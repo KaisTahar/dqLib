@@ -2,14 +2,6 @@
 # Kais Tahar
 # this script provides functions for data quality analysis in CORD
 
-env <- new.env(parent=globalenv())
-setGlobals <- function(medData, cdata) {
-  env$medData <- medData
-  env$cdata <- cdata
-  env$dq <- medData
-  env$dq$dq_msg<-""
-}
-
 getReport <- function (repCol, td, path) {
   repData <-subset(env$dq, select= repCol)
   dfq <-repData[ which(env$dq$dq_msg!="")  ,]
@@ -23,29 +15,6 @@ getExtendedReport <- function ( repCol, td, useCase, path) {
   dfq <-repData[ which(env$dq$dq_msg!="")  ,]
   sheets <- list("DQ_Report"=dfq, "Statistik"= td, "Projectathon"=useCase)
   write_xlsx(sheets, path)
-}
-
-getDQStatis <-function(bdata, col, row){
-  tdata<- addTotalCount(bdata, col, row)
-  tcdata <-addCompletness (tdata, col, row)
-  sdata <-subset(tcdata, tcdata[,col]==row)
-  sdata$N_Item <- NULL
-  return <-sdata
-}
-
-addTotalCount<- function (bdata, col, row) {
-  index = which( bdata[,col]==row)
-  bdata$missing_value_counter[index] <- sum(as.integer(as.character(bdata$missing_value_counter[-index])))
-  bdata$N[index]<-sum(bdata$N_Item[-index])
-  mr <- (bdata$missing_value_counter[index]/ bdata$N[index])* 100
-  bdata$missing_value_rate[index] <- round (mr,2)
-  bdata
-}
-
-addCompletness<- function (tdata, col, row) {
-  index = which( tdata[,col]==row)
-  tdata$K2_completness_rate[index]<-round (100-tdata$missing_value_rate[index],2)
-  return <- tdata
 }
 
 checkCordDQ <- function ( refData1, refData2) {
@@ -62,6 +31,9 @@ checkCordDQ <- function ( refData1, refData2) {
         env$dq$dq_msg[i] <- msg
       }
     }
+    if(!is.empty(env$medData$PatientIdentifikator)) {
+      cdata$pt_no = length (unique(env$medData$PatientIdentifikator))
+    }
     dqList <- checkK2( refData1, cdata)
     dq<- dqList$dq
     cdata<- dqList$cdata
@@ -69,7 +41,6 @@ checkCordDQ <- function ( refData1, refData2) {
     dqList <- checkK3( refData2)
     dq<- dqList$dq
     cdata <- addK3("basicItem", "ICD_Primärkode", cdata, dqList$k3_counter,  dqList$k3_counter_icdRd)
-
   }else {
     cdata <- addMissing("ICD_Primärkode", cdata, 0,0)
     cdata <- addK2("basicItem", "ICD_Primärkode", cdata, 0,0)
@@ -111,7 +82,7 @@ checkK2 <- function ( refData, cdata)
 
 checkK3 <- function (refData)
 {
-  eList <- c ("E84", "M30.3")
+  eList <- c ("E84", "M30.3", "E70.0")
   k3_counter_icdRd =0
   k3_counter=0
   iList <-which(env$medData$ICD_Primärkode !="" & !is.na(env$medData$ICD_Primärkode)  & !is.empty(env$medData$ICD_Primärkode))
@@ -174,14 +145,14 @@ addK2<- function (col, row, cdata, n, se) {
   item.vec <- env$medData[[row]]
   index = which( cdata[,col]==row)
   if(!is.empty(item.vec)){
-    cdata$orpha_count[index] = n
-    cdata$icd_count[index] = se
+    cdata$orpha_no[index] = n
+    cdata$icdRd_no[index] = se
     or <- ( n/se) * 100
-    cdata$K2_OrphaCoding_completeness[index] = round(or,2)
+    cdata$orphaCoding_completeness[index] = round(or,2)
   }
   else {
-    cdata$Coding_complete_count[index] = 0
-    cdata$K2_OrphaCoding_completeness[index] = 0
+    cdata$icdRd_no[index] = 0
+    cdata$orphaCoding_completeness[index] = 0
   }
   cdata
 }
@@ -190,32 +161,15 @@ addK3<- function (col, row, cdata,  n, se) {
   item.vec <- env$medData[[row]]
   index = which( cdata[,col]==row)
   if(!is.empty(item.vec)){
-    cdata$K3_count[index] <- n
+    cdata$K3_no[index] <- n
     or <- ( n/se) * 100
-    cdata$K3_uniqueness_rate[index] <- round (or,1)
+    cdata$uniqueness_rate[index] <- round (or,1)
   }
   else {
-    cdata$K3_count[index] <- 0
-    cdata$K3_uniqueness_rate[index] <- 0
+    cdata$K3_no[index] <- 0
+    cdata$uniqueness_rate[index] <- 0
   }
   cdata
-}
-
-addMissing<- function (item, bdata, m, n) {
-  index = which(bdata$basicItem==item)[1]
-  if (is.null(index)) bdata$basicItem[1]=item
-  if(n>0){
-    bdata$N_Item[index] <-n
-    bdata$missing_value_counter[index] <- m
-    mr <-(bdata$missing_value_counter[index]/ bdata$N_Item[index]) * 100
-    bdata$missing_value_rate[index] <- round (mr,1)
-  }
-  else {
-    bdata$N_Item[index] <- 0
-    bdata$missing_value_counter[index] <- 0
-    bdata$missing_value_rate[index] <-0
-  }
-  bdata
 }
 
 getCaseCount<- function (oRefCode, iRefCode) {

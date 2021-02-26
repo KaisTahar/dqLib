@@ -1,2 +1,2 @@
-"basicItem","missing_value_rate","K2_completness_rate","K2_OrphaCoding_completeness","K3_uniqueness_rate"
-"Total",0.11,99.89,94.44,98.6
+"basicItem","missing_value_rate","completness_rate","orphaCoding_completeness","uniqueness_rate","icdRd_no","pt_no"
+"Total",0.11,99.89,94.44,96.6,36,382

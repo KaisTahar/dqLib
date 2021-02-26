@@ -7,7 +7,6 @@ library(stringi)
 library(readxl)
 library(dqLib)
 
-
 # install R package
 setwd("./")
 rm(list = ls())
@@ -16,6 +15,7 @@ if (!requireNamespace("devtools")){
 }
 devtools::install_local("../")
 #source("../R/cordDqLib.R")
+#source("../R/dqCore.R")
 
 ########## data import #############
 # import CORD data
@@ -44,7 +44,7 @@ dq <- out$dq
 
 ##########Statistic#####################
 tdata<-getDQStatis(cdata, "basicItem", "Total")
-td<-subset(tdata, select= c( basicItem, missing_value_rate, K2_completness_rate, K2_OrphaCoding_completeness, K3_uniqueness_rate))
+td<-subset(tdata, select= c( basicItem, missing_value_rate, completness_rate, orphaCoding_completeness, uniqueness_rate,icdRd_no, pt_no))
 
 ########## DQ-Report ###################
 path<- paste ("./Data/Export/Datenqualitätsreport_", studycode)
