@@ -1,6 +1,6 @@
 # `dqLib`
 
-`dqLib` is a package for data quality analysis and reporting
+`dqLib` is an R package for data quality analysis and reporting
 
 ------------------------------------------------------------------------
 
@@ -14,7 +14,7 @@ devtools::install_local("./dqLib")
 
 ## Example
 
-Here are examples for data quality analysis and reporting using the cord test dataset
+Here are [examples ](https://gitlab.gwdg.de/medinf/kvf/psycho-neuro/cord/dqLib/-/tree/master/examples)for data quality analysis and reporting using the cord test dataset
 
 
 See also
