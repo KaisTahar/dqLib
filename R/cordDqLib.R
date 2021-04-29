@@ -165,7 +165,7 @@ addK3<- function (col, row, cdata,  n, se) {
   index = which( cdata[,col]==row)
   if(!is.empty(item.vec)){
     cdata$K3_no[index] <- n
-    cdata$K3_icdRd_no[index] <- se
+    cdata$icdRd_no_ext[index] <- se
     or <- ( n/se) * 100
     cdata$uniqueness_rate[index] <- round (or,1)
   }
