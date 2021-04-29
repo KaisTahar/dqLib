@@ -876,18 +876,19 @@ P_1886760;F_120438;Erworbenes Fehlen der Schilddrüse;Hypothyreose nach medizinis
 P_1886760;F_120438;Erworbenes Fehlen der Schilddrüse;Hypothyreose nach medizinischen Maßnahmen;E89.0;;;I71160
 P_1921750;F_117545;Erworbenes Fehlen der Schilddrüse;Hypothyreose nach medizinischen Maßnahmen;E89.0;;;I7116
 #test1
-P_192857501;F_101641; test; ;E75.0;;845;I95787
-P_192857502;F_101641; test; ;E75.0;;796;I95787
-P_192857503;F_101641; test; ;E75.0;;845;I956787
-P_192857504;F_101641; test; ;E75.0;;845;I956787
+P_192857501;F_101641;test; ;E75.0;;845;I95787
+P_192857502;F_101641;test; ;E75.0;;796;I95787
+P_192857503;F_101641;test; ;E75.0;;845;I956787
+P_192857504;F_101641;test; ;E75.0;;845;I956787
 #test2
-P_19285751;F_101641; test; icd-10 richtig orpha fehlerhaft nach dimdi 586 ist richtig			;E84.0;;587;I95787
-P_19285752;F_101641;test; icd-10 relevant aber korrekte orpha d.h trotztdem eindeutig 			;E84.8;;586;I95787
-P_19285753;F_101641;test; beide irrelevant                                                   		;E84.8;;587;I95787
-P_19285754;F_101641;test; icd10 und orpha relevant, die Zuordnung ist aber fehlerhaft nach dimdi		;E85.0;;586;I95787
-P_19285755;F_101641;test; 1-n Relation aber Zuordnung fehlerhaft nach dimdi 324 oder 333 ist richig		;E75.2;;325;I95787
-P_19285756;F_101641;test; 1-n Relation aber Zuordnung fehlerhaft nach dimdi					;E75.2;;320;I95787
-P_19285757;F_101641; test; fehlende icd-10 aber korrekte orpha d.h. trotztdem eindeutig 			;;;586;I95787
-P_19285758;F_101641; test; fehlende icd-10 und fehlerhafte orpha						;;;587;I95787
-P_19285759;F_101641;test; 1-n Relation aber fehlendes orpha							;E75.2;; ;I95787
-P_19285759;F_101641;test; 1-n Relation  aber fehlendes orpha							;E84.0;; ;I95787
+P_19285751;F_101641;test; icd-10 richtig orpha fehlerhaft nach dimdi 586 ist richtig			;E84.0;;587;I95787
+P_19285752;F_101641;test; richtige Zuordnung nach dimdi				 			;E84.80;;586;I95787
+P_19285753;F_101641;test; fehlerhafte Zuordnung nach dimdi                                                  ;E84.80;;587;I95787
+P_19285754;F_101641;test; Zuordnung ist fehlerhaft nach dimdi						;E85.0;;586;I95787
+P_19285755;F_101641;test; 1-m Relation aber Zuordnung fehlerhaft nach dimdi 324 oder 333 ist richig		;E75.2;;325;I95787
+P_19285756;F_101641;test; 1-m Relation aber Zuordnung fehlerhaft nach dimdi					;E75.2;;320;I95787
+P_19285757;F_101641;test; fehlendes icd-10 aber korrektes orpha d.h. trotztdem eindeutig 			;;;586;I95787
+P_19285758;F_101641;test; fehlendes icd-10 und fehlerhaftes orpha code					;;;587;I95787
+P_19285759;F_101641;test; 1-m Relation aber fehlendes orpha							;E75.2;; ;I95787
+P_19285759;F_101641;test; eindeutige n-1 Relation aber fehlendes orpha 					;E84.0;; ;I95787
+P_19285759;F_101641;test; eindeutige 1-1 Relation aber fehlendes orpha					;D45;; ;I95787

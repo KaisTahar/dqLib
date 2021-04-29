@@ -14,16 +14,17 @@ if (!requireNamespace("devtools")){
   install.packages("devtools")
 }
 devtools::install_local("../")
-
+#source("../R/cordDqLib.R")
+#source("../R/dqCore.R")
 ########## data import #############
 # import CORD data
 studycode = "CORD_TestData"
 medData <- read.table("./Data/medData/Dali2020_ICD_Orpha_Bezüge_KT.csv", sep=";", dec=",",  header=T, na.strings=c("","NA"), encoding = "latin1")
-refData1 <- read.table("./Data/refData/ICD10-Diagnosen_eindeutig_kodierend_für_SE_kt.csv", sep=",",  dec=",", na.strings=c("","NA"), encoding = "UTF-8")
+refData1 <- read.table("./Data/refData/Hamburger-Cord_DQM-List.csv", sep=",",  dec=",", na.strings=c("","NA"), encoding = "UTF-8")
 refData2 <- read.table("./Data/refData/icd10gm2020_alphaid_se_muster_edvtxt_20191004.txt", sep="|",  dec=",", na.strings=c("","NA"), encoding = "UTF-8")
 names(medData)
 mdHeader <- c ("PatientIdentifikator","Aufnahmenummer","DiagnoseText","ICD_Text","ICD_Primärkode","ICD_Manifestation","Orpha_Kode","AlphaID_Kode")
-headerRef1<- c ("IcdCode", "OrphaCode")
+headerRef1<- c ("IcdCode", "OrphaCode", "Type")
 headerRef2<- c ("Gültigkeit", "Alpha_ID", "ICD_Primärkode1", "ICD_Manifestation", "ICD_Zusatz","ICD_Primärkode2", "Orpha_Kode", "Label")
 names(medData)<-mdHeader
 names(refData1)<-headerRef1
