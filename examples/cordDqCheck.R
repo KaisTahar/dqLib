@@ -1,10 +1,11 @@
-# Last Change at 29.04.2021
+
+# Last Change at 03.06.2021
 # Kais Tahar
 # Data quality analysis for CORD
 
 library(writexl)
 library(stringi)
-library(readxl)
+library(openxlsx)
 library(dqLib)
 
 # install R package
@@ -19,8 +20,14 @@ devtools::install_local("../")
 
 ########## data import #############
 # import CORD data
+
 studycode = "CORD_TestData"
-medData <- read.table("./Data/medData/Dali2020_ICD_Orpha_Bezüge_KT.csv", sep=";", dec=",",  header=T, na.strings=c("","NA"), encoding = "latin1")
+# CSV and XLSX file formats are supported
+# path="./Data/medData/Dali2020_ICD_Orpha_Bezüge_KT.xlsx"
+path ="./Data/medData/Dali2020_ICD_Orpha_Bezüge_KT.csv"
+ext <-getFileExtension (path)
+if (ext=="csv") medData<- read.table(path, sep=";", dec=",",  header=T, na.strings=c("","NA"), encoding = "latin1")
+if (ext=="xlsx") medData <- read.xlsx(path, sheet=1,skipEmptyRows = TRUE)
 refData1 <- read.table("./Data/refData/Hamburger-Cord_DQM-List.csv", sep=",",  dec=",", na.strings=c("","NA"), encoding = "UTF-8")
 refData2 <- read.table("./Data/refData/icd10gm2020_alphaid_se_muster_edvtxt_20191004.txt", sep="|",  dec=",", na.strings=c("","NA"), encoding = "UTF-8")
 names(medData)

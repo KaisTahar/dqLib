@@ -10,6 +10,11 @@ setGlobals <- function(medData, cdata) {
   env$dq$dq_msg<-""
 }
 
+getFileExtension <- function(filePath){
+  ext <- strsplit(basename(filePath), split="\\.")[[1]]
+  return(ext[-1])
+}
+
 getDQStatis <-function(bdata, col, row){
   tdata<- addTotalCount(bdata, col, row)
   tcdata <-addCompletness (tdata, col, row)

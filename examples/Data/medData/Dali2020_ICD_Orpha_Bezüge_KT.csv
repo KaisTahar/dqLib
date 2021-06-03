@@ -892,3 +892,5 @@ P_19285758;F_101641;test; fehlendes icd-10 und fehlerhaftes orpha code					;;;58
 P_19285759;F_101641;test; 1-m Relation aber fehlendes orpha							;E75.2;; ;I95787
 P_19285759;F_101641;test; eindeutige n-1 Relation aber fehlendes orpha 					;E84.0;; ;I95787
 P_19285759;F_101641;test; eindeutige 1-1 Relation aber fehlendes orpha					;D45;; ;I95787
+P_19285759;F_101641;test; ICD Kodierung für Grippe								;J09;; ;
+P_19285759;F_101641;test; keine Orpha oder ICD Kodierung							;;; ;

@@ -1,4 +1,4 @@
-# Last Change at 29.04.2021
+# Last Change at 03.06.2021
 # Kais Tahar
 # this script provides functions for data quality analysis in CORD
 
@@ -26,7 +26,7 @@ checkCordDQ <- function ( refData1, refData2) {
       env$dq$dq_msg[i]<- paste("Fehlendes ICD10 Code ", env$dq$dq_msg[i])
       oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
       oRefList<- which(as.character (refData2$Orpha_Kode)==oCode)
-      if (is.empty ( oRefList) ){
+      if (is.empty (oRefList) & ! (is.na(oCode) || is.null(oCode))){
         msg<- paste("Orpha Kodierung ",oCode, " ist im BfArM-Mapping nicht enthalten",env$dq$dq_msg[i] )
         env$dq$dq_msg[i] <- msg
       }
@@ -68,10 +68,10 @@ checkK2 <- function ( refData, cdata)
       else{
         k2_orphaMissing =  k2_orphaMissing +1
         env$dq$dq_msg[i] <- paste("Fehlendes Orpha_Kode ", env$dq$dq_msg[i])
+        cdata <- addMissing("Orpha_Kode", cdata, k2_orphaMissing, length(env$medData$Orpha_Kode))
       }
     }
   }
-  cdata <- addMissing("Orpha_Kode", cdata, k2_orphaMissing, length(env$medData$Orpha_Kode))
   out <- list()
   out[["dq"]] <- env$dq
   out[["cdata"]] <- cdata
