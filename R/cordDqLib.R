@@ -34,6 +34,9 @@ checkCordDQ <- function ( refData1, refData2) {
     if(!is.empty(env$medData$PatientIdentifikator)) {
       cdata$pt_no = length (unique(env$medData$PatientIdentifikator))
     }
+    if(!is.empty(env$medData$Aufnahmenummer)) {
+      cdata$case_no = length (unique(env$medData$Aufnahmenummer))
+    }
     dqList <- checkK2( refData1, cdata)
     dq<- dqList$dq
     cdata<- dqList$cdata
@@ -132,6 +135,7 @@ checkK3 <- function (refData1, refData2)
         if (!is.empty (iRefList)){
           msg<- paste("ICD10-Kodierung nicht eindeutig",iCode,  env$dq$dq_msg[i])
           env$dq$dq_msg[i] <- msg
+          k3_counter_icdRd =k3_counter_icdRd+1
         }
       }
     }

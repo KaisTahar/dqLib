@@ -51,7 +51,7 @@ dq <- out$dq
 
 ##########Statistic#####################
 tdata<-getDQStatis(cdata, "basicItem", "Total")
-td<-subset(tdata, select= c( basicItem, missing_value_rate, completness_rate, orphaCoding_completeness, uniqueness_rate,icdRd_no, icdRd_no_ext,pt_no))
+td<-subset(tdata, select= c( basicItem, missing_value_rate, completness_rate, orphaCoding_completeness, uniqueness_rate,icdRd_no, icdRd_no_ext,pt_no, case_no))
 
 ########## DQ-Report ###################
 path<- paste ("./Data/Export/Datenqualitätsreport_", studycode)
