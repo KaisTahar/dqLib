@@ -20,11 +20,11 @@ devtools::install_local("../")
 
 ########## data import #############
 # import CORD data
-
-studycode = "CORD_TestData"
+#studycode = "DaliTestData_KT_Excel"
+studycode = "DaliTestData_KT"
 # CSV and XLSX file formats are supported
-# path="./Data/medData/Dali2020_ICD_Orpha_Bezüge_KT.xlsx"
-path ="./Data/medData/Dali2020_ICD_Orpha_Bezüge_KT.csv"
+path="./Data/medData/DaliTestData_KT.csv"
+#path ="./Data/medData/DaliTestData_KT.xlsx"
 ext <-getFileExtension (path)
 if (ext=="csv") medData<- read.table(path, sep=";", dec=",",  header=T, na.strings=c("","NA"), encoding = "latin1")
 if (ext=="xlsx") medData <- read.xlsx(path, sheet=1,skipEmptyRows = TRUE)
@@ -41,19 +41,28 @@ dim (medData)
 
 ########## DQ Analysis #############
 cdata <- data.frame(
-  basicItem=c ("ICD_Primärkode", "Orpha_Kode" , "Total")
+  basicItem=
+  c ("PatientIdentifikator","Aufnahmenummer","DiagnoseText","ICD_Text","ICD_Primärkode","ICD_Manifestation","Orpha_Kode", "Total")
 )
-repCol1<- c( "PatientIdentifikator", "ICD_Primärkode","Orpha_Kode", "dq_msg")
-setGlobals (medData, cdata)
-out <-checkCordDQ(refData1,refData2)
+tdata <- data.frame(
+  pt_no =NA, case_no =NA
+)
+repCol=c( "PatientIdentifikator", "ICD_Primärkode","Orpha_Kode")
+setGlobals(medData, repCol, cdata, tdata)
+env$dq$missing_item<-""
+env$dq$missing_value<-""
+items <- setdiff (cdata$basicItem ,c ("ICD_Primärkode","Orpha_Kode", "Total"))
+cdata <- getMissing(items, "missing_value", "missing_item")$cdata
+env$dq$dq_msg<-""
+out <-checkCordDQ(refData1,refData2, "dq_msg")
 cdata <-out$cdata
-dq <- out$dq
+tdata <- out$tdata
 
 ##########Statistic#####################
-tdata<-getDQStatis(cdata, "basicItem", "Total")
+tdata<-cbind (getDQStatis(cdata, "basicItem", "Total"), tdata)
 td<-subset(tdata, select= c( basicItem, missing_value_rate, completness_rate, orphaCoding_completeness, uniqueness_rate,icdRd_no, icdRd_no_ext,pt_no, case_no))
 
 ########## DQ-Report ###################
 path<- paste ("./Data/Export/Datenqualitätsreport_", studycode)
-getReport( repCol1, td, path)
+getReport( repCol, "dq_msg", td, path)
 
