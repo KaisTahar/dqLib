@@ -122,7 +122,7 @@ checkK3 <- function (refData1, refData2, cl)
           k3_counter_icdRd =k3_counter_icdRd+1
           oRef<- which(as.character (refData2$Orpha_Kode)==oCode)
           if (!is.empty ( oRef)){
-            msg<- paste("Kodierung nicht eindeutig. Relation",iCode,"-", oCode , "ist im BfArM nicht vorhanden. ")
+            msg<- paste("Kodierung ist nicht eindeutig. Relation",iCode,"-", oCode , "ist im BfArM nicht vorhanden. ")
             env$dq[,cl][i] <- msg
           }else{  msg<- paste("Kodierung ist nicht eindeutig. ICD10 Kodierung",iCode , "ist im BfArM Mapping nicht enthalten. ",  env$dq[,cl][i])
           env$dq[,cl][i] <- msg
@@ -137,9 +137,9 @@ checkK3 <- function (refData1, refData2, cl)
         k3_counter_icdRd =k3_counter_icdRd+1
       }
       else {
-        iRefList<- which(stri_trim(as.character (refData1$ICD_primaerkode1))==iCode)
+        iRefList<- which(stri_trim(as.character (refData1$IcdCode))==iCode)
         if (!is.empty (iRefList)){
-          msg<- paste("ICD10-Kodierung:",iCode, "nicht eindeutig. ",  env$dq[,cl][i])
+          msg<- paste("ICD10 Kodierung",iCode, "ist nach Tracerdiagnosen nicht eindeutig. ",  env$dq[,cl][i])
           env$dq[,cl][i] <- msg
           k3_counter_icdRd =k3_counter_icdRd+1
         }
