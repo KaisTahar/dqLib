@@ -157,13 +157,13 @@ checkK3 <- function (refData1, refData2, cl)
 addK2<- function ( tdata,  n, se) {
   if(se>0){
     tdata$orpha_no <- n
-    tdata$K2_icdRd_no<- se
+    tdata$icdRd_no<- se
     or <- ( n/se) * 100
     tdata$orphaCoding_completeness <- round(or,2)
   }
   else {
     tdata$orpha_no <- 0
-    tdata$K2_icdRd_no <- 0
+    tdata$icdRd_no <- 0
     tdata$orphaCoding_completeness<-0
   }
   tdata
@@ -171,32 +171,19 @@ addK2<- function ( tdata,  n, se) {
 
 addK3<- function (tdata,  n, se) {
   if(se>0){
-    tdata$K3_rd_no <- n
-    tdata$K3_rd_no_ext<- se
+    tdata$rd_no <- n
+    tdata$rd_no_ext<- se
     or <- ( n/se) * 100
     tdata$uniqueness_rate <- round (or,1)
   }
   else {
-    tdata$K3_rd_no <- 0
-    tdata$K3_rd_no_ext <- 0
+    tdata$rd_no <- 0
+    tdata$rd_no_ext <- 0
     tdata$uniqueness_rate  <- 0
   }
   tdata
 }
-addK4<- function (tdata,  n, se) {
-  if(se>0){
-    tdata$K4_no <- n
-    tdata$icdRd_no_4 <- se
-    or <- ( n/se) * 100
-    tdata$precision_rate <- round (or,1)
-  }
-  else {
-    tdata$K4_no <- 0
-    tdata$icdRd_no_4 <- 0
-    tdata$precision_rate  <- 0
-  }
-  tdata
-}
+
 getCaseCount<- function (oRefCode, iRefCode) {
   out <- ""
   oCase_counter=0

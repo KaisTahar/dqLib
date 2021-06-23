@@ -14,7 +14,7 @@ if (!requireNamespace("devtools")){
   install.packages("devtools")
 }
 devtools::install_local("../")
-#source("../R/cordDqLib.R")
+#("../R/cordDqLib.R")
 #source("../R/dqCore.R")
 ########## data import #############
 # import CORD data
@@ -51,7 +51,7 @@ cdata <-out$cdata
 tdata <- out$tdata
 ##########Statistic#####################
 tdata<-cbind (getDQStatis(cdata, "basicItem", "Total"), tdata)
-td<-subset(tdata, select= c( basicItem, missing_value_rate, completness_rate, orphaCoding_completeness, uniqueness_rate,K2_icdRd_no,K3_rd_no,pt_no, case_no))
+td<-subset(tdata, select= c( basicItem, missing_value_rate, completness_rate, orphaCoding_completeness, uniqueness_rate,icdRd_no,rd_no,pt_no, case_no))
 
 ########## DQ-Report ###################
 path<- paste ("./Data/Export/Datenqualitätsreport_", studycode)
