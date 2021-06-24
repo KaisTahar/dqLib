@@ -27,17 +27,14 @@ checkCordDQ <- function ( refData1, refData2, cl) {
     if(!is.empty(env$medData$Aufnahmenummer)) {
       env$tdata$case_no = length (unique(env$medData$Aufnahmenummer))
     }
-    dqList <- checkK2( refData1, env$cdata, cl)
-    dq<- dqList$dq
-    env$cdata<- dqList$cdata
+    dqList <- checkK2( refData1, cl)
     env$tdata <- addK2( env$tdata, dqList$k2_counter_icdOrpha, dqList$k2_counter_icdRd)
     dqList <- checkK3( refData1, refData2, cl)
-    dq<- dqList$dq
     env$tdata <- addK3(env$tdata, dqList$k3_counter,  dqList$k3_counter_rd)
   }else {
     env$cdata <- addMissing("ICD_primaerkode", env$cdata, 0,0)
-    env$cdata <- addK2("basicItem", "ICD_primaerkode", env$cdata, 0,0)
-    env$cdata <- addK3("basicItem", "ICD_primaerkode", env$cdata,0,0)
+    env$cdata <- addK2(env$tdata, 0,0)
+    env$cdata <- addK3(env$tada,0,0)
   }
   out <- list()
   out[["dq"]] <- env$dq
@@ -46,7 +43,7 @@ checkCordDQ <- function ( refData1, refData2, cl) {
   out
 }
 
-checkK2 <- function ( refData, cdata, cl)
+checkK2 <- function ( refData, cl)
 {
   k2_counter_icdOrpha=0
   k2_counter_icdRd =0
@@ -62,13 +59,11 @@ checkK2 <- function ( refData, cdata, cl)
       else{
         k2_orphaMissing =  k2_orphaMissing +1
         env$dq[,cl][i] <- paste("Fehlendes Orpha_Kode. ", env$dq[,cl][i])
-        cdata <- addMissing("Orpha_Kode", cdata, k2_orphaMissing, length(env$medData$Orpha_Kode))
+        env$cdata <- addMissing("Orpha_Kode", env$cdata, k2_orphaMissing, length(env$medData$Orpha_Kode))
       }
     }
   }
   out <- list()
-  out[["dq"]] <- env$dq
-  out[["cdata"]] <- cdata
   out[["k2_counter_icdRd"]] <- k2_counter_icdRd
   out[["k2_counter_icdOrpha"]] <- k2_counter_icdOrpha
   out
@@ -139,7 +134,7 @@ checkK3 <- function (refData1, refData2, cl)
       else {
         iRefList<- which(stri_trim(as.character (refData1$IcdCode))==iCode)
         if (!is.empty (iRefList)){
-          msg<- paste("ICD10 Kodierung",iCode, "ist nach Tracerdiagnosen nicht eindeutig. ",  env$dq[,cl][i])
+          msg<- paste("ICD10 Kodierung",iCode, "ist nicht eindeutig. ICD10-Orpha Relation ist gemäß Tracer-Diagnosenliste vom Typ 1-m. ",  env$dq[,cl][i])
           env$dq[,cl][i] <- msg
           k3_counter_icdRd =k3_counter_icdRd+1
         }
@@ -148,7 +143,6 @@ checkK3 <- function (refData1, refData2, cl)
   }
   }
   out <- list()
-  out[["dq"]] <- env$dq
   out[["k3_counter"]] <- k3_counter
   out[["k3_counter_rd"]] <- k3_counter_icdRd
   out
