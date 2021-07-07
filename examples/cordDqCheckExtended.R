@@ -14,7 +14,7 @@ if (!requireNamespace("devtools")){
   install.packages("devtools")
 }
 devtools::install_local("../")
-#("../R/cordDqLib.R")
+#source("../R/cordDqLib.R")
 #source("../R/dqCore.R")
 ########## data import #############
 # import CORD data
