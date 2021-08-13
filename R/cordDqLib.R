@@ -1,4 +1,4 @@
-# Last Change at 23.06.2021
+# Last Change at 13.08.2021
 # Kais Tahar
 # this script provides functions for data quality analysis in CORD
 
@@ -18,8 +18,15 @@ getExtendedReport <- function ( repCol,cl, td, useCase, path) {
   write_xlsx(sheets, path)
 }
 
-checkCordDQ <- function ( refData1, refData2, cl) {
+checkCordDQ <- function ( instID, refData1, refData2, cl) {
   cdata <- env$cdata
+   if ( !is.null(instID)){
+   env$tdata$inst_id <- instID
+   instData<- medData[which(medData$Institut_ID==instID),]
+   if (nrow(instData)>0) env$medData <- instData
+  }else {
+  	env$tdata$inst_id <- "ID fehlt"
+  }
   if(!is.empty(env$medData$ICD_primaerkode)){
     if(!is.empty(env$medData$PatientIdentifikator)) {
       env$tdata$pt_no = length (unique(env$medData$PatientIdentifikator))

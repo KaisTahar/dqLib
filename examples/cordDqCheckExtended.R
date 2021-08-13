@@ -19,6 +19,7 @@ devtools::install_local("../")
 ########## data import #############
 # import CORD data
 studycode = "CORD_TestData"
+instID="260123430-Dali"
 medData <- read.table("./Data/medData/DaliTestData_KT.csv", sep=";", dec=",",  header=T, na.strings=c("","NA"), encoding = "latin1")
 refData1 <- read.table("./Data/refData/Hamburger-Cord_DQM-List.csv", sep=",",  dec=",", na.strings=c("","NA"), encoding = "UTF-8")
 refData2 <- read.table("./Data/refData/icd10gm2020_alphaid_se_muster_edvtxt_20191004.txt", sep="|",  dec=",", na.strings=c("","NA"), encoding = "UTF-8")
@@ -34,24 +35,24 @@ dim (medData)
 ########## DQ Analysis #############
 cdata <- data.frame(
   basicItem=
-    c ("PatientIdentifikator","Aufnahmenummer","DiagnoseText","ICD_Text","ICD_primaerkode","ICD_Manifestation","Orpha_Kode", "Total")
+    c ("PatientIdentifikator","Aufnahmenummer","DiagnoseText","ICD_Text","ICD_primaerkode","Orpha_Kode", "Total")
 )
 tdata <- data.frame(
   pt_no =NA, case_no =NA
 )
-repCol=c( "PatientIdentifikator", "ICD_primaerkode","Orpha_Kode")
+repCol=c( "PatientIdentifikator", "Aufnahmenummer", "ICD_primaerkode","Orpha_Kode")
 setGlobals(medData, repCol, cdata, tdata)
 env$dq$missing_item<-""
 env$dq$missing_value<-""
 items <- setdiff (cdata$basicItem ,c ("ICD_primaerkode","Orpha_Kode", "Total"))
 cdata <- getMissing(items, "missing_value", "missing_item")$cdata
 env$dq$dq_msg<-""
-out <-checkCordDQ(refData1,refData2, "dq_msg")
+out <-checkCordDQ(instID, refData1,refData2, "dq_msg")
 cdata <-out$cdata
 tdata <- out$tdata
 ##########Statistic#####################
 tdata<-cbind (getDQStatis(cdata, "basicItem", "Total"), tdata)
-td<-subset(tdata, select= c( basicItem, missing_value_rate, completness_rate, orphaCoding_completeness, uniqueness_rate,icdRd_no,rd_no,pt_no, case_no))
+td<-subset(tdata, select= c( inst_id, missing_value_rate, completness_rate, orphaCoding_completeness, uniqueness_rate,icdRd_no,rd_no,pt_no, case_no))
 
 ########## DQ-Report ###################
 path<- paste ("./Data/Export/Datenqualitätsreport_", studycode)

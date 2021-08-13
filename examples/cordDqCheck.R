@@ -1,5 +1,5 @@
 
-# Last Change at 23.06.2021
+# Last Change at 13.08.2021
 # Kais Tahar
 # Data quality analysis for CORD
 
@@ -20,9 +20,10 @@ devtools::install_local("../")
 
 ########## data import #############
 # import CORD data
+# CSV and XLSX file formats are supported
 #studycode = "DaliTestData_KT_Excel"
 studycode = "DaliTestData_KT"
-# CSV and XLSX file formats are supported
+inst_ID="260123430-Dali"
 path="./Data/medData/DaliTestData_KT.csv"
 #path ="./Data/medData/DaliTestData_KT.xlsx"
 ext <-getFileExtension (path)
@@ -42,25 +43,25 @@ dim (medData)
 ########## DQ Analysis #############
 cdata <- data.frame(
   basicItem=
-  c ("PatientIdentifikator","Aufnahmenummer","DiagnoseText","ICD_Text","ICD_primaerkode","ICD_Manifestation","Orpha_Kode", "Total")
+  c ("PatientIdentifikator","Aufnahmenummer","DiagnoseText","ICD_Text","ICD_primaerkode","Orpha_Kode", "Total")
 )
 tdata <- data.frame(
   pt_no =NA, case_no =NA
 )
-repCol=c( "PatientIdentifikator", "ICD_primaerkode","Orpha_Kode")
+repCol=c( "PatientIdentifikator", "Aufnahmenummer", "ICD_primaerkode","Orpha_Kode")
 setGlobals(medData, repCol, cdata, tdata)
 env$dq$missing_item<-""
 env$dq$missing_value<-""
 items <- setdiff (cdata$basicItem ,c ("ICD_primaerkode","Orpha_Kode", "Total"))
 cdata <- getMissing(items, "missing_value", "missing_item")$cdata
 env$dq$dq_msg<-""
-out <-checkCordDQ(refData1,refData2, "dq_msg")
+out <-checkCordDQ(inst_ID,refData1,refData2, "dq_msg")
 cdata <-out$cdata
 tdata <- out$tdata
 
 ##########Statistic#####################
 tdata<-cbind (getDQStatis(cdata, "basicItem", "Total"), tdata)
-td<-subset(tdata, select= c( basicItem, missing_value_rate, completness_rate, orphaCoding_completeness, uniqueness_rate,icdRd_no, rd_no,pt_no, case_no))
+td<-subset(tdata, select= c( inst_id, missing_value_rate, completness_rate, orphaCoding_completeness, uniqueness_rate,icdRd_no, rd_no,pt_no, case_no))
 
 ########## DQ-Report ###################
 path<- paste ("./Data/Export/Datenqualitätsreport_", studycode)
