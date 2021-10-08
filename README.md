@@ -6,10 +6,15 @@
 
 ## Installation
 
-You can install `dqLib` from local folder with
+You can install `dqLib` from local folder with:
 
 ``` r
 devtools::install_local("./dqLib")
+```
+You can also install it directly from github with:
+
+``` r
+devtools::install_github("https://github.com/KaisTahar/dqLib")
 ```
 
 ## Example
