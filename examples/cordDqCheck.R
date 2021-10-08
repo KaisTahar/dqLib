@@ -14,7 +14,8 @@ rm(list = ls())
 if (!requireNamespace("devtools")){
   install.packages("devtools")
 }
-devtools::install_local("../")
+library(devtools)
+install_github("https://github.com/KaisTahar/dqLib")
 #source("../R/cordDqLib.R")
 #source("../R/dqCore.R")
 
