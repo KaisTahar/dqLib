@@ -37,7 +37,7 @@ checkCordDQ <- function ( instID, refData1, refData2, cl) {
     dqList <- checkK2( refData1, cl)
     env$tdata <- addK2( env$tdata, dqList$k2_counter_icdOrpha, dqList$k2_counter_icdRd)
     dqList <- checkK3( refData1, refData2, cl)
-    env$tdata <- addK3(env$tdata, dqList$k3_counter,  dqList$k3_counter_rd)
+    env$tdata <- addK3(env$tdata, dqList$k3_rd_counter,  dqList$k3_check_counter)
   }else {
     env$cdata <- addMissing("ICD_Primaerkode", env$cdata, 0,0)
     env$cdata <- addK2(env$tdata, 0,0)
@@ -84,8 +84,8 @@ checkK3 <- function (refData1, refData2, cl)
     icdCode <- stri_trim(as.character(refData1$IcdCode[i]))
     eList <- append(eList,icdCode)
   }
-  k3_counter_icdRd =0
-  k3_counter=0
+  k3_check_counter =0
+  k3_rd_counter=0
   if(!is.empty(env$medData$ICD_Primaerkode)){
     cq <- which(env$medData$ICD_Primaerkode=="" | is.na(env$medData$ICD_Primaerkode))
     env$cdata <- addMissing("ICD_Primaerkode", env$cdata, length (cq), length(env$medData$ICD_Primaerkode))
@@ -93,9 +93,12 @@ checkK3 <- function (refData1, refData2, cl)
       env$dq[,cl][i]<- paste("Fehlendes ICD10 Code. ", env$dq[,cl][i])
       oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
       oRefList<- which(as.character (refData2$Orpha_Kode)==oCode)
-      if (is.empty (oRefList) & ! (is.na(oCode) || is.null(oCode))){
-        msg<- paste("Orpha Kodierung",oCode, "ist im BfArM-Mapping nicht enthalten. ",env$dq[,cl][i] )
-        env$dq[,cl][i] <- msg
+      if (! (is.na(oCode) || is.null(oCode) || is.empty(oCode))){
+        k3_check_counter =k3_check_counter+1
+        if (!is.empty (oRefList))  k3_rd_counter=k3_rd_counter+1
+        else env$dq[,cl][i] <- paste("Kodierung ist nicht eindeutig. Orpha Code",oCode, "ist im BfArM-Mapping nicht enthalten. ",env$dq[,cl][i] )
+      }else{
+        env$dq[,cl][i] <- paste("Fall ist nicht eindeutig.",env$dq[,cl][i] )
       }
     }
   iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode)  & !is.empty(env$medData$ICD_Primaerkode))
@@ -106,7 +109,7 @@ checkK3 <- function (refData1, refData2, cl)
       iRefList<- which(stri_trim(as.character(refData2$ICD_Primaerkode1))==iCode)
       if (!is.empty (iRefList)){
         oRefList <- ""
-        k3_counter_icdRd =k3_counter_icdRd+1
+        k3_check_counter =k3_check_counter+1
 
         for (j in iRefList){
             oRefCode <-as.integer(refData2$Orpha_Kode[j])
@@ -117,17 +120,15 @@ checkK3 <- function (refData1, refData2, cl)
           msg<- paste("Kodierung ist nicht eindeutig. Relation",iCode,"-", oCode , "ist im BfArM nicht vorhanden. ",  env$dq[,cl][i])
           env$dq[,cl][i] <- msg
         }
-        else k3_counter=k3_counter+1
+        else k3_rd_counter=k3_rd_counter+1
       }
       else{
         if (!(is.null(iCode) |is.na(iCode) | is.empty(iCode))){
-          k3_counter_icdRd =k3_counter_icdRd+1
+          k3_check_counter =k3_check_counter+1
           oRef<- which(as.character (refData2$Orpha_Kode)==oCode)
           if (!is.empty ( oRef)){
-            msg<- paste("Kodierung ist nicht eindeutig. Relation",iCode,"-", oCode , "ist im BfArM nicht vorhanden. ")
+            msg<- paste("Kodierung ist nicht eindeutig. ICD10 Code",iCode , "ist im BfArM Mapping nicht enthalten. ",  env$dq[,cl][i])
             env$dq[,cl][i] <- msg
-          }else{  msg<- paste("Kodierung ist nicht eindeutig. ICD10 Kodierung",iCode , "ist im BfArM Mapping nicht enthalten. ",  env$dq[,cl][i])
-          env$dq[,cl][i] <- msg
           }
         }
       }
@@ -135,23 +136,23 @@ checkK3 <- function (refData1, refData2, cl)
     else{
       if (is.element(iCode, eList))
       {
-        k3_counter=k3_counter+1
-        k3_counter_icdRd =k3_counter_icdRd+1
+        k3_rd_counter=k3_rd_counter+1
+        k3_check_counter =k3_check_counter+1
       }
       else {
         iRefList<- which(stri_trim(as.character (refData1$IcdCode))==iCode)
         if (!is.empty (iRefList)){
           msg<- paste("ICD10 Kodierung",iCode, "ist nicht eindeutig. ICD10-Orpha Relation ist gemäß Tracer-Diagnosenliste vom Typ 1-m. ",  env$dq[,cl][i])
           env$dq[,cl][i] <- msg
-          k3_counter_icdRd =k3_counter_icdRd+1
+          k3_check_counter =k3_check_counter+1
         }
       }
     }
   }
   }
   out <- list()
-  out[["k3_counter"]] <- k3_counter
-  out[["k3_counter_rd"]] <- k3_counter_icdRd
+  out[["k3_rd_counter"]] <- k3_rd_counter
+  out[["k3_check_counter"]] <- k3_check_counter
   out
 }
 
@@ -170,16 +171,16 @@ addK2<- function ( tdata,  n, se) {
   tdata
 }
 
-addK3<- function (tdata,  n, se) {
+addK3<- function (tdata,  se, n) {
   if(se>0){
-    tdata$rd_no <- n
-    tdata$rd_no_ext<- se
-    or <- ( n/se) * 100
+    tdata$rd_no <- se
+    tdata$check_no<- n
+    or <- ( se/n) * 100
     tdata$uniqueness_rate <- round (or,1)
   }
   else {
     tdata$rd_no <- 0
-    tdata$rd_no_ext <- 0
+    tdata$check_no <- 0
     tdata$uniqueness_rate  <- 0
   }
   tdata
