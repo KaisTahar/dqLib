@@ -34,10 +34,14 @@ checkCordDQ <- function ( instID, refData1, refData2, cl) {
     if(!is.empty(env$medData$Aufnahmenummer)) {
       env$tdata$case_no = length (unique(env$medData$Aufnahmenummer))
     }
+    dqList <- checkK1( refData2, cl)
+    env$tdata <- addK1( env$tdata, dqList$k1_rd_counter, dqList$k1_check_counter)
     dqList <- checkK2( refData1, cl)
-    env$tdata <- addK2( env$tdata, dqList$k2_counter_icdOrpha, dqList$k2_counter_icdRd)
+    env$tdata <- addK2( env$tdata, dqList$k2_icdOrpha_counter, dqList$k2_icdRd_counter)
     dqList <- checkK3( refData1, refData2, cl)
     env$tdata <- addK3(env$tdata, dqList$k3_rd_counter,  dqList$k3_check_counter)
+    dqList <- checkK4( refData2, cl)
+    env$tdata <- addK4( env$tdata,  dqList$k4_counter_orpha, dqList$k4_counter_icd)
   }else {
     env$cdata <- addMissing("ICD_Primaerkode", env$cdata, 0,0)
     env$cdata <- addK2(env$tdata, 0,0)
@@ -47,6 +51,52 @@ checkCordDQ <- function ( instID, refData1, refData2, cl) {
   out[["dq"]] <- env$dq
   out[["cdata"]] <- env$cdata
   out[["tdata"]] <- env$tdata
+  out
+}
+
+
+checkK1 <- function (refData2, cl)
+{
+  k1_check_counter =0
+  k1_rd_counter=0
+  if(!is.empty(env$medData$ICD_Primaerkode)){
+    iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode) & !is.empty(env$medData$ICD_Primaerkode))
+    for(i in iList){
+      iCode <- stri_trim(as.character(env$medData$ICD_Primaerkode[i]))
+      oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
+      if (!(is.null(oCode) |is.na(oCode) | is.empty(oCode))){
+        iRefList<- which(stri_trim(as.character(refData2$ICD_Primaerkode1))==iCode)
+        if (!is.empty (iRefList)){
+          oRefList <- ""
+          k1_check_counter =k1_check_counter+1
+          
+          for (j in iRefList){
+            oRefCode <-as.integer(refData2$Orpha_Kode[j])
+            oRefList <- append( oRefList,oRefCode)
+          }
+          if ( !is.element(oCode, oRefList))
+          {
+            msg<- paste("ICD10-Orpha Zuordnung ist gemäß BfArM nicht plausible.",  env$dq[,cl][i])
+            env$dq[,cl][i] <- msg
+          }
+          else k1_rd_counter=k1_rd_counter+1
+        }
+        else{
+          if (!(is.null(iCode) |is.na(iCode) | is.empty(iCode))){
+            k1_check_counter =k1_check_counter+1
+            oRef<- which(as.character (refData2$Orpha_Kode)==oCode)
+            if (!is.empty ( oRef)){
+              msg<- paste("ICD10-Orpha Zuordnung ist gemäß BfArM nicht plausible.",  env$dq[,cl][i])
+              env$dq[,cl][i] <- msg
+            }
+          }
+        }
+      }
+    }
+  }
+  out <- list()
+  out[["k1_rd_counter"]] <- k1_rd_counter
+  out[["k1_check_counter"]] <- k1_check_counter
   out
 }
 
@@ -71,11 +121,10 @@ checkK2 <- function ( refData, cl)
     }
   }
   out <- list()
-  out[["k2_counter_icdRd"]] <- k2_counter_icdRd
-  out[["k2_counter_icdOrpha"]] <- k2_counter_icdOrpha
+  out[["k2_icdRd_counter"]] <- k2_counter_icdRd
+  out[["k2_icdOrpha_counter"]] <- k2_counter_icdOrpha
   out
 }
-
 checkK3 <- function (refData1, refData2, cl)
 {
   eRel <- which(refData1$Type=="1:1" | refData1$Type=="n:1")
@@ -86,6 +135,7 @@ checkK3 <- function (refData1, refData2, cl)
   }
   k3_check_counter =0
   k3_rd_counter=0
+  rd_counter=0
   if(!is.empty(env$medData$ICD_Primaerkode)){
     cq <- which(env$medData$ICD_Primaerkode=="" | is.na(env$medData$ICD_Primaerkode))
     env$cdata <- addMissing("ICD_Primaerkode", env$cdata, length (cq), length(env$medData$ICD_Primaerkode))
@@ -96,7 +146,7 @@ checkK3 <- function (refData1, refData2, cl)
       if (! (is.na(oCode) || is.null(oCode) || is.empty(oCode))){
         k3_check_counter =k3_check_counter+1
         if (!is.empty (oRefList))  k3_rd_counter=k3_rd_counter+1
-        else env$dq[,cl][i] <- paste("Kodierung ist nicht eindeutig. Orpha Code",oCode, "ist im BfArM-Mapping nicht enthalten. ",env$dq[,cl][i] )
+        #else env$dq[,cl][i] <- paste("Kodierung ist nicht eindeutig. Orpha Code",oCode, "ist im BfArM-Mapping nicht enthalten. ",env$dq[,cl][i] )
       }else{
         env$dq[,cl][i] <- paste("Fall ist nicht eindeutig.",env$dq[,cl][i] )
       }
@@ -156,6 +206,43 @@ checkK3 <- function (refData1, refData2, cl)
   out
 }
 
+checkK4 <- function ( refData, cl)
+{
+  k4_counter_icd =0
+  k4_counter_orpha =0 
+  iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode)  & !is.empty(env$medData$ICD_Primaerkode))
+  oList <-which(env$medData$Orpha_Kode !="" & !is.na(env$medData$Orpha_Kode)  & !is.empty(env$medData$Orpha_Kode))
+  k4_counter_icd= length(iList)
+  if (!is.empty (oList)) for(i in oList) {
+    oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
+    oRefList<- which(as.character (refData$Orpha_Kode)==oCode)
+    if (! (is.na(oCode) || is.null(oCode) || is.empty(oCode))){
+      if (!is.empty (oRefList)) k4_counter_orpha = k4_counter_orpha +1
+      else env$dq[,cl][i] <- paste("Orpha Code",oCode, "ist im BfArM-Mapping nicht enthalten. ",env$dq[,cl][i] )
+    }
+  }
+  
+  out <- list()
+  out[["k4_counter_icd"]] <- k4_counter_icd
+  out[["k4_counter_orpha"]] <- k4_counter_orpha
+  out
+}
+
+addK1<- function ( tdata,  se, n) {
+  if(se>0){
+    tdata$icdOrpha_no <- n
+    tdata$plausible_icdOrpha_no<- se
+    or <- ( se/n) * 100
+    tdata$orphaCoding_plausibility_rate <- round(or,2)
+  }
+  else {
+    tdata$icdOrpha_no <- 0
+    tdata$plausible_icdOrpha_no <- 0
+    tdata$orphaCoding_plausibility_rate<-0
+  }
+  tdata
+}
+
 addK2<- function ( tdata,  n, se) {
   if(se>0){
     tdata$orpha_no <- n
@@ -173,19 +260,35 @@ addK2<- function ( tdata,  n, se) {
 
 addK3<- function (tdata,  se, n) {
   if(se>0){
-    tdata$rd_no <- se
+    tdata$uniqueRd_no <- se
     tdata$check_no<- n
     or <- ( se/n) * 100
-    tdata$uniqueness_rate <- round (or,1)
+    tdata$uniqueness_rate <- round (or,2)
   }
   else {
-    tdata$rd_no <- 0
+    tdata$uniqueRd_no <- 0
     tdata$check_no <- 0
     tdata$uniqueness_rate  <- 0
   }
   tdata
 }
 
+addK4<- function (tdata,  se, n) {
+  if(se>0){
+    tdata$orphaCoding_absoluteFrequency <- se
+    tdata$check_no<- n
+    tdata$icd_no <-n
+    or <- ( se/n) * 100
+    tdata$orphaCoding_relativeFrequency  <- round (or,2)
+  }
+  else {
+    tdata$orphaCoding_absoluteFrequency <- 0
+    tdata$check_no <- 0
+    tdata$icd_no <-0
+    tdata$orphaCoding_relativeFrequency  <- 0
+  }
+  tdata
+}
 getCaseCount<- function (oRefCode, iRefCode) {
   out <- ""
   oCase_counter=0
