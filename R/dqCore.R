@@ -1,11 +1,11 @@
-# Last Change at 21.06.2021
 # Kais Tahar
 # this script provides core functions for data quality analysis
 
 env <- new.env(parent=globalenv())
-setGlobals <- function(medData, repCol, cdata,tdata) {
+setGlobals <- function(medData, repCol, cdata,ddata, tdata) {
   env$medData <- medData
   env$cdata <- cdata
+  env$ddata <-cdata
   env$tdata <- tdata
   env$dq <- subset(medData, select = repCol)
   env$dq$dq_msg<-""
@@ -14,6 +14,76 @@ setGlobals <- function(medData, repCol, cdata,tdata) {
 getFileExtension <- function(filePath){
   ext <- strsplit(basename(filePath), split="\\.")[[1]]
   return(ext[-1])
+}
+
+getTotalStatistic <- function(cdata, ddata,col, row){
+  ddata<- addStatistic(ddata, col, row)
+  cdata<- addStatistic(cdata, col, row)
+  bdata <- merge(cdata, ddata, by=intersect(names(cdata), names(ddata)), all = TRUE)
+  bdata$Item_no<- 1
+  index = which(bdata[,col]==row)
+  bdata<-bdata[-index,]
+  bdata[nrow(bdata) + 1, ] <- list ("Total",0,0,0,0,0, 0, nrow(bdata)-1)
+  bdata<- addStatistic(bdata, col, row)
+  tcdata <-addCompletness (bdata, col, row)
+  sdata <-subset(tcdata, tcdata[,col]==row)
+  #sdata$N_Item <- NULL
+  return <-sdata
+}
+
+addStatistic<- function (bdata, col, row) {
+  bdata =addMissingCount(bdata,col,row)
+  bdata = addOutlierCount(bdata,col,row)
+  bdata
+}
+
+addMissingCount<- function (bdata, col, row) {
+  index = which( bdata[,col]==row)
+  bdata$N_Item[index]<-sum(bdata$N_Item[-index], na.rm=TRUE)
+  bdata$missing_value_no[index] <- sum(as.integer(as.character(bdata$missing_value_no[-index])), na.rm=TRUE)
+  mr <- (bdata$missing_value_no[index]/ bdata$N[index])* 100
+  bdata$missing_value_rate[index] <- round (mr,2)
+  bdata
+}
+
+addOutlierCount<- function (bdata, col, row) {
+  index = which( bdata[,col]==row)
+  bdata$N_Item[index]<-sum(bdata$N_Item[-index],na.rm=TRUE)
+  bdata$outlier_no[index] <- sum (as.integer(as.character( bdata$outlier_no[-index] )), na.rm=TRUE)
+  bdata$outlier_check_no[index] <- sum (as.integer(as.character( bdata$outlier_check_no[-index] )), na.rm=TRUE)
+  if (bdata$outlier_no[index]>0) {
+    or <- (bdata$outlier_no[index] / as.integer(bdata$outlier_check_no[index]))* 100
+    bdata$outlier_rate[index] <- round (or,2)}
+  else  bdata$outlier_rate[index] <- 0
+  bdata
+}
+
+addOutlier<- function (item, bdata, m,n) {
+  index = which(bdata$basicItem==item)[1]
+  if (is.null(index)) bdata$basicItem[1]=item
+  if(!"outlier_no" %in% colnames(bdata)) bdata$outlier_no <-0
+  if(!"outlier_rate" %in% colnames(bdata)) bdata$outlier_rate <-0
+  if(!"N_Item" %in% colnames(bdata)) bdata$N_Item <-0
+  if(!"missing_value_no" %in% colnames(bdata)) bdata$missing_value_no <-0
+  if(!"outlier_check_no" %in% colnames(bdata)) bdata$outlier_check_no <-0
+  if(n>0){
+    bdata$N_Item[index] <-n
+    bdata$outlier_check_no[index] <- bdata$N_Item[index]-bdata$missing_value_no[index]
+    if (!is.na(bdata$outlier_no[index]) && is.numeric(bdata$outlier_no[index]) ) bdata$outlier_no[index] <- bdata$outlier_no[index]+m
+    else bdata$outlier_no[index] <- m
+    #or <- (bdata$outlier_no[index]/ bdata$N_Item[index]) * 100
+    if (bdata$outlier_no[index]>0) {
+      or <- (bdata$outlier_no[index]/ bdata$outlier_check_no[index]) * 100
+      bdata$outlier_rate[index] <- round (or,1)
+    }else bdata$outlier_rate[index] <-0
+  }
+  else if (item!="Total"){
+    bdata$N_Item[index]<- 0
+    bdata$outlier_no[index] <- NA
+    bdata$outlier_rate[index] <- NA
+  }
+  
+  bdata
 }
 
 getDQStatis <-function(bdata, col, row){
@@ -30,6 +100,9 @@ addTotalCount<- function (bdata, col, row) {
   bdata$N[index]<-sum(bdata$N_Item[-index],na.rm=TRUE)
   mr <- (bdata$missing_value_no[index]/ bdata$N[index])* 100
   bdata$missing_value_rate[index] <- round (mr,2)
+  bdata$outlier_no[index] <- sum (as.integer(as.character( bdata$outlier_no[-index] )), na.rm=TRUE)
+  or <- (bdata$outlier_no[index] / bdata$N_Item[index] )* 100
+  bdata$outlier_rate[index] <- round (or,2)
   bdata
 }
 
@@ -39,15 +112,62 @@ addCompletness<- function (tdata, col, row) {
   return <- tdata
 }
 
+getMissing<-function (df, itemCol, outCol1,outCol2){
+  if(!outCol1 %in% colnames(env$dq)) env$dq[,outCol1]<-NA
+  if(!outCol2 %in% colnames(env$dq)) env$dq[,outCol2] <-""
+  if (!is.empty(itemCol))
+  {
+    for (item in unique(itemCol)) {
+      df <-missingCheck(df, item,itemCol,outCol1, outCol2)
+    }
+    if ( !is.empty(env$cdata) && "basicItem" %in% colnames(env$cdata))
+    {
+      x <- itemCol %in%  env$cdata [, "basicItem"]
+      if ( any(x)) {
+        env$cdata <-df
+      }
+    }
+  }
+  df
+  
+}
+
+missingCheck<- function (df, item, itemCol, cl1, cl2) {
+  dqItem.vec <- itemCol
+  index <- which(dqItem.vec==item)[[1]]
+  item.vec <- env$medData[[item]]
+  if(!is.empty(item.vec)){
+    nq <- which(as.character(item.vec) =="" | is.na(item.vec))
+    if (!is.empty (nq))
+      for(i in nq)
+      {
+        msg <- paste("Fehlendes ", item)
+        if (index >1) {
+          if (!is.na(env$dq[,cl1][i])) env$dq[,cl1][i] <- paste(msg, "; ", env$dq[,cl1][i])
+          else env$dq [,cl1] [i] <- msg
+        }
+        else env$dq [,cl1] [i] <- paste (msg, ".")
+      }
+    df <- addMissing(item, df,length(nq), length(item.vec))
+  }
+  else if (item!="Total"){
+    df <- addMissing(item, df, 0,0)
+    env$dq[,cl2]<- paste( item, " wurde nicht erhoben ", env$dq[,cl2])
+  }
+  
+  df
+}
+
 addMissing<- function (item, bdata, m, n) {
   index = which(bdata$basicItem==item)[1]
   if (is.null(index)) bdata$basicItem[1]=item
-  if(!"missing_value_no" %in% colnames(bdata)) bdata$missing_value_no <-NA
-  if(!"missing_value_rate" %in% colnames(bdata)) bdata$missing_value_rate <-NA
-  if(!"N_Item" %in% colnames(bdata)) bdata$N_Item <-NA
+  if(!"missing_value_no" %in% colnames(bdata)) bdata$missing_value_no <-0
+  if(!"missing_value_rate" %in% colnames(bdata)) bdata$missing_value_rate <-0
+  if(!"N_Item" %in% colnames(bdata)) bdata$N_Item <-0
   if(n>0){
     bdata$N_Item[index] <-n
-    bdata$missing_value_no[index] <- m
+    if (!is.na(bdata$missing_value_no[index]) && is.numeric(bdata$missing_value_no[index]) ) bdata$missing_value_no[index] <- bdata$missing_value_no[index]+m
+    else bdata$missing_value_no[index] <- m
     mr <-(bdata$missing_value_no[index]/ bdata$N_Item[index]) * 100
     bdata$missing_value_rate[index] <- round (mr,1)
   }
@@ -59,36 +179,5 @@ addMissing<- function (item, bdata, m, n) {
   bdata
 }
 
-getMissing<-function (itemCol, outCol1, outCol2){
-  if (!is.empty(itemCol))
-  {
-    for (i in itemCol) {
-      cdata <-missingCheck(i,itemCol,outCol1, outCol2)$cdata
-      dq <- missingCheck(i,itemCol,outCol1, outCol2)$dq
-    }
-  }
-  out <- list()
-  out[["dq"]] <- dq
-  out[["cdata"]] <- cdata
-  out
-}
 
-missingCheck<- function (item, itemCol, cl1, cl2) {
-  dqItem.vec <- itemCol
-  index <- which(dqItem.vec==item)[[1]]
-  item.vec <- env$medData[[item]]
-  if(!is.empty(item.vec)){
-    nq <- which(item.vec =="" | is.na(item.vec))
-      if (!is.empty (nq)) for(i in nq)
-      {
-        msg <- paste("Fehlendes ", item)
-        if (index >1) env$dq[,cl1][i] <- paste(msg, env$dq[,cl1][i])
-        else env$dq [,cl2] [i] <- msg
-      }
-    env$cdata <- addMissing(item, env$cdata,length(nq), length(item.vec))
-  }
-  out <- list()
-  out[["dq"]] <- env$dq
-  out[["cdata"]] <- env$cdata
-  out
-}
+

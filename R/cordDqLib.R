@@ -1,4 +1,3 @@
-# Last Change at 13.08.2021
 # Kais Tahar
 # this script provides functions for data quality analysis in CORD
 
@@ -18,8 +17,10 @@ getExtendedReport <- function ( repCol,cl, td, useCase, path) {
   write_xlsx(sheets, path)
 }
 
-checkCordDQ <- function ( instID, refData1, refData2, cl) {
-  cdata <- env$cdata
+checkCordDQ <- function ( instID, inpatientCases, cdata, ddata, refData1, refData2, cl) {
+  #cdata <- env$cdata
+  env$cdata <-cdata
+  env$ddata <-ddata
    if ( !is.null(instID)){
    env$tdata$inst_id <- instID
    instData<- medData[which(medData$Institut_ID==instID),]
@@ -34,14 +35,16 @@ checkCordDQ <- function ( instID, refData1, refData2, cl) {
     if(!is.empty(env$medData$Aufnahmenummer)) {
       env$tdata$case_no = length (unique(env$medData$Aufnahmenummer))
     }
-    dqList <- checkK1( refData2, cl)
-    env$tdata <- addK1( env$tdata, dqList$k1_rd_counter, dqList$k1_check_counter)
+    env$ddata <- checkK1_1(ddata, cl)
+    dqList <- checkK1_2( refData2, cl)
+    env$tdata <- addK1_2( env$tdata, dqList$k1_rd_counter, dqList$k1_check_counter)
     dqList <- checkK2( refData1, cl)
     env$tdata <- addK2( env$tdata, dqList$k2_icdOrpha_counter, dqList$k2_icdRd_counter)
     dqList <- checkK3( refData1, refData2, cl)
     env$tdata <- addK3(env$tdata, dqList$k3_rd_counter,  dqList$k3_check_counter)
     dqList <- checkK4( refData2, cl)
-    env$tdata <- addK4( env$tdata,  dqList$k4_counter_orpha, dqList$k4_counter_icd)
+    #env$tdata <- addK4( env$tdata,  dqList$k4_counter_orpha, dqList$k4_counter_icd)
+    env$tdata <- addK4( env$tdata,  dqList$k4_counter_orpha, inpatientCases)
   }else {
     env$cdata <- addMissing("ICD_Primaerkode", env$cdata, 0,0)
     env$cdata <- addK2(env$tdata, 0,0)
@@ -50,12 +53,63 @@ checkCordDQ <- function ( instID, refData1, refData2, cl) {
   out <- list()
   out[["dq"]] <- env$dq
   out[["cdata"]] <- env$cdata
+  out[["ddata"]] <- env$ddata
   out[["tdata"]] <- env$tdata
   out
 }
 
+checkK1_1<-function (df, cl){
+  itemCol <- df$basicItem
+  if (!is.empty(itemCol)) {
+    for (item in unique(itemCol)) {
+      df <-checkOutlier(df, item, cl)
+    }
+  }
+  df
+}
 
-checkK1 <- function (refData2, cl)
+checkOutlier<-function (ddata, item, cl) {
+  item.vec <- env$medData[[item]]
+  if(!is.empty(item.vec)){
+    item.vec <-  as.Date(ISOdate(env$medData[[item]], 1, 1))
+    out <- getDateOutlier(item.vec)
+    if (!is.empty(out)) {
+      ddata<- addOutlier (item, ddata, length(out), length(item.vec))
+      for(i in out) env$dq[,cl][i] <- paste( "Unplausibles", item , item.vec[i], "Datum liegt in der Zukunft.")
+    }   else ddata <- addOutlier(item, ddata, 0,length(item.vec))
+
+    if(item == "Geburtsdatum")
+    {
+      item1.vec <-  as.Date(ISOdate(env$medData[["Geburtsdatum"]], 1, 1))
+      now<- as.Date(Sys.Date())
+      out<-getAgeMaxOutlier(item1.vec,  now, 105)
+      if (!is.empty(out)) {
+        ddata<- addOutlier (item, ddata, length(out), length(item1.vec) )
+        for(i in out) env$dq[,cl][i] <- paste( "Unplausibles",  item, item1.vec[i] , "Max Alter 105.",  env$dq[,cl][i])
+      }
+    }
+   
+  }
+  else if (item!="Total"){
+    ddata <- addOutlier(item, ddata, 0,0)
+  }
+  ddata
+}
+
+getDateOutlier<- function (dItem.vec) {
+  now<- as.Date(Sys.Date())
+  out <-  vector()
+  out <- which(isDate(dItem.vec) & (as.Date(dItem.vec)>now))
+  out
+}
+
+getAgeMaxOutlier<- function ( dItem1.vec, dItem2.vec, n) {
+  diff <-  ifelse ((isDate(dItem1.vec) & isDate(dItem2.vec)), as.numeric(difftime(dItem1.vec, dItem2.vec),units="weeks")/52.25 , 0 )
+  out <- which(abs(diff)>n)
+  out
+}
+
+checkK1_2 <- function (refData2, cl)
 {
   k1_check_counter =0
   k1_rd_counter=0
@@ -105,6 +159,7 @@ checkK2 <- function ( refData, cl)
   k2_counter_icdOrpha=0
   k2_counter_icdRd =0
   k2_orphaMissing = 0
+  env$cdata <- addMissing("Orpha_Kode",env$cdata, 0,0)
   iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode)  & !is.empty(env$medData$ICD_Primaerkode))
   for(i in iList){
     iCode <- stri_trim(as.character(env$medData$ICD_Primaerkode[i]))
@@ -138,7 +193,7 @@ checkK3 <- function (refData1, refData2, cl)
   rd_counter=0
   if(!is.empty(env$medData$ICD_Primaerkode)){
     cq <- which(env$medData$ICD_Primaerkode=="" | is.na(env$medData$ICD_Primaerkode))
-    env$cdata <- addMissing("ICD_Primaerkode", env$cdata, length (cq), length(env$medData$ICD_Primaerkode))
+    #env$cdata <- addMissing("ICD_Primaerkode", env$cdata, length (cq), length(env$medData$ICD_Primaerkode))
     if (!is.empty (cq)) for(i in cq) {
       env$dq[,cl][i]<- paste("Fehlendes ICD10 Code. ", env$dq[,cl][i])
       oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
@@ -228,7 +283,7 @@ checkK4 <- function ( refData, cl)
   out
 }
 
-addK1<- function ( tdata,  se, n) {
+addK1_2<- function ( tdata,  se, n) {
   if(se>0){
     tdata$icdOrpha_no <- n
     tdata$plausible_icdOrpha_no<- se
@@ -342,3 +397,7 @@ addRdCase<- function (item, item_text, oCode, iCode, useCase) {
 
 is.empty <- function(x) return(length(x) ==0 )
 
+isDate <- function(mydate) {
+  tryCatch(!is.na(as.Date(mydate,tryFormats = c("%Y-%m-%d", "%Y/%m/%d","%d-%m-%Y","%m-%d-%Y"))),
+           error = function(err) {FALSE})
+}
