@@ -18,7 +18,6 @@ getExtendedReport <- function ( repCol,cl, td, useCase, path) {
 }
 
 checkCordDQ <- function ( instID, inpatientCases, cdata, ddata, refData1, refData2, cl) {
-  #cdata <- env$cdata
   env$cdata <-cdata
   env$ddata <-ddata
    if ( !is.null(instID)){
@@ -96,21 +95,20 @@ checkOutlier<-function (ddata, item, cl) {
   ddata
 }
 
-getDateOutlier<- function (dItem.vec) {
+getDateOutlier<- function (dItem.vec){
   now<- as.Date(Sys.Date())
   out <-  vector()
   out <- which(isDate(dItem.vec) & (as.Date(dItem.vec)>now))
   out
 }
 
-getAgeMaxOutlier<- function ( dItem1.vec, dItem2.vec, n) {
+getAgeMaxOutlier<- function ( dItem1.vec, dItem2.vec, n){
   diff <-  ifelse ((isDate(dItem1.vec) & isDate(dItem2.vec)), as.numeric(difftime(dItem1.vec, dItem2.vec),units="weeks")/52.25 , 0 )
   out <- which(abs(diff)>n)
   out
 }
 
-checkK1_2 <- function (refData2, cl)
-{
+checkK1_2 <- function (refData2, cl){
   k1_check_counter =0
   k1_rd_counter=0
   if(!is.empty(env$medData$ICD_Primaerkode)){
@@ -154,8 +152,7 @@ checkK1_2 <- function (refData2, cl)
   out
 }
 
-checkK2 <- function ( refData, cl)
-{
+checkK2 <- function ( refData, cl){
   k2_counter_icdOrpha=0
   k2_counter_icdRd =0
   k2_orphaMissing = 0
@@ -180,8 +177,8 @@ checkK2 <- function ( refData, cl)
   out[["k2_icdOrpha_counter"]] <- k2_counter_icdOrpha
   out
 }
-checkK3 <- function (refData1, refData2, cl)
-{
+
+checkK3 <- function (refData1, refData2, cl){
   eRel <- which(refData1$Type=="1:1" | refData1$Type=="n:1")
   eList <- ""
   for (i in eRel){
@@ -261,8 +258,7 @@ checkK3 <- function (refData1, refData2, cl)
   out
 }
 
-checkK4 <- function ( refData, cl)
-{
+checkK4 <- function ( refData, cl) {
   k4_counter_icd =0
   k4_counter_orpha =0 
   iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode)  & !is.empty(env$medData$ICD_Primaerkode))
