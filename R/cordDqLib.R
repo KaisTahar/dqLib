@@ -29,18 +29,18 @@ checkCordDQ <- function ( instID, inpatientCases, cdata, ddata, refData1, refDat
   }
   if(!is.empty(env$medData$ICD_Primaerkode)){
     if(!is.empty(env$medData$PatientIdentifikator)) {
-      env$tdata$pt_no = length (unique(env$medData$PatientIdentifikator))
+      env$tdata$patient_no = length (unique(env$medData$PatientIdentifikator))
     }
     if(!is.empty(env$medData$Aufnahmenummer)) {
       env$tdata$case_no = length (unique(env$medData$Aufnahmenummer))
     }
-    env$ddata <- checkK1_1(ddata, cl)
-    dqList <- checkK1_2( refData2, cl)
-    env$tdata <- addK1_2( env$tdata, dqList$k1_rd_counter, dqList$k1_check_counter)
+
+    dqList <- checkK1( refData2, cl)
+    env$tdata <- addK1( env$tdata, dqList$k1_rd_counter, dqList$k1_check_counter)
     dqList <- checkK2( refData1, cl)
     env$tdata <- addK2( env$tdata, dqList$k2_icdOrpha_counter, dqList$k2_icdRd_counter)
     dqList <- checkK3( refData1, refData2, cl)
-    env$tdata <- addK3(env$tdata, dqList$k3_rd_counter,  dqList$k3_check_counter)
+    env$tdata <- addK3(env$tdata, dqList$k3_rd_counter,  dqList$k3_check_counter, inpatientCases)
     dqList <- checkK4( refData2, cl)
     #env$tdata <- addK4( env$tdata,  dqList$k4_counter_orpha, dqList$k4_counter_icd)
     env$tdata <- addK4( env$tdata,  dqList$k4_counter_orpha, inpatientCases)
@@ -57,58 +57,17 @@ checkCordDQ <- function ( instID, inpatientCases, cdata, ddata, refData1, refDat
   out
 }
 
-checkK1_1<-function (df, cl){
-  itemCol <- df$basicItem
+
+checkK1 <- function (refData2, cl){
+# get outliers
+  itemCol <- env$ddata$basicItem
   if (!is.empty(itemCol)) {
     for (item in unique(itemCol)) {
-      df <-checkOutlier(df, item, cl)
+      env$ddata  <-checkOutlier(env$ddata, item, cl)
     }
   }
-  df
-}
-
-checkOutlier<-function (ddata, item, cl) {
-  item.vec <- env$medData[[item]]
-  if(!is.empty(item.vec)){
-    item.vec <-  as.Date(ISOdate(env$medData[[item]], 1, 1))
-    out <- getDateOutlier(item.vec)
-    if (!is.empty(out)) {
-      ddata<- addOutlier (item, ddata, length(out), length(item.vec))
-      for(i in out) env$dq[,cl][i] <- paste( "Unplausibles", item , item.vec[i], "Datum liegt in der Zukunft.")
-    }   else ddata <- addOutlier(item, ddata, 0,length(item.vec))
-
-    if(item == "Geburtsdatum")
-    {
-      item1.vec <-  as.Date(ISOdate(env$medData[["Geburtsdatum"]], 1, 1))
-      now<- as.Date(Sys.Date())
-      out<-getAgeMaxOutlier(item1.vec,  now, 105)
-      if (!is.empty(out)) {
-        ddata<- addOutlier (item, ddata, length(out), length(item1.vec) )
-        for(i in out) env$dq[,cl][i] <- paste( "Unplausibles",  item, item1.vec[i] , "Max Alter 105.",  env$dq[,cl][i])
-      }
-    }
-   
-  }
-  else if (item!="Total"){
-    ddata <- addOutlier(item, ddata, 0,0)
-  }
-  ddata
-}
-
-getDateOutlier<- function (dItem.vec){
-  now<- as.Date(Sys.Date())
-  out <-  vector()
-  out <- which(isDate(dItem.vec) & (as.Date(dItem.vec)>now))
-  out
-}
-
-getAgeMaxOutlier<- function ( dItem1.vec, dItem2.vec, n){
-  diff <-  ifelse ((isDate(dItem1.vec) & isDate(dItem2.vec)), as.numeric(difftime(dItem1.vec, dItem2.vec),units="weeks")/52.25 , 0 )
-  out <- which(abs(diff)>n)
-  out
-}
-
-checkK1_2 <- function (refData2, cl){
+  
+# check ICD10-Orpha
   k1_check_counter =0
   k1_rd_counter=0
   if(!is.empty(env$medData$ICD_Primaerkode)){
@@ -279,7 +238,35 @@ checkK4 <- function ( refData, cl) {
   out
 }
 
-addK1_2<- function ( tdata,  se, n) {
+checkOutlier<-function (ddata, item, cl) {
+  item.vec <- env$medData[[item]]
+  if(!is.empty(item.vec)){
+    item.vec <-  as.Date(ISOdate(env$medData[[item]], 1, 1))
+    out <- getDateOutlier(item.vec)
+    if (!is.empty(out)) {
+      ddata<- addOutlier (item, ddata, length(out), length(item.vec))
+      for(i in out) env$dq[,cl][i] <- paste( "Unplausibles", item , item.vec[i], "Datum liegt in der Zukunft.")
+    }   else ddata <- addOutlier(item, ddata, 0,length(item.vec))
+    
+    if(item == "Geburtsdatum")
+    {
+      item1.vec <-  as.Date(ISOdate(env$medData[["Geburtsdatum"]], 1, 1))
+      now<- as.Date(Sys.Date())
+      out<-getAgeMaxOutlier(item1.vec,  now, 105)
+      if (!is.empty(out)) {
+        ddata<- addOutlier (item, ddata, length(out), length(item1.vec) )
+        for(i in out) env$dq[,cl][i] <- paste( "Unplausibles",  item, item1.vec[i] , "Max Alter 105.",  env$dq[,cl][i])
+      }
+    }
+    
+  }
+  else if (item!="Total"){
+    ddata <- addOutlier(item, ddata, 0,0)
+  }
+  ddata
+}
+
+addK1<- function ( tdata,  se, n) {
   if(se>0){
     tdata$icdOrpha_no <- n
     tdata$plausible_icdOrpha_no<- se
@@ -299,44 +286,45 @@ addK2<- function ( tdata,  n, se) {
     tdata$orpha_no <- n
     tdata$icdRd_no<- se
     or <- ( n/se) * 100
-    tdata$orphaCoding_completeness <- round(or,2)
+    tdata$orphaCoding_completeness_rate <- round(or,2)
   }
   else {
     tdata$orpha_no <- 0
     tdata$icdRd_no <- 0
-    tdata$orphaCoding_completeness<-0
+    tdata$orphaCoding_completeness_rate<-0
   }
   tdata
 }
 
-addK3<- function (tdata,  se, n) {
+addK3<- function (tdata,  se, n, inpatientCases) {
   if(se>0){
-    tdata$uniqueRd_no <- se
+    tdata$unique_rdCase_no <- se
     tdata$check_no<- n
-    or <- ( se/n) * 100
-    tdata$uniqueness_rate <- round (or,2)
+    ur <- ( se/n) * 100
+    tdata$rdCase_uniqueness_rate <- round (ur,2)
   }
   else {
-    tdata$uniqueRd_no <- 0
+    tdata$unique_rdCase_no <- 0
     tdata$check_no <- 0
-    tdata$uniqueness_rate  <- 0
+    tdata$rdCase_uniqueness_rate  <- 0
   }
   tdata
 }
 
 addK4<- function (tdata,  se, n) {
   if(se>0){
-    tdata$orphaCoding_absoluteFrequency <- se
-    tdata$check_no<- n
-    tdata$icd_no <-n
+    tdata$orphaCoding_no <- se
+    tdata$inpatientCases_no <-n
     or <- ( se/n) * 100
     tdata$orphaCoding_relativeFrequency  <- round (or,2)
+    rf <- ( tdata$unique_rdCase_no/n) * 100
+    tdata$unique_rdCase_relativeFrequency <- round (rf,2)
   }
   else {
-    tdata$orphaCoding_absoluteFrequency <- 0
-    tdata$check_no <- 0
-    tdata$icd_no <-0
+    tdata$orphaCoding_no <- 0
+    tdata$inpatientCases_no <-n
     tdata$orphaCoding_relativeFrequency  <- 0
+    tdata$unique_rdCase_relativeFrequency<- 0
   }
   tdata
 }

@@ -86,6 +86,19 @@ addOutlier<- function (item, bdata, m,n) {
   bdata
 }
 
+getDateOutlier<- function (dItem.vec){
+  now<- as.Date(Sys.Date())
+  out <-  vector()
+  out <- which(isDate(dItem.vec) & (as.Date(dItem.vec)>now))
+  out
+}
+
+getAgeMaxOutlier<- function ( dItem1.vec, dItem2.vec, n){
+  diff <-  ifelse ((isDate(dItem1.vec) & isDate(dItem2.vec)), as.numeric(difftime(dItem1.vec, dItem2.vec),units="weeks")/52.25 , 0 )
+  out <- which(abs(diff)>n)
+  out
+}
+
 getDQStatis <-function(bdata, col, row){
   tdata<- addTotalCount(bdata, col, row)
   tcdata <-addCompletness (tdata, col, row)
