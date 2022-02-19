@@ -218,11 +218,9 @@ getMissingItem<- function (basicItem) {
   if (!is.empty (diff)){
     str<- paste (diff,collapse=" , " )
     mItem <- paste ("Folgende mandatorische Items fehlen: ", str) 
-    mItem_no <-length(diff)
-    
   }
-  env$tdata$missing_item_no<- mItem_no
-  env$tdata$missing_item_rate <- round(mItem_no/length(basicItem)*100 ,2)
+  env$tdata$missing_item_no<- length(diff)
+  env$tdata$missing_item_rate <- round(length(diff)/length(basicItem)*100 ,2)
   env$tdata
   mItem
 }
