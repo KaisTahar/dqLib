@@ -5,9 +5,12 @@ getReport <- function (repCol, cl, td, path) {
   repCol = append (repCol, cl)
   repData <-subset(env$dq, select= repCol)
   dfq <-repData[ which(env$dq[,cl]!="")  ,]
+  dfq[nrow(dfq)+1,] <- NA
+  dfq[nrow(dfq)+1,1] <- env$mItem
   sheets <- list("DQ_Report"=dfq, "Statistik" = td)
   write_xlsx(sheets, paste (path,".xlsx"))
   write.csv(td, paste (path,".csv"), row.names = FALSE)
+ # env <-NULL
 }
 
 getExtendedReport <- function ( repCol,cl, td, useCase, path) {
@@ -17,9 +20,10 @@ getExtendedReport <- function ( repCol,cl, td, useCase, path) {
   write_xlsx(sheets, path)
 }
 
-checkCordDQ <- function ( instID, inpatientCases, cdata, ddata, refData1, refData2, cl) {
-  env$cdata <-cdata
-  env$ddata <-ddata
+checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2, dqInd, cl, bItemCl, totalRow) {
+  env$tdata$report_year <-reportYear
+  
+  basicItem <- union(env$cdata[bItemCl,bItemCl !=totalRow], env$ddata[bItemCl,bItemCl !=totalRow])
    if ( !is.null(instID)){
    env$tdata$inst_id <- instID
    instData<- medData[which(medData$Institut_ID==instID),]
@@ -34,13 +38,17 @@ checkCordDQ <- function ( instID, inpatientCases, cdata, ddata, refData1, refDat
     if(!is.empty(env$medData$Aufnahmenummer)) {
       env$tdata$case_no = length (unique(env$medData$Aufnahmenummer))
     }
-
-    dqList <- checkK1( refData2, cl)
+    #D1
+    dqList <- checkK1( refData2, bItemCl, cl)
     env$tdata <- addK1( env$tdata, dqList$k1_rd_counter, dqList$k1_check_counter)
-    dqList <- checkK2( refData1, cl)
+    #D2 
+    dqList <- checkK2( refData1, cl, basicItem, bItemCl)
+    env$mItem <- dqList$mItem
     env$tdata <- addK2( env$tdata, dqList$k2_icdOrpha_counter, dqList$k2_icdRd_counter)
+    #D3
     dqList <- checkK3( refData1, refData2, cl)
     env$tdata <- addK3(env$tdata, dqList$k3_rd_counter,  dqList$k3_check_counter, inpatientCases)
+    #D4
     dqList <- checkK4( refData2, cl)
     #env$tdata <- addK4( env$tdata,  dqList$k4_counter_orpha, dqList$k4_counter_icd)
     env$tdata <- addK4( env$tdata,  dqList$k4_counter_orpha, inpatientCases)
@@ -49,24 +57,19 @@ checkCordDQ <- function ( instID, inpatientCases, cdata, ddata, refData1, refDat
     env$cdata <- addK2(env$tdata, 0,0)
     env$cdata <- addK3(env$tada,0,0)
   }
-  out <- list()
-  out[["dq"]] <- env$dq
-  out[["cdata"]] <- env$cdata
-  out[["ddata"]] <- env$ddata
-  out[["tdata"]] <- env$tdata
-  out
+  td<-getTotalStatistic(dqInd, bItemCl, totalRow)
+  td
 }
 
 
-checkK1 <- function (refData2, cl){
+checkK1 <- function (refData2, bItemCl, cl){
 # get outliers
-  itemCol <- env$ddata$basicItem
-  if (!is.empty(itemCol)) {
-    for (item in unique(itemCol)) {
+  dItem <- env$ddata[, bItemCl]
+  if (!is.empty(dItem)) {
+    for (item in unique(dItem)) {
       env$ddata  <-checkOutlier(env$ddata, item, cl)
     }
   }
-  
 # check ICD10-Orpha
   k1_check_counter =0
   k1_rd_counter=0
@@ -111,11 +114,19 @@ checkK1 <- function (refData2, cl){
   out
 }
 
-checkK2 <- function ( refData, cl){
+checkK2 <- function ( refData, cl, basicItems,bItemCl){
+  mItem <- getMissingItem(basicItems)
+  env$cdata <- getMissingValue(env$cdata, bItemCl, "missing_value", "missing_item")
+  env$ddata <- getMissingValue(env$ddata, bItemCl, "missing_value", "missing_item")
+  dqList <- append(checkOrphaCodingCompleteness(refData, cl), list (mItem=mItem))
+  dqList
+}
+
+checkOrphaCodingCompleteness <- function ( refData, cl){
   k2_counter_icdOrpha=0
   k2_counter_icdRd =0
   k2_orphaMissing = 0
-  env$cdata <- addMissing("Orpha_Kode",env$cdata, 0,0)
+#  env$cdata <- addMissing("Orpha_Kode",env$cdata, 0,0)
   iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode)  & !is.empty(env$medData$ICD_Primaerkode))
   for(i in iList){
     iCode <- stri_trim(as.character(env$medData$ICD_Primaerkode[i]))
@@ -127,7 +138,7 @@ checkK2 <- function ( refData, cl){
       else{
         k2_orphaMissing =  k2_orphaMissing +1
         env$dq[,cl][i] <- paste("Fehlendes Orpha_Kode. ", env$dq[,cl][i])
-        env$cdata <- addMissing("Orpha_Kode", env$cdata, k2_orphaMissing, length(env$medData$Orpha_Kode))
+#        env$cdata <- addMissing("Orpha_Kode", env$cdata, k2_orphaMissing, length(env$medData$Orpha_Kode))
       }
     }
   }

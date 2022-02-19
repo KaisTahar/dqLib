@@ -1,11 +1,13 @@
 # Kais Tahar
 # this script provides core functions for data quality analysis
 
-env <- new.env(parent=globalenv())
+#env <- new.env(parent=globalenv())
+#env <- new.env(parent = emptyenv())
+env <- new.env()
 setGlobals <- function(medData, repCol, cdata,ddata, tdata) {
   env$medData <- medData
   env$cdata <- cdata
-  env$ddata <-cdata
+  env$ddata <-ddata
   env$tdata <- tdata
   env$dq <- subset(medData, select = repCol)
   env$dq$dq_msg<-""
@@ -16,7 +18,23 @@ getFileExtension <- function(filePath){
   return(ext[-1])
 }
 
-getTotalStatistic <- function(cdata, ddata,col, row){
+getTotalStatistic <- function(dqInd, col, row){
+  env$cdata<- addStatistic(env$cdata, col, row)
+  env$ddata<- addStatistic(env$ddata, col, row)
+  bdata <- merge(env$cdata, env$ddata, by=intersect(names(env$cdata), names(env$ddata)), all = TRUE)
+  bdata$Item_no<- 1
+  index = which(bdata[,col]==row)
+  bdata<-bdata[-index,]
+  bdata[nrow(bdata) + 1, ] <- list ("Total",0,0,0,0,0, 0, nrow(bdata)-1)
+  bdata<- addStatistic(bdata, col, row)
+  tcdata <- addCompletness (bdata, col, row)
+  total <- subset(tcdata, tcdata[,col]==row)
+  env$tdata<- cbind(total,env$tdata)
+  stotal <- subset(env$tdata, select= dqInd)
+  stotal
+}
+
+getTotalStatisticx <- function(cdata, ddata,col, row){
   ddata<- addStatistic(ddata, col, row)
   cdata<- addStatistic(cdata, col, row)
   bdata <- merge(cdata, ddata, by=intersect(names(cdata), names(ddata)), all = TRUE)
@@ -125,18 +143,19 @@ addCompletness<- function (tdata, col, row) {
   return <- tdata
 }
 
-getMissing<-function (df, itemCol, outCol1,outCol2){
+getMissingValue<-function (df, bItemCol, outCol1,outCol2){
   if(!outCol1 %in% colnames(env$dq)) env$dq[,outCol1]<-NA
   if(!outCol2 %in% colnames(env$dq)) env$dq[,outCol2] <-""
-  if (!is.empty(itemCol))
+  bItems <-df[,bItemCol]
+  if (!is.empty(bItems))
   {
-    for (item in unique(itemCol)) {
-      df <-missingCheck(df, item,itemCol,outCol1, outCol2)
+    for (item in unique(bItems)) {
+      df <-missingCheck(df, item, bItems,outCol1, outCol2)
     }
     if ( !is.empty(env$cdata) && "basicItem" %in% colnames(env$cdata))
     {
-      x <- itemCol %in%  env$cdata [, "basicItem"]
-      if ( any(x)) {
+      x <- bItems %in%  env$cdata [, "basicItem"]
+      if ( all(x)) {
         env$cdata <-df
       }
     }
@@ -145,9 +164,8 @@ getMissing<-function (df, itemCol, outCol1,outCol2){
   
 }
 
-missingCheck<- function (df, item, itemCol, cl1, cl2) {
-  dqItem.vec <- itemCol
-  index <- which(dqItem.vec==item)[[1]]
+missingCheck<- function (df, item, bItems, cl1, cl2) {
+  index <- which(bItems==item)[[1]]
   item.vec <- env$medData[[item]]
   if(!is.empty(item.vec)){
     nq <- which(as.character(item.vec) =="" | is.na(item.vec))
@@ -161,17 +179,19 @@ missingCheck<- function (df, item, itemCol, cl1, cl2) {
         }
         else env$dq [,cl1] [i] <- paste (msg, ".")
       }
-    df <- addMissing(item, df,length(nq), length(item.vec))
+    df <- addMissingValue(item, df,length(nq), length(item.vec))
   }
   else if (item!="Total"){
-    df <- addMissing(item, df, 0,0)
+    df <- addMissingValue(item, df, 0,0)
     env$dq[,cl2]<- paste( item, " wurde nicht erhoben ", env$dq[,cl2])
   }
   
   df
 }
 
-addMissing<- function (item, bdata, m, n) {
+
+addMissingValue<- function (item, bdata, m, n) {
+  #index <- which(dqItem.vec==item)[[1]]
   index = which(bdata$basicItem==item)[1]
   if (is.null(index)) bdata$basicItem[1]=item
   if(!"missing_value_no" %in% colnames(bdata)) bdata$missing_value_no <-0
@@ -192,5 +212,19 @@ addMissing<- function (item, bdata, m, n) {
   bdata
 }
 
+getMissingItem<- function (basicItem) {
+  diff <- setdiff (basicItem, names (env$medData))
+  mItem <-""
+  if (!is.empty (diff)){
+    str<- paste (diff,collapse=" " )
+    mItem <- paste ("Folgende Items fehlen: ", str) 
+    mItem_no <-length(diff)
+    
+  }
+  env$tdata$missing_item_no<- mItem_no
+  env$tdata$missing_item_rate <- round(mItem_no/length(basicItem)*100 ,2)
+  env$tdata
+  mItem
+}
 
 
