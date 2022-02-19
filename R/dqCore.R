@@ -216,8 +216,8 @@ getMissingItem<- function (basicItem) {
   diff <- setdiff (basicItem, names (env$medData))
   mItem <-""
   if (!is.empty (diff)){
-    str<- paste (diff,collapse=" " )
-    mItem <- paste ("Folgende Items fehlen: ", str) 
+    str<- paste (diff,collapse=" , " )
+    mItem <- paste ("Folgende mandatorische Items fehlen: ", str) 
     mItem_no <-length(diff)
     
   }
@@ -226,5 +226,6 @@ getMissingItem<- function (basicItem) {
   env$tdata
   mItem
 }
+
 
 

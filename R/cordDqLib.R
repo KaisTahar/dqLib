@@ -22,8 +22,7 @@ getExtendedReport <- function ( repCol,cl, td, useCase, path) {
 
 checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2, dqInd, cl, bItemCl, totalRow) {
   env$tdata$report_year <-reportYear
-  
-  basicItem <- union(env$cdata[bItemCl,bItemCl !=totalRow], env$ddata[bItemCl,bItemCl !=totalRow])
+  basicItem <- setdiff  (union(env$cdata[, bItemCl], env$ddata[, bItemCl]),totalRow)
    if ( !is.null(instID)){
    env$tdata$inst_id <- instID
    instData<- medData[which(medData$Institut_ID==instID),]
