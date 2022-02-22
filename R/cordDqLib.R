@@ -137,8 +137,12 @@ checkOrphaCodingCompleteness <- function ( refData, cl){
       else{
         k2_orphaMissing =  k2_orphaMissing +1
         env$dq[,cl][i] <- paste("Fehlendes Orpha_Kode. ", env$dq[,cl][i])
-#        env$cdata <- addMissing("Orpha_Kode", env$cdata, k2_orphaMissing, length(env$medData$Orpha_Kode))
+        #env$cdata <- addMissing("Orpha_Kode", env$cdata, k2_orphaMissing, length(env$medData$Orpha_Kode))
       }
+    }
+    else if ((is.null(oCode) |is.na(oCode) | is.empty(oCode))) {
+      # Kein SE-Fall
+      #env$dq[,cl][i] <- paste("Fehlendes Orpha_Kode. ", env$dq[,cl][i])
     }
   }
   out <- list()
@@ -165,11 +169,17 @@ checkK3 <- function (refData1, refData2, cl){
       oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
       oRefList<- which(as.character (refData2$Orpha_Kode)==oCode)
       if (! (is.na(oCode) || is.null(oCode) || is.empty(oCode))){
+        #SE-Fälle
         k3_check_counter =k3_check_counter+1
         if (!is.empty (oRefList))  k3_rd_counter=k3_rd_counter+1
+      else{
         #else env$dq[,cl][i] <- paste("Kodierung ist nicht eindeutig. Orpha Code",oCode, "ist im BfArM-Mapping nicht enthalten. ",env$dq[,cl][i] )
-      }else{
         env$dq[,cl][i] <- paste("Fall ist nicht eindeutig.",env$dq[,cl][i] )
+      }
+      }else{
+        # Kein SE-Fall
+        #k3_check_counter =k3_check_counter+1
+        #env$dq[,cl][i] <- paste("Fall ist nicht eindeutig.",env$dq[,cl][i] )
       }
     }
   iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode)  & !is.empty(env$medData$ICD_Primaerkode))
