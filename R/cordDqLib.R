@@ -137,14 +137,14 @@ checkOrphaCodingCompleteness <- function ( refData, cl){
         oCode <-as.character(env$medData$Orpha_Kode[i])
         if (!(is.na(oCode) | is.empty(oCode))) k2_counter_icdOrpha=k2_counter_icdOrpha+1
         else{
-          env$dq[,cl][i] <- paste("Fehlender Orpha_Kode. ", env$dq[,cl][i])
+          env$dq[,cl][i] <- paste("Fehlender Orpha Code. ", env$dq[,cl][i])
           missing_counter1 =missing_counter1 +1
         }
       }
       if("AlphaID_Kode" %in% colnames(env$medData)){
           aCode <-as.character(env$medData$AlphaID_Kode[i])
           if (is.na(aCode) | is.empty(aCode)) {
-            env$dq[,cl][i] <- paste("Fehlender AlphaID_Kode. ", env$dq[,cl][i])
+            env$dq[,cl][i] <- paste("Fehlender AlphaID Code. ", env$dq[,cl][i])
             missing_counter2 =missing_counter2 +1
           }
       } 
