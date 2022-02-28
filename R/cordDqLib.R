@@ -123,6 +123,8 @@ checkK2 <- function ( refData, cl, basicItems,bItemCl){
 checkOrphaCodingCompleteness <- function ( refData, cl){
   k2_counter_icdOrpha=0
   k2_counter_icdRd =0
+  missing_counter1=0 
+  missing_counter2=0
   env$cdata <- addMissingValue("Orpha_Kode",env$cdata, 0,0)
   env$cdata <- addMissingValue("AlphaID_Kode",env$cdata, 0,0)
   iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode)  & !is.empty(env$medData$ICD_Primaerkode))
@@ -132,22 +134,24 @@ checkOrphaCodingCompleteness <- function ( refData, cl){
     if (!is.empty(rdRefList)) {
       k2_counter_icdRd =k2_counter_icdRd+1
       if("Orpha_Kode" %in% colnames(env$medData)){
-        oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
+        oCode <-as.character(env$medData$Orpha_Kode[i])
         if (!(is.na(oCode) | is.empty(oCode))) k2_counter_icdOrpha=k2_counter_icdOrpha+1
         else{
           env$dq[,cl][i] <- paste("Fehlender Orpha_Kode. ", env$dq[,cl][i])
-          env$cdata <- addMissingValue("Orpha_Kode", env$cdata, 1, k2_counter_icdRd)
+          missing_counter1 =missing_counter1 +1
         }
       }
       if("AlphaID_Kode" %in% colnames(env$medData)){
-          aCode <-as.numeric(as.character(env$medData$AlphaID_Kode[i]))
+          aCode <-as.character(env$medData$AlphaID_Kode[i])
           if (is.na(aCode) | is.empty(aCode)) {
-            env$cdata <- addMissingValue("AlphaID_Kode", env$cdata, 1, k2_counter_icdRd)
             env$dq[,cl][i] <- paste("Fehlender AlphaID_Kode. ", env$dq[,cl][i])
+            missing_counter2 =missing_counter2 +1
           }
       } 
     }
   }
+  env$cdata <- addMissingValue("Orpha_Kode", env$cdata, missing_counter1, k2_counter_icdRd)
+  env$cdata <- addMissingValue("AlphaID_Kode", env$cdata, missing_counter2 , k2_counter_icdRd)
   out <- list()
   out[["k2_icdRd_counter"]] <- k2_counter_icdRd
   out[["k2_icdOrpha_counter"]] <- k2_counter_icdOrpha
