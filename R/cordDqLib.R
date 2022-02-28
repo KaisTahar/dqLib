@@ -89,7 +89,7 @@ checkK1 <- function (refData2, bItemCl, cl){
           }
           if ( !is.element(oCode, oRefList))
           {
-            msg<- paste("ICD10-Orpha Zuordnung ist gemäß BfArM nicht plausible.",  env$dq[,cl][i])
+            msg<- paste("ICD10-Orpha Zuordnung ist gemäß BfArM nicht plausibel.",  env$dq[,cl][i])
             env$dq[,cl][i] <- msg
           }
           else k1_rd_counter=k1_rd_counter+1
@@ -99,7 +99,7 @@ checkK1 <- function (refData2, bItemCl, cl){
             k1_check_counter =k1_check_counter+1
             oRef<- which(as.character (refData2$Orpha_Kode)==oCode)
             if (!is.empty ( oRef)){
-              msg<- paste("ICD10-Orpha Zuordnung ist gemäß BfArM nicht plausible.",  env$dq[,cl][i])
+              msg<- paste("ICD10-Orpha Zuordnung ist gemäß BfArM nicht plausibel.",  env$dq[,cl][i])
               env$dq[,cl][i] <- msg
             }
           }
@@ -124,25 +124,29 @@ checkK2 <- function ( refData, cl, basicItems,bItemCl){
 checkOrphaCodingCompleteness <- function ( refData, cl){
   k2_counter_icdOrpha=0
   k2_counter_icdRd =0
-  k2_orphaMissing = 0
-#  env$cdata <- addMissing("Orpha_Kode",env$cdata, 0,0)
+  env$cdata <- addMissingValue("Orpha_Kode",env$cdata, 0,0)
+  env$cdata <- addMissingValue("AlphaID_Kode",env$cdata, 0,0)
   iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode)  & !is.empty(env$medData$ICD_Primaerkode))
   for(i in iList){
     iCode <- stri_trim(as.character(env$medData$ICD_Primaerkode[i]))
-    oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
     rdRefList<- which(stri_trim(as.character(refData$IcdCode))==iCode)
     if (!is.empty(rdRefList)) {
       k2_counter_icdRd =k2_counter_icdRd+1
-      if (!(is.null(oCode) |is.na(oCode) | is.empty(oCode))) k2_counter_icdOrpha=k2_counter_icdOrpha+1
-      else{
-        k2_orphaMissing =  k2_orphaMissing +1
-        env$dq[,cl][i] <- paste("Fehlendes Orpha_Kode. ", env$dq[,cl][i])
-        #env$cdata <- addMissing("Orpha_Kode", env$cdata, k2_orphaMissing, length(env$medData$Orpha_Kode))
+      if("Orpha_Kode" %in% colnames(env$medData)){
+        oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
+        if (!(is.na(oCode) | is.empty(oCode))) k2_counter_icdOrpha=k2_counter_icdOrpha+1
+        else{
+          env$dq[,cl][i] <- paste("Fehlendes Orpha_Kode. ", env$dq[,cl][i])
+          env$cdata <- addMissingValue("Orpha_Kode", env$cdata, 1, length(env$medData$Orpha_Kode))
+        }
       }
-    }
-    else if ((is.null(oCode) |is.na(oCode) | is.empty(oCode))) {
-      # Kein SE-Fall
-      #env$dq[,cl][i] <- paste("Fehlendes Orpha_Kode. ", env$dq[,cl][i])
+      if("AlphaID_Kode" %in% colnames(env$medData)){
+          aCode <-as.numeric(as.character(env$medData$AlphaID_Kode[i]))
+          if (is.na(aCode) | is.empty(aCode)) {
+            env$cdata <- addMissingValue("AlphaID_Kode", env$cdata, 1, length(env$medData$AlphaID_Kode))
+            env$dq[,cl][i] <- paste("Fehlendes AlphaID_Kode. ", env$dq[,cl][i])
+          }
+      } 
     }
   }
   out <- list()
@@ -165,7 +169,7 @@ checkK3 <- function (refData1, refData2, cl){
     cq <- which(env$medData$ICD_Primaerkode=="" | is.na(env$medData$ICD_Primaerkode))
     #env$cdata <- addMissing("ICD_Primaerkode", env$cdata, length (cq), length(env$medData$ICD_Primaerkode))
     if (!is.empty (cq)) for(i in cq) {
-      env$dq[,cl][i]<- paste("Fehlendes ICD10 Code. ", env$dq[,cl][i])
+      env$dq[,cl][i]<- paste("Fehlender ICD-Code. ", env$dq[,cl][i])
       oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
       oRefList<- which(as.character (refData2$Orpha_Kode)==oCode)
       if (! (is.na(oCode) || is.null(oCode) || is.empty(oCode))){
