@@ -1,6 +1,11 @@
+####################################################################################################### 
 # Kais Tahar
 # this script provides functions for data quality analysis in CORD
+#######################################################################################################
 
+#------------------------------------------------------------------------------------------------------
+# functions to generate DQ reports
+#------------------------------------------------------------------------------------------------------
 getReport <- function (repCol, cl, td, path) {
   repCol = append (repCol, cl)
   repData <-subset(env$dq, select= repCol)
@@ -20,9 +25,14 @@ getExtendedReport <- function ( repCol,cl, td, useCase, path) {
   write_xlsx(sheets, path)
 }
 
-checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2, dqInd, cl, bItemCl, totalRow) {
+#------------------------------------------------------------------------------------------------------
+# functions for DQ analysis
+#------------------------------------------------------------------------------------------------------
+checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2, dqInd, cl, bItemCl, totalRow, oItem) {
   env$tdata$report_year <-reportYear
-  basicItem <- setdiff  (union(env$cdata[, bItemCl], env$ddata[, bItemCl]),totalRow)
+  if (is.null(oItem)) mv <-totalRow
+  mv <-c (totalRow, oItem)
+  basicItem <- setdiff  (union(env$cdata[, bItemCl], env$ddata[, bItemCl]),mv)
    if ( !is.null(instID)){
    env$tdata$inst_id <- instID
    instData<- medData[which(medData$Institut_ID==instID),]
@@ -37,17 +47,17 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
     if(!is.empty(env$medData$Aufnahmenummer)) {
       env$tdata$case_no = length (unique(env$medData$Aufnahmenummer))
     }
-    #D1
+    #D1 plausibility
     dqList <- checkK1( refData2, bItemCl, cl)
     env$tdata <- addK1( env$tdata, dqList$k1_rd_counter, dqList$k1_check_counter)
-    #D2 
+    #D2 completeness
     dqList <- checkK2( refData1, cl, basicItem, bItemCl)
     env$mItem <- dqList$mItem
     env$tdata <- addK2( env$tdata, dqList$k2_icdOrpha_counter, dqList$k2_icdRd_counter)
-    #D3
+    #D3 uniquness
     dqList <- checkK3( refData1, refData2, cl)
     env$tdata <- addK3(env$tdata, dqList$k3_rd_counter,  dqList$k3_check_counter, inpatientCases)
-    #D4
+    #D4 concordance
     dqList <- checkK4( refData2, cl)
     #env$tdata <- addK4( env$tdata,  dqList$k4_counter_orpha, dqList$k4_counter_icd)
     env$tdata <- addK4( env$tdata,  dqList$k4_counter_orpha, inpatientCases)
@@ -60,7 +70,10 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   td
 }
 
-
+#------------------------------------------------------------------------------------------------------
+# functions for D1 plausibility dimension
+#------------------------------------------------------------------------------------------------------
+# D1 plausibility
 checkK1 <- function (refData2, bItemCl, cl){
 # get outliers
   dItem <- env$ddata[, bItemCl]
@@ -112,6 +125,25 @@ checkK1 <- function (refData2, bItemCl, cl){
   out
 }
 
+addK1<- function ( tdata,  se, n) {
+  if(se>0){
+    tdata$icdOrpha_no <- n
+    tdata$plausible_icdOrpha_no<- se
+    or <- ( se/n) * 100
+    tdata$orphaCoding_plausibility_rate <- round(or,2)
+  }
+  else {
+    tdata$icdOrpha_no <- 0
+    tdata$plausible_icdOrpha_no <- 0
+    tdata$orphaCoding_plausibility_rate<-0
+  }
+  tdata
+}
+
+#------------------------------------------------------------------------------------------------------
+# functions for D2 completeness dimension
+#------------------------------------------------------------------------------------------------------
+#D2 completeness
 checkK2 <- function ( refData, cl, basicItems,bItemCl){
   mItem <- getMissingItem(basicItems)
   env$cdata <- getMissingValue(env$cdata, bItemCl, "missing_value", "missing_item")
@@ -158,6 +190,24 @@ checkOrphaCodingCompleteness <- function ( refData, cl){
   out
 }
 
+addK2<- function ( tdata,  n, se) {
+  if(se>0){
+    tdata$orpha_no <- n
+    tdata$icdRd_no<- se
+    or <- ( n/se) * 100
+    tdata$orphaCoding_completeness_rate <- round(or,2)
+  }
+  else {
+    tdata$orpha_no <- 0
+    tdata$icdRd_no <- 0
+    tdata$orphaCoding_completeness_rate<-0
+  }
+  tdata
+}
+
+#------------------------------------------------------------------------------------------------------
+# functions for D3 uniqueness dimension
+#------------------------------------------------------------------------------------------------------
 checkK3 <- function (refData1, refData2, cl){
   eRel <- which(refData1$Type=="1:1" | refData1$Type=="n:1")
   eList <- ""
@@ -243,7 +293,24 @@ checkK3 <- function (refData1, refData2, cl){
   out[["k3_check_counter"]] <- k3_check_counter
   out
 }
+addK3<- function (tdata,  se, n, inpatientCases) {
+  if(se>0){
+    tdata$unique_rdCase_no <- se
+    tdata$check_no<- n
+    ur <- ( se/n) * 100
+    tdata$rdCase_uniqueness_rate <- round (ur,2)
+  }
+  else {
+    tdata$unique_rdCase_no <- 0
+    tdata$check_no <- 0
+    tdata$rdCase_uniqueness_rate  <- 0
+  }
+  tdata
+}
 
+#------------------------------------------------------------------------------------------------------
+# functions for D4 concordance dimension
+#------------------------------------------------------------------------------------------------------
 checkK4 <- function ( refData, cl) {
   k4_counter_icd =0
   k4_counter_orpha =0 
@@ -291,51 +358,6 @@ checkOutlier<-function (ddata, item, cl) {
     ddata <- addOutlier(item, ddata, 0,0)
   }
   ddata
-}
-
-addK1<- function ( tdata,  se, n) {
-  if(se>0){
-    tdata$icdOrpha_no <- n
-    tdata$plausible_icdOrpha_no<- se
-    or <- ( se/n) * 100
-    tdata$orphaCoding_plausibility_rate <- round(or,2)
-  }
-  else {
-    tdata$icdOrpha_no <- 0
-    tdata$plausible_icdOrpha_no <- 0
-    tdata$orphaCoding_plausibility_rate<-0
-  }
-  tdata
-}
-
-addK2<- function ( tdata,  n, se) {
-  if(se>0){
-    tdata$orpha_no <- n
-    tdata$icdRd_no<- se
-    or <- ( n/se) * 100
-    tdata$orphaCoding_completeness_rate <- round(or,2)
-  }
-  else {
-    tdata$orpha_no <- 0
-    tdata$icdRd_no <- 0
-    tdata$orphaCoding_completeness_rate<-0
-  }
-  tdata
-}
-
-addK3<- function (tdata,  se, n, inpatientCases) {
-  if(se>0){
-    tdata$unique_rdCase_no <- se
-    tdata$check_no<- n
-    ur <- ( se/n) * 100
-    tdata$rdCase_uniqueness_rate <- round (ur,2)
-  }
-  else {
-    tdata$unique_rdCase_no <- 0
-    tdata$check_no <- 0
-    tdata$rdCase_uniqueness_rate  <- 0
-  }
-  tdata
 }
 
 addK4<- function (tdata,  se, n) {
@@ -406,9 +428,3 @@ addRdCase<- function (item, item_text, oCode, iCode, useCase) {
   useCase
 }
 
-is.empty <- function(x) return(length(x) ==0 )
-
-isDate <- function(mydate) {
-  tryCatch(!is.na(as.Date(mydate,tryFormats = c("%Y-%m-%d", "%Y/%m/%d","%d-%m-%Y","%m-%d-%Y"))),
-           error = function(err) {FALSE})
-}

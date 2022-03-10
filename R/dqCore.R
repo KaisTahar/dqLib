@@ -1,6 +1,11 @@
+####################################################################################################### 
 # Kais Tahar
 # this script provides core functions for data quality analysis
+#######################################################################################################
 
+#------------------------------------------------------------------------------------------------------
+# function to set the package environment
+#------------------------------------------------------------------------------------------------------
 #env <- new.env(parent=globalenv())
 #env <- new.env(parent = emptyenv())
 env <- new.env()
@@ -13,11 +18,9 @@ setGlobals <- function(medData, repCol, cdata,ddata, tdata) {
   env$dq$dq_msg<-""
 }
 
-getFileExtension <- function(filePath){
-  ext <- strsplit(basename(filePath), split="\\.")[[1]]
-  return(ext[-1])
-}
-
+#------------------------------------------------------------------------------------------------------
+# functions to calculate overall DQ metrics
+#------------------------------------------------------------------------------------------------------
 getTotalStatistic <- function(dqInd, col, row){
   env$cdata<- addStatistic(env$cdata, col, row)
   env$ddata<- addStatistic(env$ddata, col, row)
@@ -33,7 +36,25 @@ getTotalStatistic <- function(dqInd, col, row){
   stotal <- subset(env$tdata, select= dqInd)
   stotal
 }
+getDQStatis <-function(bdata, col, row){
+  tdata<- addTotalCount(bdata, col, row)
+  tcdata <-addCompletness (tdata, col, row)
+  sdata <-subset(tcdata, tcdata[,col]==row)
+  sdata$N_Item <- NULL
+  return <-sdata
+}
 
+addTotalCount<- function (bdata, col, row) {
+  index = which( bdata[,col]==row)
+  bdata$missing_value_no[index] <- sum(as.integer(as.character(bdata$missing_value_no[-index])),na.rm=TRUE)
+  bdata$N[index]<-sum(bdata$N_Item[-index],na.rm=TRUE)
+  mr <- (bdata$missing_value_no[index]/ bdata$N[index])* 100
+  bdata$missing_value_rate[index] <- round (mr,2)
+  bdata$outlier_no[index] <- sum (as.integer(as.character( bdata$outlier_no[-index] )), na.rm=TRUE)
+  or <- (bdata$outlier_no[index] / bdata$N_Item[index] )* 100
+  bdata$outlier_rate[index] <- round (or,2)
+  bdata
+}
 getTotalStatisticx <- function(cdata, ddata,col, row){
   ddata<- addStatistic(ddata, col, row)
   cdata<- addStatistic(cdata, col, row)
@@ -55,6 +76,9 @@ addStatistic<- function (bdata, col, row) {
   bdata
 }
 
+#------------------------------------------------------------------------------------------------------
+# functions to calculate DQ metrics for D2 completeness dimension
+#------------------------------------------------------------------------------------------------------
 addMissingCount<- function (bdata, col, row) {
   index = which( bdata[,col]==row)
   bdata$N_Item[index]<-sum(bdata$N_Item[-index], na.rm=TRUE)
@@ -63,7 +87,98 @@ addMissingCount<- function (bdata, col, row) {
   bdata$missing_value_rate[index] <- round (mr,2)
   bdata
 }
+addCompletness<- function (tdata, col, row) {
+  index = which( tdata[,col]==row)
+  tdata$completness_rate[index]<-round (100-tdata$missing_value_rate[index],2)
+  return <- tdata
+}
 
+getMissingValue<-function (df, bItemCol, outCol1,outCol2){
+  if(!outCol1 %in% colnames(env$dq)) env$dq[,outCol1]<-NA
+  if(!outCol2 %in% colnames(env$dq)) env$dq[,outCol2] <-""
+  bItems <-df[,bItemCol]
+  if (!is.empty(bItems))
+  {
+    for (item in unique(bItems)) {
+      df <-missingCheck(df, item, bItems,outCol1, outCol2)
+    }
+    if ( !is.empty(env$cdata) && "basicItem" %in% colnames(env$cdata))
+    {
+      x <- bItems %in%  env$cdata [, "basicItem"]
+      if ( all(x)) {
+        env$cdata <-df
+      }
+    }
+  }
+  df
+  
+}
+
+missingCheck<- function (df, item, bItems, cl1, cl2) {
+  index <- which(bItems==item)[[1]]
+  item.vec <- env$medData[[item]]
+  if(!is.empty(item.vec)){
+    nq <- which(as.character(item.vec) =="" | is.na(item.vec))
+    if (!is.empty (nq))
+      for(i in nq)
+      {
+        msg <- paste("Fehlendes ", item)
+        if (index >1) {
+          if (!is.na(env$dq[,cl1][i])) env$dq[,cl1][i] <- paste(msg, "; ", env$dq[,cl1][i])
+          else env$dq [,cl1] [i] <- msg
+        }
+        else env$dq [,cl1] [i] <- paste (msg, ".")
+      }
+    df <- addMissingValue(item, df,length(nq), length(item.vec))
+  }
+  else if (item!="Total"){
+    df <- addMissingValue(item, df, 0,0)
+    env$dq[,cl2]<- paste( item, " wurde nicht erhoben ", env$dq[,cl2])
+  }
+  
+  df
+}
+
+addMissingValue<- function (item, bdata, m, n) {
+  #index <- which(dqItem.vec==item)[[1]]
+  index = which(bdata$basicItem==item)[1]
+  if (is.null(index)) bdata$basicItem[1]=item
+  if(!"missing_value_no" %in% colnames(bdata)) bdata$missing_value_no <-0
+  if(!"missing_value_rate" %in% colnames(bdata)) bdata$missing_value_rate <-0
+  if(!"N_Item" %in% colnames(bdata)) bdata$N_Item <-0
+  if(n>0){
+    bdata$N_Item[index] <-n
+    if (!is.na(bdata$missing_value_no[index]) && is.numeric(bdata$missing_value_no[index]) ) bdata$missing_value_no[index] <- bdata$missing_value_no[index]+m
+    else bdata$missing_value_no[index] <- m
+    mr <-(bdata$missing_value_no[index]/ bdata$N_Item[index]) * 100
+    bdata$missing_value_rate[index] <- round (mr,1)
+  }
+  else if (item!="Total"){
+    bdata$N_Item[index] <- 0
+    bdata$missing_value_no[index] <- 0
+    bdata$missing_value_rate[index] <-0
+  }
+  bdata
+}
+
+getMissingItem<- function (basicItem) {
+  diff <- setdiff (basicItem, names (env$medData))
+  mItem <-""
+  if (!is.empty (diff)){
+    str<- paste (diff,collapse=" , " )
+    mItem <- paste ("Folgende mandatorische Items fehlen: ", str) 
+  }
+  env$tdata$missing_item_no<- length(diff)
+  env$tdata$missing_item_rate <- round(length(diff)/length(basicItem)*100 ,2)
+  env$tdata
+  mItem
+}
+
+is.empty <- function(x) return(length(x) ==0 )
+
+#------------------------------------------------------------------------------------------------------
+# functions to calculate DQ metrics for D2 plausibility dimension
+#------------------------------------------------------------------------------------------------------
 addOutlierCount<- function (bdata, col, row) {
   index = which( bdata[,col]==row)
   bdata$N_Item[index]<-sum(bdata$N_Item[-index],na.rm=TRUE)
@@ -117,113 +232,13 @@ getAgeMaxOutlier<- function ( dItem1.vec, dItem2.vec, n){
   out
 }
 
-getDQStatis <-function(bdata, col, row){
-  tdata<- addTotalCount(bdata, col, row)
-  tcdata <-addCompletness (tdata, col, row)
-  sdata <-subset(tcdata, tcdata[,col]==row)
-  sdata$N_Item <- NULL
-  return <-sdata
+isDate <- function(mydate) {
+  tryCatch(!is.na(as.Date(mydate,tryFormats = c("%Y-%m-%d", "%Y/%m/%d","%d-%m-%Y","%m-%d-%Y"))),
+           error = function(err) {FALSE})
 }
 
-addTotalCount<- function (bdata, col, row) {
-  index = which( bdata[,col]==row)
-  bdata$missing_value_no[index] <- sum(as.integer(as.character(bdata$missing_value_no[-index])),na.rm=TRUE)
-  bdata$N[index]<-sum(bdata$N_Item[-index],na.rm=TRUE)
-  mr <- (bdata$missing_value_no[index]/ bdata$N[index])* 100
-  bdata$missing_value_rate[index] <- round (mr,2)
-  bdata$outlier_no[index] <- sum (as.integer(as.character( bdata$outlier_no[-index] )), na.rm=TRUE)
-  or <- (bdata$outlier_no[index] / bdata$N_Item[index] )* 100
-  bdata$outlier_rate[index] <- round (or,2)
-  bdata
+getFileExtension <- function(filePath){
+  ext <- strsplit(basename(filePath), split="\\.")[[1]]
+  return(ext[-1])
 }
-
-addCompletness<- function (tdata, col, row) {
-  index = which( tdata[,col]==row)
-  tdata$completness_rate[index]<-round (100-tdata$missing_value_rate[index],2)
-  return <- tdata
-}
-
-getMissingValue<-function (df, bItemCol, outCol1,outCol2){
-  if(!outCol1 %in% colnames(env$dq)) env$dq[,outCol1]<-NA
-  if(!outCol2 %in% colnames(env$dq)) env$dq[,outCol2] <-""
-  bItems <-df[,bItemCol]
-  if (!is.empty(bItems))
-  {
-    for (item in unique(bItems)) {
-      df <-missingCheck(df, item, bItems,outCol1, outCol2)
-    }
-    if ( !is.empty(env$cdata) && "basicItem" %in% colnames(env$cdata))
-    {
-      x <- bItems %in%  env$cdata [, "basicItem"]
-      if ( all(x)) {
-        env$cdata <-df
-      }
-    }
-  }
-  df
-  
-}
-
-missingCheck<- function (df, item, bItems, cl1, cl2) {
-  index <- which(bItems==item)[[1]]
-  item.vec <- env$medData[[item]]
-  if(!is.empty(item.vec)){
-    nq <- which(as.character(item.vec) =="" | is.na(item.vec))
-    if (!is.empty (nq))
-      for(i in nq)
-      {
-        msg <- paste("Fehlendes ", item)
-        if (index >1) {
-          if (!is.na(env$dq[,cl1][i])) env$dq[,cl1][i] <- paste(msg, "; ", env$dq[,cl1][i])
-          else env$dq [,cl1] [i] <- msg
-        }
-        else env$dq [,cl1] [i] <- paste (msg, ".")
-      }
-    df <- addMissingValue(item, df,length(nq), length(item.vec))
-  }
-  else if (item!="Total"){
-    df <- addMissingValue(item, df, 0,0)
-    env$dq[,cl2]<- paste( item, " wurde nicht erhoben ", env$dq[,cl2])
-  }
-  
-  df
-}
-
-
-addMissingValue<- function (item, bdata, m, n) {
-  #index <- which(dqItem.vec==item)[[1]]
-  index = which(bdata$basicItem==item)[1]
-  if (is.null(index)) bdata$basicItem[1]=item
-  if(!"missing_value_no" %in% colnames(bdata)) bdata$missing_value_no <-0
-  if(!"missing_value_rate" %in% colnames(bdata)) bdata$missing_value_rate <-0
-  if(!"N_Item" %in% colnames(bdata)) bdata$N_Item <-0
-  if(n>0){
-    bdata$N_Item[index] <-n
-    if (!is.na(bdata$missing_value_no[index]) && is.numeric(bdata$missing_value_no[index]) ) bdata$missing_value_no[index] <- bdata$missing_value_no[index]+m
-    else bdata$missing_value_no[index] <- m
-    mr <-(bdata$missing_value_no[index]/ bdata$N_Item[index]) * 100
-    bdata$missing_value_rate[index] <- round (mr,1)
-  }
-  else if (item!="Total"){
-    bdata$N_Item[index] <- 0
-    bdata$missing_value_no[index] <- 0
-    bdata$missing_value_rate[index] <-0
-  }
-  bdata
-}
-
-getMissingItem<- function (basicItem) {
-  diff <- setdiff (basicItem, names (env$medData))
-  mItem <-""
-  if (!is.empty (diff)){
-    str<- paste (diff,collapse=" , " )
-    mItem <- paste ("Folgende mandatorische Items fehlen: ", str) 
-  }
-  env$tdata$missing_item_no<- length(diff)
-  env$tdata$missing_item_rate <- round(length(diff)/length(basicItem)*100 ,2)
-  env$tdata
-  mItem
-}
-
-
 
