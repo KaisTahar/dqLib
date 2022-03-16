@@ -1,6 +1,28 @@
 # `dqLib`
 
-`dqLib` is an R package for data quality analysis and reporting
+`dqLib` is an R package for data quality analysis and reporting. 
+`dqLib` provides methods for calculating data quality metrics and generating data quality reports.
+
+## Data Quality Metrics
+- The following data quality dimensions and indicatos are implemented:
+
+  | Dimension  | Indicator Name|
+  | ------------- | ------------- |
+  | completeness  | missing_item_rate, missing_value_rate, orphaCoding_completeness_rate  |
+  | plausibility  | outlier_rate, orphaCoding_plausibility_rate |
+  | uniqueness | rdCase_uniqueness_rate|
+  | concordance | orphaCoding_relativeFrequency, unique_rdCase_relativeFrequency|
+  
+- The following references are required to assess the quality of orphacoding:
+
+  - Current Version of Alpha-ID-SE list [1]
+  - Tracer diagnosis list such as Hamburger list [2] extended with relation types of ICD-10 to Orpha codes. 
+  - Here are [Examples](https://github.com/KaisTahar/dqLib/tree/master/refData) of required references that can be easily used or updated.
+
+    [1] DIMDI/Alpha-ID-SE list: www.dimdi.de
+    
+    [2] Schulz M et alt:. Prävalenz seltener Erkrankungen in der ambulanten Versorgung in Deutschland im Zeitraum 2008 bis 2011, Versorgungsatlas-Bericht. 2015;15/13
+  
 
 ------------------------------------------------------------------------
 
@@ -19,9 +41,9 @@ devtools::install_github("https://github.com/KaisTahar/dqLib")
 
 ## Example
 
-Here are [examples](https://github.com/KaisTahar/cordDqChecker) for data quality analysis and reporting using the cord test dataset
-- [cordDQCheck.R](https://github.com/KaisTahar/cordDqChecker/blob/master/cordDqChecker.R) for generating a simple data quality report
-- Here you can see [the resulting files](https://github.com/KaisTahar/cordDqChecker/tree/master/Data/Export)
+Here are [examples](https://github.com/medizininformatik-initiative/cord-dq-checker) for data quality analysis and reporting using this package
+- [cordDQCheck.R](https://github.com/medizininformatik-initiative/cord-dq-checker/blob/master/cordDqChecker.R) for generating data quality reports in CORD-MI.
+- Here you can see [the resulting files](https://github.com/medizininformatik-initiative/cord-dq-checker/tree/master/Data/Export)
 
 
 See also: [`CORD-MI`](https://www.medizininformatik-initiative.de/de/CORD)
