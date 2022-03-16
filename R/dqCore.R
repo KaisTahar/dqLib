@@ -23,8 +23,8 @@ setGlobals <- function(medData, repCol, cdata,ddata, tdata) {
 #------------------------------------------------------------------------------------------------------
 getTotalStatistic <- function(dqInd, col, row){
   env$cdata<- addStatistic(env$cdata, col, row)
-  env$ddata<- addStatistic(env$ddata, col, row)
-  bdata <- merge(env$cdata, env$ddata, by=intersect(names(env$cdata), names(env$ddata)), all = TRUE)
+  if (is.null(env$ddata)) bdata <-env$cdata
+  else bdata <- merge(env$cdata,  addStatistic(env$ddata, col, row) , by=intersect(names(env$cdata), names(env$ddata)), all = TRUE)
   bdata$Item_no<- 1
   index = which(bdata[,col]==row)
   bdata<-bdata[-index,]
@@ -166,7 +166,7 @@ getMissingItem<- function (basicItem) {
   mItem <-""
   if (!is.empty (diff)){
     str<- paste (diff,collapse=" , " )
-    mItem <- paste ("Folgende mandatorische Items fehlen: ", str) 
+    mItem <- paste ("Folgende mandatorische Items fehlen: ", str)
   }
   env$tdata$missing_item_no<- length(diff)
   env$tdata$missing_item_rate <- round(length(diff)/length(basicItem)*100 ,2)
