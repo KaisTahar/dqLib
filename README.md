@@ -38,12 +38,21 @@ You can also install it directly from github with:
 ``` r
 devtools::install_github("https://github.com/KaisTahar/dqLib")
 ```
-
 ## Example
 
 Here are [examples](https://github.com/medizininformatik-initiative/cord-dq-checker) for data quality analysis and reporting using this package
 - [cordDQCheck.R](https://github.com/medizininformatik-initiative/cord-dq-checker/blob/master/cordDqChecker.R) for generating data quality reports in CORD-MI.
 - Here you can see [the resulting files](https://github.com/medizininformatik-initiative/cord-dq-checker/tree/master/Data/Export)
 
+## Citation
 
+To cite `dqLib`, please use the following **BibTeX** entry: 
+
+```
+@software{Tahar_dqLib,
+author = {Tahar, Kais},
+title = {{dqLib}},
+url = {https://github.com/KaisTahar/dqLib}
+}
+```
 See also: [`CORD-MI`](https://www.medizininformatik-initiative.de/de/CORD)
