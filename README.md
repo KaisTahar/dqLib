@@ -1,6 +1,6 @@
 # `dqLib`
 
-`dqLib` is an R package for data quality analysis and reporting. 
+`dqLib` is an R package for data quality assessment and reporting. 
 `dqLib` provides methods for calculating data quality metrics and generating data quality reports.
 
 ## Data Quality Metrics
