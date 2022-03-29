@@ -36,13 +36,17 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   else basicItem <- setdiff (union(env$cdata[, bItemCl], env$ddata[, bItemCl]),mv)
    if ( !is.null(instID)){
    env$tdata$inst_id <- instID
-   instData<- medData[which(medData$Institut_ID==instID),]
+   instData<- env$medData[which(env$medData$Institut_ID==instID),]
    if (nrow(instData)>0) env$medData <- instData
   }else {
   	env$tdata$inst_id <- "ID fehlt"
   }
   if(!is.empty(env$medData$PatientIdentifikator)) env$tdata$patient_no = length (unique(env$medData$PatientIdentifikator))
   if(!is.empty(env$medData$Aufnahmenummer)) env$tdata$case_no = length (unique(env$medData$Aufnahmenummer))
+  if(!is.empty(env$medData$PatientIdentifikator) & !is.empty(env$medData$Aufnahmenummer) & !is.empty(env$medData$ICD_Primaerkode) & !is.empty(env$medData$Orpha_Kode))
+  env$medData<-medData[!duplicated(medData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode","Orpha_Kode")]),]
+  else if(!is.empty(env$medData$PatientIdentifikator) & !is.empty(env$medData$Aufnahmenummer) & !is.empty(env$medData$ICD_Primaerkode))
+  env$medData<-medData[!duplicated(medData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode")]),]
   #D1 completeness
   keyD1 <- checkD1( refData1, cl, basicItem, bItemCl)
   env$mItem <- keyD1$mItem
