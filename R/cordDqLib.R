@@ -61,7 +61,10 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   keyD4 <- checkD4( refData2, cl)
   env$tdata <- addD4( env$tdata,  keyD4$k4_counter_orpha, keyD3$k3_rd_counter, inpatientCases)
   td<-getTotalStatistic(dqInd, bItemCl, totalRow)
-  td
+  out <- list()
+  out[["metric"]] <-td
+  out[["mItem"]] <-env$mItem
+  out
 }
 
 #------------------------------------------------------------------------------------------------------
@@ -69,6 +72,7 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
 #------------------------------------------------------------------------------------------------------
 #D1 completeness
 checkD1 <- function ( refData, cl, basicItems,bItemCl){
+  env$medData<- env$medData[!sapply(env$medData, function(x) all( is.empty(x) | is.na(x)))]
   mItem <- getMissingItem(basicItems)
   if (!is.null(env$cdata)) env$cdata <- getMissingValue(env$cdata, bItemCl, "missing_value", "missing_item")
   if (!is.null(env$ddata))env$ddata <- getMissingValue(env$ddata, bItemCl, "missing_value", "missing_item")
