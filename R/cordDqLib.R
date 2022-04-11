@@ -34,19 +34,21 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   mv <-c (totalRow, oItem)
   if (is.null(env$ddata)) basicItem <- setdiff(env$cdata[, bItemCl],mv)
   else basicItem <- setdiff (union(env$cdata[, bItemCl], env$ddata[, bItemCl]),mv)
-   if ( !is.null(instID)){
-   env$tdata$inst_id <- instID
-   instData<- env$medData[which(env$medData$Institut_ID==instID),]
-   if (nrow(instData)>0) env$medData <- instData
+  if ( !is.null(instID)){
+    env$tdata$inst_id <- instID
+    instData<- env$medData[which(env$medData$Institut_ID==instID),]
+    if (nrow(instData)>0) env$medData <- instData
   }else {
-  	env$tdata$inst_id <- "ID fehlt"
+    env$tdata$inst_id <- "ID fehlt"
   }
+  row_no = nrow(env$medData)
+  input <-env$medData
   if(!is.empty(env$medData$PatientIdentifikator)) env$tdata$patient_no = length (unique(env$medData$PatientIdentifikator))
   if(!is.empty(env$medData$Aufnahmenummer)) env$tdata$case_no = length (unique(env$medData$Aufnahmenummer))
   if(!is.empty(env$medData$PatientIdentifikator) & !is.empty(env$medData$Aufnahmenummer) & !is.empty(env$medData$ICD_Primaerkode) & !is.empty(env$medData$Orpha_Kode))
-  env$medData<-medData[!duplicated(medData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode","Orpha_Kode")]),]
+    env$medData<-env$medData[!duplicated(env$medData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode","Orpha_Kode")]),]
   else if(!is.empty(env$medData$PatientIdentifikator) & !is.empty(env$medData$Aufnahmenummer) & !is.empty(env$medData$ICD_Primaerkode))
-  env$medData<-medData[!duplicated(medData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode")]),]
+    env$medData<-env$medData[!duplicated(env$medData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode")]),]
   #D1 completeness
   keyD1 <- checkD1( refData1, cl, basicItem, bItemCl)
   env$mItem <- keyD1$mItem
@@ -57,8 +59,11 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   #D3 uniquness
   keyD3 <- checkD3( refData1, refData2, cl)
   env$tdata <- addD3(env$tdata, keyD3$k3_rd_counter,  keyD3$k3_check_counter)
+  env$tdata$dup_no = row_no - nrow(env$medData)
+  env$tdata$duplication_rate <- round((env$tdata$dup_no/row_no)*100,2)
+  env$dup <- input[duplicated(input[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode","Orpha_Kode")]),]
   #D4 concordance
-  keyD4 <- checkD4( refData2, cl)
+  keyD4 <- checkD4(cl)
   env$tdata <- addD4( env$tdata,  keyD4$k4_counter_orpha, keyD3$k3_rd_counter, inpatientCases)
   td<-getTotalStatistic(dqInd, bItemCl, totalRow)
   out <- list()
@@ -260,7 +265,7 @@ addD2<- function ( tdata,  se, n) {
 # functions for D3 uniqueness dimension
 #------------------------------------------------------------------------------------------------------
 checkD3 <- function (refData1, refData2, cl){
-  if (is.null(env$medData$ICD_Primaerkode)) out <-checkUniqueOrphaCoding(refData2, cl)
+  if (is.null(env$medData$ICD_Primaerkode)) out <-checkUniqueOrphaCoding(cl)
   else if (!is.null(env$medData$Orpha_Kode)) out <-checkUniqueIcdOrphaCoding(refData1, refData2, cl)
        else out <- checkUniqueIcd(refData1, cl)
   out
@@ -300,28 +305,25 @@ checkUniqueIcd <- function (refData1, cl){
   out
 }
 
-checkUniqueOrphaCoding <- function (refData2, cl){
+checkUniqueOrphaCoding <- function (cl){
   k3_check_counter =0
   k3_rd_counter=0
   rd_counter=0
-  oList <-which(env$medData$Orpha_Kode !="" & !is.na(env$medData$Orpha_Kode)  & !is.empty(env$medData$Orpha_Kode))
+  oList <-which(env$medData$Orpha_Kode !="" & !is.na(env$medData$Orpha_Kode)  & !is.empty(env$medData$Orpha_Kode)& !is.null(env$medData$Orpha_Kode))
   for (i in oList)
   {
+    code <-env$medData$Orpha_Kode[i]
     oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
-    oRefList<- which(as.character(refData2$Orpha_Kode)==oCode)
-    k3_check_counter =k3_check_counter+1
-    if (!is.empty (oRefList))  k3_rd_counter=k3_rd_counter+1
-    else{
-      env$dq[,cl][i] <- paste("Fall ist nicht eindeutig.",env$dq[,cl][i] )
-    }
+    if (!is.na(oCode)) k3_check_counter =k3_check_counter+1
+    else env$dq[,cl][i] <- paste("Fall ist nicht eindeutig.",env$dq[,cl][i] )
+    
   }
-
   out <- list()
   out[["k3_rd_counter"]] <- k3_rd_counter
   out[["k3_check_counter"]] <- k3_check_counter
   out
-}
-
+  }
+  
 checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
   eRel <- which(refData1$Type=="1:1" | refData1$Type=="n:1")
   eList <- ""
@@ -337,12 +339,13 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
     #env$cdata <- addMissing("ICD_Primaerkode", env$cdata, length (cq), length(env$medData$ICD_Primaerkode))
     if (!is.empty (cq)) for(i in cq) {
       env$dq[,cl][i]<- paste("Fehlender ICD-Code. ", env$dq[,cl][i])
+      code <- env$medData$Orpha_Kode[i]
       oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
-      oRefList<- which(as.character (refData2$Orpha_Kode)==oCode)
-      if (! (is.na(oCode) || is.null(oCode) || is.empty(oCode))){
-        #SE-Fälle
+      #oRefList<- which(as.character (refData2$Orpha_Kode)==oCode)
+      if (! (is.na(code) || is.null(code) || is.empty(code))){
         k3_check_counter =k3_check_counter+1
-        if (!is.empty (oRefList))  k3_rd_counter=k3_rd_counter+1
+        #SE-Fälle
+        if (!is.na(oCode)) k3_rd_counter=k3_rd_counter+1
         else{
           #else env$dq[,cl][i] <- paste("Kodierung ist nicht eindeutig. Orpha Code",oCode, "ist im BfArM-Mapping nicht enthalten. ",env$dq[,cl][i] )
           env$dq[,cl][i] <- paste("Fall ist nicht eindeutig.",env$dq[,cl][i] )
@@ -356,7 +359,8 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
     iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode)  & !is.empty(env$medData$ICD_Primaerkode))
     for(i in iList){
       iCode <- stri_trim(as.character(env$medData$ICD_Primaerkode[i]))
-      oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
+      oCode <-env$medData$Orpha_Kode[i]
+      numCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
       if (!(is.null(oCode) |is.na(oCode) | is.empty(oCode))){
         iRefList<- which(stri_trim(as.character(refData2$ICD_Primaerkode1))==iCode)
         if (!is.empty (iRefList)){
@@ -367,7 +371,7 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
             oRefCode <-as.integer(refData2$Orpha_Kode[j])
             oRefList <- append( oRefList,oRefCode)
           }
-          if ( !is.element(oCode, oRefList))
+          if ( !is.element(numCode, oRefList))
           {
             msg<- paste("Kodierung ist nicht eindeutig. Relation",iCode,"-", oCode , "ist im BfArM nicht vorhanden. ",  env$dq[,cl][i])
             env$dq[,cl][i] <- msg
@@ -377,7 +381,7 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
         else{
           if (!(is.null(iCode) |is.na(iCode) | is.empty(iCode))){
             k3_check_counter =k3_check_counter+1
-            oRef<- which(as.character (refData2$Orpha_Kode)==oCode)
+            oRef<- which(as.numeric(as.character(refData2$Orpha_Kode))==numCode)
             if (!is.empty ( oRef)){
               msg<- paste("Kodierung ist nicht eindeutig. ICD10 Code",iCode , "ist im BfArM Mapping nicht enthalten. ",  env$dq[,cl][i])
               env$dq[,cl][i] <- msg
@@ -426,10 +430,10 @@ addD3<- function (tdata, uRD, checkNo) {
 #------------------------------------------------------------------------------------------------------
 # functions for D4 concordance dimension
 #------------------------------------------------------------------------------------------------------
-checkD4 <- function ( refData, cl) {
+checkD4 <- function (cl) {
   iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode)  & !is.empty(env$medData$ICD_Primaerkode))
   k4_counter_icd= length(iList)
-  if (!is.null(env$medData$Orpha_Kode))  k4_counter_orpha = getOrphaCodeNo (refData, cl)
+  if (!is.null(env$medData$Orpha_Kode))  k4_counter_orpha = getOrphaCodeNo (cl)
   else k4_counter_orpha=0
   out <- list()
   out[["k4_counter_icd"]] <- k4_counter_icd
@@ -437,16 +441,14 @@ checkD4 <- function ( refData, cl) {
   out
 }
 
-getOrphaCodeNo <- function ( refData, cl) {
+getOrphaCodeNo <- function (cl) {
   k4_counter_orpha =0 
-  oList <-which(env$medData$Orpha_Kode !="" & !is.na(env$medData$Orpha_Kode)  & !is.empty(env$medData$Orpha_Kode))
+  oList <-which(env$medData$Orpha_Kode !="" & !is.na(env$medData$Orpha_Kode)  & !is.empty(env$medData$Orpha_Kode) & !is.null(env$medData$Orpha_Kode))
   if (!is.empty (oList)) for(i in oList) {
+    code <-env$medData$Orpha_Kode[i]
     oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
-    oRefList<- which(as.character (refData$Orpha_Kode)==oCode)
-    if (! (is.na(oCode) || is.null(oCode) || is.empty(oCode))){
-      if (!is.empty (oRefList)) k4_counter_orpha = k4_counter_orpha +1
-      else env$dq[,cl][i] <- paste("Orpha Code",oCode, "ist im BfArM-Mapping nicht enthalten. ",env$dq[,cl][i] )
-    }
+    if (!is.na(oCode)) k4_counter_orpha = k4_counter_orpha +1
+    else env$dq[,cl][i] <- paste("Orpha Code",code, "ist nicht valide. ", env$dq[,cl][i] )
   }
   k4_counter_orpha
 }
