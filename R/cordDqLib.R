@@ -91,6 +91,8 @@ checkOrphaCodingCompleteness <- function ( refData, cl){
   k2_orphaCheck_no  =0
   missing_counter1=0 
   missing_counter2=0
+  refData <-refData[(which(refData$Type=="1:1" | refData$Type=="n:1")),]
+  
   env$cdata <- addMissingValue("Orpha_Kode",env$cdata, 0,0)
   env$cdata <- addMissingValue("AlphaID_Kode",env$cdata, 0,0)
   if (!is.null(env$medData$ICD_Primaerkode))
@@ -271,12 +273,7 @@ checkD3 <- function (refData1, refData2, cl){
   out
 }
 checkUniqueIcd <- function (refData1, cl){
-  eRel <- which(refData1$Type=="1:1" | refData1$Type=="n:1")
-  eList <- ""
-  for (i in eRel){
-    icdCode <- stri_trim(as.character(refData1$IcdCode[i]))
-    eList <- append(eList,icdCode)
-  }
+  eList <-refData1[(which(refData1$Type=="1:1" | refData1$Type=="n:1")),]
   k3_check_counter =0
   k3_rd_counter=0
   rd_counter=0
@@ -284,7 +281,7 @@ checkUniqueIcd <- function (refData1, cl){
   iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode)  & !is.empty(env$medData$ICD_Primaerkode))
   for(i in iList){
     iCode <- stri_trim(as.character(env$medData$ICD_Primaerkode[i]))
-      if (is.element(iCode, eList))
+      if (is.element(iCode, stri_trim(as.character(eList$IcdCode))))
       {
         k3_rd_counter=k3_rd_counter+1
         k3_check_counter =k3_check_counter+1
@@ -325,12 +322,7 @@ checkUniqueOrphaCoding <- function (cl){
   }
   
 checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
-  eRel <- which(refData1$Type=="1:1" | refData1$Type=="n:1")
-  eList <- ""
-  for (i in eRel){
-    icdCode <- stri_trim(as.character(refData1$IcdCode[i]))
-    eList <- append(eList,icdCode)
-  }
+  eList <-refData1[(which(refData1$Type=="1:1" | refData1$Type=="n:1")),]
   k3_check_counter =0
   k3_rd_counter=0
   rd_counter=0
@@ -390,7 +382,7 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
         }
       }
       else{
-        if (is.element(iCode, eList))
+        if (is.element(iCode, stri_trim(as.character(eList$IcdCode))))
         {
           k3_rd_counter=k3_rd_counter+1
           k3_check_counter =k3_check_counter+1
