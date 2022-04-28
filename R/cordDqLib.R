@@ -13,8 +13,8 @@ getReport <- function (repCol, cl, td, path) {
   dfq[nrow(dfq)+1,] <- NA
   dfq[nrow(dfq)+1,1] <- env$mItem
   sheets <- list("DQ_Report"=dfq, "Statistik" = td)
-  write_xlsx(sheets, paste (path,".xlsx"))
-  write.csv(td, paste (path,".csv"), row.names = FALSE)
+  write_xlsx(sheets, paste (path,".xlsx", sep =""))
+  write.csv(td, paste (path,".csv", sep =""), row.names = FALSE)
  # env <-NULL
 }
 
