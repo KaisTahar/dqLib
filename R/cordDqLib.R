@@ -64,7 +64,7 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   env$dup <- input[duplicated(input[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode","Orpha_Kode")]),]
   #D4 concordance
   keyD4 <- checkD4(cl)
-  env$tdata <- addD4( env$tdata,  keyD4$k4_counter_orpha, keyD3$k3_rd_counter, inpatientCases)
+  env$tdata <- addD4( env$tdata,  keyD4$k4_counter_orpha, keyD4$k4_counter_orphaCase, keyD3$k3_rd_counter, inpatientCases)
   td<-getTotalStatistic(dqInd, bItemCl, totalRow)
   out <- list()
   out[["metric"]] <-td
@@ -425,12 +425,32 @@ addD3<- function (tdata, uRD, checkNo) {
 checkD4 <- function (cl) {
   iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode)  & !is.empty(env$medData$ICD_Primaerkode))
   k4_counter_icd= length(iList)
-  if (!is.null(env$medData$Orpha_Kode))  k4_counter_orpha = getOrphaCodeNo (cl)
-  else k4_counter_orpha=0
+  if (!is.null(env$medData$Orpha_Kode)){
+    k4_counter_orpha = getOrphaCodeNo (cl)
+    k4_counter_orphaCase =getOrphaCaseNo(cl)
+  }
+  else { k4_counter_orpha=0
+    k4_counter_orphaCase =0
+  }
   out <- list()
   out[["k4_counter_icd"]] <- k4_counter_icd
   out[["k4_counter_orpha"]] <- k4_counter_orpha
+  out[["k4_counter_orphaCase"]] <- k4_counter_orphaCase
   out
+}
+
+
+getOrphaCaseNo <- function (cl) {
+  orphaCaseNo =0 
+  medData<-env$medData[!duplicated(env$medData[c("Aufnahmenummer")]),]
+  oList <-which(medData$Orpha_Kode !="" & !is.na(medData$Orpha_Kode)  & !is.empty(medData$Orpha_Kode) & !is.null(medData$Orpha_Kode))
+  if (!is.empty (oList)) for(i in oList) {
+    code <-medData$Orpha_Kode[i]
+    oCode <-as.numeric(as.character(medData$Orpha_Kode[i]))
+    if (!is.na(oCode))  orphaCaseNo =  orphaCaseNo +1
+    else env$dq[,cl][i] <- paste("Orpha Code",code, "ist nicht valide. ", env$dq[,cl][i] )
+  }
+  orphaCaseNo
 }
 
 getOrphaCodeNo <- function (cl) {
@@ -445,11 +465,12 @@ getOrphaCodeNo <- function (cl) {
   k4_counter_orpha
 }
 
-addD4<- function (tdata,orpha, uRD, inPtCase) {
+addD4<- function (tdata,orpha,orphaCase, uRD, inPtCase) {
   if(orpha>0){
     tdata$orphaCoding_no <- orpha
     tdata$inpatientCases_no <-inPtCase
-    or <- ( orpha/inPtCase) * 100
+    tdata$orphaCase_no <-orphaCase
+    or <- ( orphaCase/inPtCase) * 100
     tdata$orphaCoding_relativeFrequency  <- round (or,2)
   }
   else {
