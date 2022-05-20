@@ -46,7 +46,8 @@ Here are [examples](https://github.com/medizininformatik-initiative/cord-dq-chec
 - [cordDQCheck.R](https://github.com/medizininformatik-initiative/cord-dq-checker/blob/master/Local/cordDqChecker.R) for generating data quality reports in CORD-MI.
 - Here you can see [the resulting files](https://github.com/medizininformatik-initiative/cord-dq-checker/tree/master/Local/Data/Export)
 
-## Citation
+## Note
+The default data quality dimensions are completeness, plausibility, uniqueness and concordance. Howerver, this framework allows the user to select desired quality dimensions and indicators as well as to generate user defined DQ reports. 
 
 To cite `dqLib`, please use the following **BibTeX** entry: 
 
