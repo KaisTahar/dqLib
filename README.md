@@ -38,7 +38,7 @@ devtools::install_local("./dqLib")
 You can also install it directly from github with:
 
 ``` r
-devtools::install_github("https://github.com/KaisTahar/dqLib")
+devtools::install_github("https://github.com/medizininformatik-initiative/dqLib")
 ```
 ## Example
 
