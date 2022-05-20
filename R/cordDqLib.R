@@ -1,33 +1,14 @@
-####################################################################################################### 
-# Kais Tahar
-# this script provides functions for data quality analysis in CORD
 #######################################################################################################
+#' @title cordDqLib.R
+#' @description This script provides functions for data quality analysis in CORD-MI
+#' @author Kais Tahar, University Medical Center Göttingen
+#' Date Created: 2021-02-26
+# ######################################################################################################
 
-#------------------------------------------------------------------------------------------------------
-# functions to generate DQ reports
-#------------------------------------------------------------------------------------------------------
-getReport <- function (repCol, cl, td, path) {
-  repCol = append (repCol, cl)
-  repData <-subset(env$dq, select= repCol)
-  dfq <-repData[ which(env$dq[,cl]!="")  ,]
-  dfq[nrow(dfq)+1,] <- NA
-  dfq[nrow(dfq)+1,1] <- env$mItem
-  sheets <- list("DQ_Report"=dfq, "Statistik" = td)
-  write_xlsx(sheets, paste (path,".xlsx", sep =""))
-  write.csv(td, paste (path,".csv", sep =""), row.names = FALSE)
- # env <-NULL
-}
-
-getExtendedReport <- function ( repCol,cl, td, useCase, path) {
-  repData <-subset(env$dq,select= repCol)
-  dfq <-repData[ which(env$dq[,cl]!="")  ,]
-  sheets <- list("DQ_Report"=dfq, "Statistik"= td, "Projectathon"=useCase)
-  write_xlsx(sheets, path)
-}
-
-#------------------------------------------------------------------------------------------------------
-# functions for DQ analysis
-#------------------------------------------------------------------------------------------------------
+#' @title checkCordDQ
+#' @description This function checks the quality of loaded data regarding selected quality metrics
+#' The default data quality dimensions are completeness, plausibility, uniqueness and concordance
+#'
 checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2, dqInd, cl, bItemCl, totalRow, oItem) {
   env$tdata$report_year <-reportYear
   if (is.null(oItem)) mv <-totalRow
@@ -56,7 +37,7 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   #D2 plausibility
   keyD2 <- checkD2( refData2, bItemCl, cl)
   env$tdata <- addD2( env$tdata, keyD2$k1_rd_counter, keyD2$k1_check_counter)
-  #D3 uniquness
+  #D3 uniqueness
   keyD3 <- checkD3( refData1, refData2, cl)
   env$tdata <- addD3(env$tdata, keyD3$k3_rd_counter,  keyD3$k3_check_counter)
   env$tdata$dup_no = row_no - nrow(env$medData)
@@ -73,9 +54,12 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
 }
 
 #------------------------------------------------------------------------------------------------------
-# functions for D1 completeness dimension
+# functions for the completeness dimension (D1)
 #------------------------------------------------------------------------------------------------------
-#D1 completeness
+
+#' @title checkD1
+#' @description This function checks the quality of loaded data regarding the completeness dimension (D1)
+#'
 checkD1 <- function ( refData, cl, basicItems,bItemCl){
   env$medData<- env$medData[!sapply(env$medData, function(x) all( is.empty(x) | is.na(x)))]
   mItem <- getMissingItem(basicItems)
@@ -86,13 +70,15 @@ checkD1 <- function ( refData, cl, basicItems,bItemCl){
   dqList
 }
 
+#' @title checkOrphaCodingCompleteness
+#' @description This function checks the completeness of OrphaCoding
+#'
 checkOrphaCodingCompleteness <- function ( refData, cl){
   k2_orpha_no =0
   k2_orphaCheck_no  =0
-  missing_counter1=0 
+  missing_counter1=0
   missing_counter2=0
   refData <-refData[(which(refData$Type=="1:1" | refData$Type=="n:1")),]
-  
   env$cdata <- addMissingValue("Orpha_Kode",env$cdata, 0,0)
   env$cdata <- addMissingValue("AlphaID_Kode",env$cdata, 0,0)
   if (!is.null(env$medData$ICD_Primaerkode))
@@ -117,7 +103,7 @@ checkOrphaCodingCompleteness <- function ( refData, cl){
             env$dq[,cl][i] <- paste("Fehlender AlphaID Code. ", env$dq[,cl][i])
             missing_counter2 =missing_counter2 +1
           }
-        } 
+        }
       }
     }
   }
@@ -135,11 +121,14 @@ checkOrphaCodingCompleteness <- function ( refData, cl){
   env$cdata <- addMissingValue("Orpha_Kode", env$cdata, missing_counter1,k2_orphaCheck_no )
   env$cdata <- addMissingValue("AlphaID_Kode", env$cdata, missing_counter2 ,k2_orphaCheck_no )
   out <- list()
-  out[["k2_orphaCheck_no"]] <-k2_orphaCheck_no 
-  out[["k2_orpha_no"]] <-k2_orpha_no 
+  out[["k2_orphaCheck_no"]] <-k2_orphaCheck_no
+  out[["k2_orpha_no"]] <-k2_orpha_no
   out
 }
 
+#' @title addD1
+#' @description This function adds indicators and key numbers for the completeness dimension (D1)
+#'
 addD1<- function ( tdata,  orpha, checkNo) {
   if(checkNo>0 & orpha>0){
     tdata$orpha_no <- orpha
@@ -156,9 +145,12 @@ addD1<- function ( tdata,  orpha, checkNo) {
 }
 
 #------------------------------------------------------------------------------------------------------
-# functions for D2 plausibility dimension
+# functions for the plausibility dimension (D2)
 #------------------------------------------------------------------------------------------------------
-# D2 plausibility
+
+#' @title checkD2
+#' @description This function checks the quality of loaded data regarding the plausibility dimension (D2)
+#'
 checkD2 <- function (refData2, bItemCl, cl){
   # get outliers
   if (!is.null(env$ddata))
@@ -174,9 +166,12 @@ checkD2 <- function (refData2, bItemCl, cl){
   # check ICD10-Orpha
   if (!is.null(env$medData$Orpha_Kode)) out <-checkOrphaCoding(refData2, bItemCl, cl)
   else out <- list (k1_rd_counter=0,k1_check_counter=0 )
-  out 
+  out
 }
 
+#' @title checkOrphaCoding
+#' @description This function checks the plausibility of ICD-Orpha Coding
+#'
 checkOrphaCoding<- function (refData2, bItemCl, cl) {
   k1_check_counter =0
   k1_rd_counter=0
@@ -220,6 +215,9 @@ checkOrphaCoding<- function (refData2, bItemCl, cl) {
   out
 }
 
+#' @title checkOutlier
+#' @description This function checks the loaded data for outliers
+#'
 checkOutlier<-function (ddata, item, cl) {
   item.vec <- env$medData[[item]]
   if(!is.empty(item.vec)){
@@ -229,7 +227,7 @@ checkOutlier<-function (ddata, item, cl) {
       ddata<- addOutlier (item, ddata, length(out), length(item.vec))
       for(i in out) env$dq[,cl][i] <- paste( "Unplausibles", item , item.vec[i], "Datum liegt in der Zukunft.")
     }   else ddata <- addOutlier(item, ddata, 0,length(item.vec))
-    
+
     if(item == "Geburtsdatum")
     {
       item1.vec <-  as.Date(ISOdate(env$medData[["Geburtsdatum"]], 1, 1))
@@ -240,7 +238,7 @@ checkOutlier<-function (ddata, item, cl) {
         for(i in out) env$dq[,cl][i] <- paste( "Unplausibles",  item, item1.vec[i] , "Max Alter 105.",  env$dq[,cl][i])
       }
     }
-    
+
   }
   else if (item!="Total"){
     ddata <- addOutlier(item, ddata, 0,0)
@@ -248,6 +246,9 @@ checkOutlier<-function (ddata, item, cl) {
   ddata
 }
 
+#' @title addD2
+#' @description This function adds indicators and key numbers for the plausibility dimension (D2)
+#'
 addD2<- function ( tdata,  se, n) {
   if(se>0 & n >0){
     tdata$icdOrpha_no <- n
@@ -266,12 +267,19 @@ addD2<- function ( tdata,  se, n) {
 #------------------------------------------------------------------------------------------------------
 # functions for D3 uniqueness dimension
 #------------------------------------------------------------------------------------------------------
+
+#' @title checkD3
+#' @description This function checks the quality of loaded data regarding uniqueness dimension (D3)
+#'
 checkD3 <- function (refData1, refData2, cl){
   if (is.null(env$medData$ICD_Primaerkode)) out <-checkUniqueOrphaCoding(cl)
   else if (!is.null(env$medData$Orpha_Kode)) out <-checkUniqueIcdOrphaCoding(refData1, refData2, cl)
        else out <- checkUniqueIcd(refData1, cl)
   out
 }
+#' @title checkUniqueIcd
+#' @description This function checks the uniqueness of SE cases coded using ICD-10
+#'
 checkUniqueIcd <- function (refData1, cl){
   eList <-refData1[(which(refData1$Type=="1:1" | refData1$Type=="n:1")),]
   k3_check_counter =0
@@ -302,6 +310,9 @@ checkUniqueIcd <- function (refData1, cl){
   out
 }
 
+#' @title checkUniqueOrphaCoding
+#' @description This function checks the uniqueness of RD cases coded with Orpha numbers
+#'
 checkUniqueOrphaCoding <- function (cl){
   k3_check_counter =0
   k3_rd_counter=0
@@ -313,14 +324,17 @@ checkUniqueOrphaCoding <- function (cl){
     oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
     if (!is.na(oCode)) k3_check_counter =k3_check_counter+1
     else env$dq[,cl][i] <- paste("Fall ist nicht eindeutig.",env$dq[,cl][i] )
-    
+
   }
   out <- list()
   out[["k3_rd_counter"]] <- k3_rd_counter
   out[["k3_check_counter"]] <- k3_check_counter
   out
   }
-  
+
+#' @title checkUniqueIcdOrphaCoding
+#' @description This function checks the uniqueness of RD cases coded with ICD-Orpha mapping
+#'
 checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
   eList <-refData1[(which(refData1$Type=="1:1" | refData1$Type=="n:1")),]
   k3_check_counter =0
@@ -358,7 +372,7 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
         if (!is.empty (iRefList)){
           oRefList <- ""
           k3_check_counter =k3_check_counter+1
-          
+
           for (j in iRefList){
             oRefCode <-as.integer(refData2$Orpha_Kode[j])
             oRefList <- append( oRefList,oRefCode)
@@ -404,6 +418,8 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
   out
 }
 
+#' @title addD3
+#' @description This function adds indicators and key numbers for uniqueness dimension (D3)
 addD3<- function (tdata, uRD, checkNo) {
   if(uRD>0 & checkNo >0){
     tdata$unique_rdCase_no <- uRD
@@ -420,8 +436,10 @@ addD3<- function (tdata, uRD, checkNo) {
 }
 
 #------------------------------------------------------------------------------------------------------
-# functions for D4 concordance dimension
+# functions for concordance dimension (D4)
 #------------------------------------------------------------------------------------------------------
+#' @title checkD4
+#' @description This function checks the quality of loaded data regarding the concordance dimension (D4)
 checkD4 <- function (cl) {
   iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode)  & !is.empty(env$medData$ICD_Primaerkode))
   k4_counter_icd= length(iList)
@@ -439,9 +457,10 @@ checkD4 <- function (cl) {
   out
 }
 
-
+#' @title getOrphaCaseNo
+#' @description This function calculates the number of Orpha cases
 getOrphaCaseNo <- function (cl) {
-  orphaCaseNo =0 
+  orphaCaseNo =0
   medData<-env$medData[!duplicated(env$medData[c("Aufnahmenummer")]),]
   oList <-which(medData$Orpha_Kode !="" & !is.na(medData$Orpha_Kode)  & !is.empty(medData$Orpha_Kode) & !is.null(medData$Orpha_Kode))
   if (!is.empty (oList)) for(i in oList) {
@@ -453,8 +472,10 @@ getOrphaCaseNo <- function (cl) {
   orphaCaseNo
 }
 
+#' @title getOrphaCodeNo
+#' @description This function calculates the number of Orpha codes
 getOrphaCodeNo <- function (cl) {
-  k4_counter_orpha =0 
+  k4_counter_orpha =0
   oList <-which(env$medData$Orpha_Kode !="" & !is.na(env$medData$Orpha_Kode)  & !is.empty(env$medData$Orpha_Kode) & !is.null(env$medData$Orpha_Kode))
   if (!is.empty (oList)) for(i in oList) {
     code <-env$medData$Orpha_Kode[i]
@@ -465,6 +486,8 @@ getOrphaCodeNo <- function (cl) {
   k4_counter_orpha
 }
 
+#' @title addD4
+#' @description This function adds indicators and key numbers for the concordance dimension (D4)
 addD4<- function (tdata,orpha,orphaCase, uRD, inPtCase) {
   if(orpha>0){
     tdata$orphaCoding_no <- orpha
@@ -491,6 +514,37 @@ addD4<- function (tdata,orpha,orphaCase, uRD, inPtCase) {
   }
   tdata
 }
+
+
+#------------------------------------------------------------------------------------------------------
+# Functions to generate data quality reports
+#------------------------------------------------------------------------------------------------------
+#' @name geReport
+#' @description This function generates data quality reports about detected quality issues, user selected indicators and key numbers
+#'
+getReport <- function (repCol, cl, td, path) {
+  repCol = append (repCol, cl)
+  repData <-subset(env$dq, select= repCol)
+  dfq <-repData[ which(env$dq[,cl]!="")  ,]
+  dfq[nrow(dfq)+1,] <- NA
+  dfq[nrow(dfq)+1,1] <- env$mItem
+  sheets <- list("DQ_Report"=dfq, "Statistik" = td)
+  write_xlsx(sheets, paste (path,".xlsx", sep =""))
+  write.csv(td, paste (path,".csv", sep =""), row.names = FALSE)
+  # env <-NULL
+}
+
+#' @title getExtendedReport
+#' @description This function generates an extended data quality reports with infos about Projecathon use cases
+#'
+getExtendedReport <- function ( repCol,cl, td, useCase, path) {
+  repData <-subset(env$dq,select= repCol)
+  dfq <-repData[ which(env$dq[,cl]!="")  ,]
+  sheets <- list("DQ_Report"=dfq, "Statistik"= td, "Projectathon"=useCase)
+  write_xlsx(sheets, path)
+}
+
+# Reporting functions for Projecathon
 getCaseCount<- function (oRefCode, iRefCode) {
   out <- ""
   oCase_counter=0
@@ -541,4 +595,3 @@ addRdCase<- function (item, item_text, oCode, iCode, useCase) {
   }
   useCase
 }
-
