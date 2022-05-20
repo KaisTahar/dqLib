@@ -1,7 +1,9 @@
 # `dqLib`
 
 `dqLib` is an R package for data quality assessment and reporting. 
-`dqLib` provides methods for calculating data quality metrics and generating data quality reports.
+`dqLib` provides methods for calculating data quality metrics and generating data quality reports, epecially in [`CORD-MI`](https://www.medizininformatik-initiative.de/de/CORD).
+
+Acknowledgement: This work was done within the “Collaboration on Rare Diseases” of the Medical Informatics Initiative (CORD-MI) funded by the German Federal Ministry of Education and Research (BMBF), under grant number: FKZ-01ZZ1911R
 
 ## Data Quality Metrics
 - The following data quality dimensions and indicatos are implemented:
@@ -10,7 +12,7 @@
   | ------------- | ------------- |
   | completeness  | missing_item_rate, missing_value_rate, orphaCoding_completeness_rate  |
   | plausibility  | outlier_rate, orphaCoding_plausibility_rate |
-  | uniqueness | rdCase_uniqueness_rate|
+  | uniqueness | rdCase_uniqueness_rate, duplication_rate|
   | concordance | orphaCoding_relativeFrequency, unique_rdCase_relativeFrequency|
   
 - The following references are required to assess the quality of orphacoding:
