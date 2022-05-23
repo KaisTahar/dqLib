@@ -78,7 +78,8 @@ checkOrphaCodingCompleteness <- function ( refData, cl){
   k2_orphaCheck_no  =0
   missing_counter1=0
   missing_counter2=0
-  refData <-refData[(which(refData$Type=="1:1" | refData$Type=="n:1")),]
+  refData <-refData[which(refData$Complete=="yes"),]
+  #refData <-refData[(which(refData$Type=="1:1" | refData$Type=="n:1")),]
   env$cdata <- addMissingValue("Orpha_Kode",env$cdata, 0,0)
   env$cdata <- addMissingValue("AlphaID_Kode",env$cdata, 0,0)
   if (!is.null(env$medData$ICD_Primaerkode))
@@ -281,7 +282,8 @@ checkD3 <- function (refData1, refData2, cl){
 #' @description This function checks the uniqueness of SE cases coded using ICD-10
 #'
 checkUniqueIcd <- function (refData1, cl){
-  eList <-refData1[(which(refData1$Type=="1:1" | refData1$Type=="n:1")),]
+  eList <-refData1[which(refData1$Unique_SE=="yes"),]
+  #eList <-refData1[(which(refData1$Type=="1:1" | refData1$Type=="n:1")),]
   k3_check_counter =0
   k3_rd_counter=0
   rd_counter=0
@@ -295,7 +297,9 @@ checkUniqueIcd <- function (refData1, cl){
         k3_check_counter =k3_check_counter+1
       }
       else {
-        iRefList<- which(stri_trim(as.character (refData1$IcdCode))==iCode)
+        mList <-refData1[(which(refData1$Unique_SE=="no")),]
+        #iRefList<- which(stri_trim(as.character (refData1$IcdCode))==iCode)
+        iRefList<- which(stri_trim(as.character (mList$IcdCode))==iCode)
         if (!is.empty (iRefList)){
           msg<- paste("ICD10 Kodierung",iCode, "ist nicht eindeutig. ICD10-Orpha Relation ist gemäß Tracer-Diagnosenliste vom Typ 1-m. ",  env$dq[,cl][i])
           env$dq[,cl][i] <- msg
@@ -336,7 +340,8 @@ checkUniqueOrphaCoding <- function (cl){
 #' @description This function checks the uniqueness of RD cases coded with ICD-Orpha mapping
 #'
 checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
-  eList <-refData1[(which(refData1$Type=="1:1" | refData1$Type=="n:1")),]
+  eList <-refData1[(which(refData1$Unique_SE=="yes")),]
+  #eList <-refData1[(which(refData1$Type=="1:1" | refData1$Type=="n:1")),]
   k3_check_counter =0
   k3_rd_counter=0
   rd_counter=0
@@ -402,7 +407,9 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
           k3_check_counter =k3_check_counter+1
         }
         else {
-          iRefList<- which(stri_trim(as.character (refData1$IcdCode))==iCode)
+          mList <-refData1[(which(refData1$Unique_SE=="no")),]
+          iRefList<- which(stri_trim(as.character (mList$IcdCode))==iCode)
+          #iRefList<- which(stri_trim(as.character (refData1$IcdCode))==iCode)
           if (!is.empty (iRefList)){
             msg<- paste("ICD10 Kodierung",iCode, "ist nicht eindeutig. ICD10-Orpha Relation ist gemäß Tracer-Diagnosenliste vom Typ 1-m. ",  env$dq[,cl][i])
             env$dq[,cl][i] <- msg
