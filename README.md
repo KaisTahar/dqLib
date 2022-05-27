@@ -1,7 +1,7 @@
 # `dqLib`
 
 `dqLib` is an R package for data quality assessment and reporting. 
-`dqLib` provides methods for calculating data quality metrics and generating data quality reports, epecially in [`CORD-MI`](https://www.medizininformatik-initiative.de/de/CORD).
+`dqLib` provides methods for calculating data quality metrics and generating reports on data quality, especially in [`CORD-MI`](https://www.medizininformatik-initiative.de/de/CORD).
 
 Acknowledgement: This work was done within the “Collaboration on Rare Diseases” of the Medical Informatics Initiative (CORD-MI) funded by the German Federal Ministry of Education and Research (BMBF), under grant number: FKZ-01ZZ1911R
 
@@ -15,14 +15,14 @@ Acknowledgement: This work was done within the “Collaboration on Rare Diseases
   | uniqueness | rdCase_uniqueness_rate, duplication_rate|
   | concordance | orphaCoding_relativeFrequency, unique_rdCase_relativeFrequency|
   
-- The following references are required to assess the quality of orphacoding:
+- The following references are required to assess the quality of RD documentation:
 
   - Current Version of Alpha-ID-SE Terminology [1]
   - A reference for tracer diagnoses such as the list provided in [2].
   
     [1]   BfArM - Alpha-ID-SE [Internet]. [cited 2022 May 23]. Available from: https://www.bfarm.de/EN/Code-systems/Terminologies/Alpha-ID-SE/_node.html 
     
-    [2]   List of Tracer Diagnoses Extracted from Alpha-ID-SE Terminology [Internet]. 2022 [cited 2022May 24]. Available from: https://doi.org/21.11101/21.11101/0000-0007-F6DE-A
+    [2]   List of Tracer Diagnoses Extracted from Alpha-ID-SE Terminology [Internet]. 2022 [cited 2022May 24]. Available from:  https://doi.org/21.11101/0000-0007-F6DF-9
 ------------------------------------------------------------------------
 
 ## Installation
