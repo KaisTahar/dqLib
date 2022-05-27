@@ -17,15 +17,12 @@ Acknowledgement: This work was done within the “Collaboration on Rare Diseases
   
 - The following references are required to assess the quality of orphacoding:
 
-  - Current Version of Alpha-ID-SE list [1]
-  - Tracer diagnosis list such as Hamburger list [2] extended with relation types of ICD-10 to Orpha codes. 
-  - Here are [Examples](https://github.com/KaisTahar/dqLib/tree/master/refData) of required references that can be easily used or updated.
-
-    [1] DIMDI/Alpha-ID-SE list: www.dimdi.de
-    
-    [2] Schulz M et alt:. Prävalenz seltener Erkrankungen in der ambulanten Versorgung in Deutschland im Zeitraum 2008 bis 2011, Versorgungsatlas-Bericht. 2015;15/13
+  - Current Version of Alpha-ID-SE Terminology [1]
+  - A reference for tracer diagnoses such as the list provided in [2].
   
-
+    [1]   BfArM - Alpha-ID-SE [Internet]. [cited 2022 May 23]. Available from: https://www.bfarm.de/EN/Code-systems/Terminologies/Alpha-ID-SE/_node.html 
+    
+    [2]   List of Tracer Diagnoses Extracted from Alpha-ID-SE Terminology [Internet]. 2022 [cited 2022May 24]. Available from: https://doi.org/21.11101/21.11101/0000-0007-F6DE-A
 ------------------------------------------------------------------------
 
 ## Installation
