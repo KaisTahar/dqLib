@@ -1,7 +1,7 @@
 # `dqLib`
 
 `dqLib` is an R package for data quality assessment and reporting. 
-`dqLib` provides methods for calculating data quality metrics and generating reports on data quality, especially in [`CORD-MI`](https://www.medizininformatik-initiative.de/de/CORD).
+`dqLib` provides methods for calculating data quality metrics and generating reports on detected data quality issues, especially in [`CORD-MI`](https://www.medizininformatik-initiative.de/de/CORD).
 
 Acknowledgement: This work was done within the “Collaboration on Rare Diseases” of the Medical Informatics Initiative (CORD-MI) funded by the German Federal Ministry of Education and Research (BMBF), under grant number: FKZ-01ZZ1911R
 
