@@ -18,8 +18,8 @@ setGlobals <- function(medData, repCol, cdata,ddata, tdata) {
   env$cdata <- cdata
   env$ddata <-ddata
   env$tdata <- tdata
-  env$dq <- subset(medData, select = repCol)
-  env$dq$dq_msg<-""
+  #env$dq <- subset(medData, select = repCol)
+  #env$dq$dq_msg<-""
 }
 
 #------------------------------------------------------------------------------------------------------
@@ -210,7 +210,28 @@ isDate <- function(mydate) {
 # functions to calculate overall data quality metrics
 #------------------------------------------------------------------------------------------------------
 
-getTotalStatistic <- function(dqInd, col, row){
+getUserSelectedMetrics <- function(dqInd, tdata){
+  dqMetrics <- subset(tdata, select= dqInd)
+  dqMetrics
+}
+
+getTotalStatistic <- function( col, row){
+  env$cdata<- addStatistic(env$cdata, col, row)
+  if (is.null(env$ddata)) bdata <-env$cdata
+  else bdata <- merge(env$cdata,  addStatistic(env$ddata, col, row) , by=intersect(names(env$cdata), names(env$ddata)), all = TRUE)
+  bdata$Item_no<- 1
+  index = which(bdata[,col]==row)
+  bdata<-bdata[-index,]
+  bdata[nrow(bdata) + 1, ] <- list ("Total",0,0,0,0,0, 0, nrow(bdata)-1)
+  bdata<- addStatistic(bdata, col, row)
+  tcdata <- addCompletness (bdata, col, row)
+  total <- subset(tcdata, tcdata[,col]==row)
+  env$tdata<- cbind(total,env$tdata)
+  env$tdata
+  
+}
+
+getTotalStatisticx <- function(dqInd, col, row){
   env$cdata<- addStatistic(env$cdata, col, row)
   if (is.null(env$ddata)) bdata <-env$cdata
   else bdata <- merge(env$cdata,  addStatistic(env$ddata, col, row) , by=intersect(names(env$cdata), names(env$ddata)), all = TRUE)
@@ -225,6 +246,7 @@ getTotalStatistic <- function(dqInd, col, row){
   stotal <- subset(env$tdata, select= dqInd)
   stotal
 }
+
 getDQStatis <-function(bdata, col, row){
   tdata<- addTotalCount(bdata, col, row)
   tcdata <-addCompletness (tdata, col, row)
@@ -244,20 +266,6 @@ addTotalCount<- function (bdata, col, row) {
   bdata$outlier_rate[index] <- round (or,2)
   bdata
 }
-getTotalStatisticx <- function(cdata, ddata,col, row){
-  ddata<- addStatistic(ddata, col, row)
-  cdata<- addStatistic(cdata, col, row)
-  bdata <- merge(cdata, ddata, by=intersect(names(cdata), names(ddata)), all = TRUE)
-  bdata$Item_no<- 1
-  index = which(bdata[,col]==row)
-  bdata<-bdata[-index,]
-  bdata[nrow(bdata) + 1, ] <- list ("Total",0,0,0,0,0, 0, nrow(bdata)-1)
-  bdata<- addStatistic(bdata, col, row)
-  tcdata <-addCompletness (bdata, col, row)
-  sdata <-subset(tcdata, tcdata[,col]==row)
-  #sdata$N_Item <- NULL
-  return <-sdata
-}
 
 addStatistic<- function (bdata, col, row) {
   bdata =addMissingCount(bdata,col,row)
@@ -268,4 +276,8 @@ addStatistic<- function (bdata, col, row) {
 getFileExtension <- function(filePath){
   ext <- strsplit(basename(filePath), split="\\.")[[1]]
   return(ext[-1])
+}
+
+getPercentFormat <- function(x, digits = 2, format = "f", ...) {
+  paste0(formatC(x * 100, format = format, digits = digits, ...), "%")
 }
