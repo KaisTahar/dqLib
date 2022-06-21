@@ -650,7 +650,7 @@ addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
       tdata$orphaCoding_no_py <- orpha
       tdata$orphaMissing_no_py <- tdata$orphaMissing_no
       tdata$implausible_codeLink_no_py <- tdata$implausible_codeLink_no
-      tdata$missing_value_no_py <- tdata$missing_item_no
+      tdata$missing_value_no_py <- tdata$missing_value_no
       tdata$missing_item_no_py <- tdata$missing_item_no
       tdata$outlier_no_py <- tdata$outlier_no
       tdata$duplicateCase_no_py <-tdata$duplicateCase_no
