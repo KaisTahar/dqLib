@@ -30,23 +30,46 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
     env$tdata$inst_id <- "ID fehlt"
   }
   row_no = nrow(env$medData)
-  input <-env$medData
+  rdDup_no =0
+  inputData <-env$medData
+  row_no = nrow(inputData)
+  eList <-refData1[which(refData1$Unique_SE=="yes"),]
   if(!is.empty(env$medData$PatientIdentifikator)) env$tdata$patient_no = length (unique(env$medData$PatientIdentifikator))
   if(!is.empty(env$medData$Aufnahmenummer)) env$tdata$case_no = length (unique(env$medData$Aufnahmenummer))
   if(!is.empty(env$medData$PatientIdentifikator) & !is.empty(env$medData$Aufnahmenummer) & !is.empty(env$medData$ICD_Primaerkode) & !is.empty(env$medData$Orpha_Kode))
   {
-    dup <-which(duplicated(env$medData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode","Orpha_Kode")],fromLast=TRUE))
     env$medData<-env$medData[!duplicated(env$medData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode","Orpha_Kode")]),]
     env$dq <- subset(env$medData, select = repCol)
     env$dq[cl]<-""
+    dup <-inputData[duplicated(inputData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode","Orpha_Kode")],fromLast=TRUE),]
+    icdList <-which(!( dup$ICD_Primaerkode =="" | is.na(dup$ICD_Primaerkode) | is.empty(dup$ICD_Primaerkode)))
+    for(i in icdList){
+      iCode <- stri_trim(as.character(dup$ICD_Primaerkode[i]))
+      oCode <- stri_trim(as.character(dup$Orpha_Kode[i]))
+      if (is.element(iCode, stri_trim(as.character(eList$IcdCode))))
+      {
+        rdDup_no =rdDup_no+1
+      }else if (!is.na(as.numeric(oCode))) {
+        rdDup_no =rdDup_no+1
+      }
+    }
+    
   }
   else if(!is.empty(env$medData$PatientIdentifikator) & !is.empty(env$medData$Aufnahmenummer) & !is.empty(env$medData$ICD_Primaerkode))
   {
     env$medData<-env$medData[!duplicated(env$medData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode")]),]
     env$dq <- subset(env$medData, select = repCol) 
     env$dq[cl]<-""
-    dup <-which(duplicated(medData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode","Orpha_Kode")], fromLast=TRUE))
-  
+    #dup <-which(duplicated(medData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode")], fromLast=TRUE))
+    dup <-inputData[duplicated(inputData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode")], fromLast=TRUE),]
+    icdList <-which(!( dup$ICD_Primaerkode =="" | is.na(dup$ICD_Primaerkode) | is.empty(dup$ICD_Primaerkode)))
+    for(i in icdList){
+      iCode <- stri_trim(as.character(dup$ICD_Primaerkode[i]))
+      if (is.element(iCode, stri_trim(as.character(eList$IcdCode))))
+      {
+        rdDup_no =rdDup_no+1
+      }
+    }
   }
     
   #D1 completeness
@@ -58,6 +81,7 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   env$tdata <- addD2( env$tdata, keyD2$k1_rd_counter, keyD2$k1_check_counter)
   #D3 uniqueness
   env$tdata$duplicateCase_no = row_no - nrow(env$medData)
+  env$tdata$duplicateRdCase_no =rdDup_no
   env$tdata$duplication_rate <- round((env$tdata$duplicateCase_no/row_no)*100,2)
   keyD3 <- checkD3( refData1, refData2, cl)
   env$tdata <- addD3(env$tdata, keyD3$k3_unambigous_rdDiag_no,  keyD3$k3_unambigous_rdCase_no, keyD3$k3_checkedRdCase_no)
@@ -550,7 +574,9 @@ addD3<- function (tdata, uRdDiag,  uRdCase, checkNo) {
     ur <- ( uRdCase/checkNo) * 100
     tdata$rdCase_unambiguity_rate <- round (ur,2)
     tdata$unambigous_rdDiagnosis_no<- uRdDiag
-    tdata$rdCase_dissimilarity_rate <- 100-tdata$duplication_rate
+    tdata$case_dissimilarity_rate <- 100-tdata$duplication_rate
+    tdata$duplicateRdCase_rate <- round((tdata$duplicateRdCase_no/checkNo)*100, 2)
+    tdata$rdCase_dissimilarity_rate <-  100-tdata$duplicateRdCase_rate 
   }
   else {
     tdata$unambigous_rdCase_no <- 0
@@ -558,6 +584,8 @@ addD3<- function (tdata, uRdDiag,  uRdCase, checkNo) {
     tdata$rdCase_unambiguity_rate<- 0
     tdata$unambigous_rdDiagnosis_no<- NA
     env$tdata$rdCase_dissimilarity_rate <- NA
+    tdata$duplicated_rdCase_rate <-NA
+    tdata$case_dissimilarity_rate <-NA
   }
   tdata
 }
@@ -654,6 +682,7 @@ addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
       tdata$missing_item_no_py <- tdata$missing_item_no
       tdata$outlier_no_py <- tdata$outlier_no
       tdata$duplicateCase_no_py <-tdata$duplicateCase_no
+      tdata$duplicateRdCase_no_py <-tdata$duplicateRdCase_no
 
       rd <- (tdata$rdCase_no_py/inPtCase) * 100
       tdata$rdCase_rel_py_ipat  <-  round (rd,2)
@@ -671,6 +700,7 @@ addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
       tdata$duplicateCase_no <-NULL
       tdata$orphaMissing_no <- NULL
       tdata$implausible_codeLink_no<-NULL
+      tdata$duplicateRdCase_no <-NULL
       
       if(orphaCase>0){
         tdata$orphaCase_no_py <-orphaCase
