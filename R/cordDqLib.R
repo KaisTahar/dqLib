@@ -566,7 +566,7 @@ addD3<- function (tdata, uRdDiag,  uRdCase, checkNo) {
     tdata$unambigous_rdCase_no <- uRdCase
     tdata$rdCase_no<- checkNo
     tdata$ambigous_rdCase_no <-checkNo- uRdCase
-    ur <- ( uRdCase/checkNo) * 100´
+    ur <- ( uRdCase/checkNo) * 100
     tdata$rdCase_unambiguity_rate <- round (ur,2)
     tdata$unambigous_rdDiagnosis_no<- uRdDiag
     tdata$case_dissimilarity_rate <- 100-tdata$duplication_rate
