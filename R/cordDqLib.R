@@ -16,7 +16,6 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   else env$dq <- { subset(env$medData, select = repCol)
     env$dq[cl]<-""
   }
-  #env$dq$dq_msg<-""
   env$tdata$report_year <-reportYear
   if (is.null(oItem)) mv <-totalRow
   mv <-c (totalRow, oItem)
@@ -142,7 +141,6 @@ checkOrphaCodingCompleteness <- function ( refData, cl){
       if (!is.empty(rdRefList)) {
        #k2_orphaCheck_no = k2_orphaCheck_no +1
         env$dq$tracer[i] <-"yes"
-       # env$dq$rdCase[i] <-"yes"
         if("Orpha_Kode" %in% colnames(env$medData)){
           code <-as.character(env$medData$Orpha_Kode[i])
           if(!(is.null(code) | is.na(code) | is.empty(code)))
@@ -470,10 +468,6 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
           env$dq[,cl][i] <- paste("Fall ist nicht eindeutig.",env$dq[,cl][i] )
          # env$dq[,cl][i] <- paste("Orpha Code",code, "ist nicht valide. ", env$dq[,cl][i] )
         }
-      }else{
-        # Kein SE-Fall
-        #k3_check_counter =k3_check_counter+1
-        #env$dq[,cl][i] <- paste("Fall ist nicht eindeutig.",env$dq[,cl][i] )
       }
     }
     iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode)  & !is.empty(env$medData$ICD_Primaerkode))
@@ -568,10 +562,11 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
 #' @title addD3
 #' @description This function adds indicators and key numbers for uniqueness dimension (D3)
 addD3<- function (tdata, uRdDiag,  uRdCase, checkNo) {
-  if(uRdDiag>0 & checkNo >0){
+  if(checkNo >0){
     tdata$unambigous_rdCase_no <- uRdCase
     tdata$rdCase_no<- checkNo
-    ur <- ( uRdCase/checkNo) * 100
+    tdata$ambigous_rdCase_no <-checkNo- uRdCase
+    ur <- ( uRdCase/checkNo) * 100´
     tdata$rdCase_unambiguity_rate <- round (ur,2)
     tdata$unambigous_rdDiagnosis_no<- uRdDiag
     tdata$case_dissimilarity_rate <- 100-tdata$duplication_rate
@@ -582,7 +577,8 @@ addD3<- function (tdata, uRdDiag,  uRdCase, checkNo) {
     tdata$unambigous_rdCase_no <- 0
     tdata$rdCase_no <- 0
     tdata$rdCase_unambiguity_rate<- 0
-    tdata$unambigous_rdDiagnosis_no<- NA
+    tdata$unambigous_rdDiagnosis_no<- 0
+    tdata$ambigous_rdCase_no <- NA
     env$tdata$rdCase_dissimilarity_rate <- NA
     tdata$duplicated_rdCase_rate <-NA
     tdata$case_dissimilarity_rate <-NA
@@ -683,6 +679,7 @@ addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
       tdata$outlier_no_py <- tdata$outlier_no
       tdata$duplicateCase_no_py <-tdata$duplicateCase_no
       tdata$duplicateRdCase_no_py <-tdata$duplicateRdCase_no
+      tdata$ambigous_rdCase_no_py <- tdata$ambigous_rdCase_no
 
       rd <- (tdata$rdCase_no_py/inPtCase) * 100
       tdata$rdCase_rel_py_ipat  <-  round (rd,2)
@@ -701,6 +698,7 @@ addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
       tdata$orphaMissing_no <- NULL
       tdata$implausible_codeLink_no<-NULL
       tdata$duplicateRdCase_no <-NULL
+      tdata$ambigous_rdCase_no <- NULL
       
       if(orphaCase>0){
         tdata$orphaCase_no_py <-orphaCase
