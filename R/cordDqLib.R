@@ -83,14 +83,14 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   env$tdata$duplicateRdCase_no =rdDup_no
   env$tdata$duplication_rate <- round((env$tdata$duplicateCase_no/row_no)*100,2)
   keyD3 <- checkD3( refData1, refData2, cl)
-  env$tdata <- addD3(env$tdata, keyD3$k3_unambigous_rdDiag_no,  keyD3$k3_unambigous_rdCase_no, keyD3$k3_checkedRdCase_no)
+  env$tdata <- addD3(env$tdata, keyD3$k3_unambiguous_rdDiag_no,  keyD3$k3_unambiguous_rdCase_no, keyD3$k3_checkedRdCase_no)
   total<-getTotalStatistic(bItemCl, totalRow)
   total$value_completeness_rate <- 100-env$tdata$missing_value_rate
   total$range_plausibility_rate <-100-env$tdata$outlier_rate
   env$tdata <-total
   #D4 concordance
   keyD4 <- checkD4(cl)
-  env$tdata <- addD4( env$tdata,  keyD4$k4_counter_orpha, keyD4$k4_counter_orphaCase, keyD3$k3_unambigous_rdCase_no, inpatientCases)
+  env$tdata <- addD4( env$tdata,  keyD4$k4_counter_orpha, keyD4$k4_counter_orphaCase, keyD3$k3_unambiguous_rdCase_no, inpatientCases)
   td<-getUserSelectedMetrics(dqInd, env$tdata)
   out <- list()
   out[["metric"]] <-td
@@ -370,7 +370,7 @@ checkD3 <- function (refData1, refData2, cl){
 checkUniqueIcd <- function (refData1, cl){
   env$dq$rdCase <-NA
   env$dq$CheckedRdCase <- NA
-  env$dq$unambigous_rdCase <-NA
+  env$dq$unambiguous_rdCase <-NA
   eList <-refData1[which(refData1$Unique_SE=="yes"),]
   #eList <-refData1[(which(refData1$Type=="1:1" | refData1$Type=="n:1")),]
   k3_check_counter =0
@@ -385,7 +385,7 @@ checkUniqueIcd <- function (refData1, cl){
         k3_rd_counter=k3_rd_counter+1
         k3_check_counter =k3_check_counter+1
         env$dq$CheckedRdCase[i] <- "yes"
-        env$dq$unambigous_rdCase[i] = "yes"
+        env$dq$unambiguous_rdCase[i] = "yes"
         env$dq$rdCase[i] = "yes"
       }
       else {
@@ -404,11 +404,11 @@ checkUniqueIcd <- function (refData1, cl){
   }
   rd <-env$dq[ which (env$dq$rdCase=="yes"),]
   
-  aRd <-env$dq[ which (env$dq$unambigous_rdCase=="yes"),]
+  aRd <-env$dq[ which (env$dq$unambiguous_rdCase=="yes"),]
   checkedRd <-env$dq[ which (env$dq$CheckedRdCase=="yes"),]
   out <- list()
-  out[["k3_unambigous_rdDiag_no"]] <- length(aRd$Aufnahmenummer)
-  out[["k3_unambigous_rdCase_no"]] <- length (unique(aRd$Aufnahmenummer))
+  out[["k3_unambiguous_rdDiag_no"]] <- length(aRd$Aufnahmenummer)
+  out[["k3_unambiguous_rdCase_no"]] <- length (unique(aRd$Aufnahmenummer))
   out[["k3_checkedRdCase_no"]] <-  length (unique(checkedRd$Aufnahmenummer))
 }
 
@@ -423,7 +423,7 @@ checkUniqueOrphaCoding <- function (cl){
     oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
     if (!is.na(oCode)) {
       env$dq$CheckedRdCase[i] <- "yes"
-      env$dq$unambigous_rdCase[i] = "yes"
+      env$dq$unambiguous_rdCase[i] = "yes"
       env$dq$rdCase[i] = "yes"
     }
     else env$dq[,cl][i] <- paste("Ambiguous Case.",env$dq[,cl][i] )
@@ -432,11 +432,11 @@ checkUniqueOrphaCoding <- function (cl){
   
   out <- list()
   rd <-env$dq[ which (env$dq$rdCase=="yes"),]
-  aRd <-env$dq[ which (env$dq$unambigous_rdCase=="yes"),]
+  aRd <-env$dq[ which (env$dq$unambiguous_rdCase=="yes"),]
   checkedRd <-env$dq[ which (env$dq$CheckedRdCase=="yes"),]
   out <- list()
-  out[["k3_unambigous_rdDiag_no"]] <- length(aRd$Aufnahmenummer)
-  out[["k3_unambigous_rdCase_no"]] <- length (unique(aRd$Aufnahmenummer))
+  out[["k3_unambiguous_rdDiag_no"]] <- length(aRd$Aufnahmenummer)
+  out[["k3_unambiguous_rdCase_no"]] <- length (unique(aRd$Aufnahmenummer))
   out[["k3_checkedRdCase_no"]] <-  length (unique(checkedRd$Aufnahmenummer))
   
   out
@@ -448,7 +448,7 @@ checkUniqueOrphaCoding <- function (cl){
 checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
   env$dq$rdCase <-NA
   env$dq$CheckedRdCase <- NA
-  env$dq$unambigous_rdCase <-NA
+  env$dq$unambiguous_rdCase <-NA
   #eList <-refData1[(which(refData1$Type=="1:1" | refData1$Type=="n:1")),]
   k3_check_counter =0
   k3_rd_counter=0
@@ -467,7 +467,7 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
         if (!is.na(oCode)) { 
           k3_rd_counter=k3_rd_counter+1
           env$dq$rdCase[i] <- "yes"
-          env$dq$unambigous_rdCase [i] = "yes"
+          env$dq$unambiguous_rdCase [i] = "yes"
         }
         else{
           env$dq[,cl][i] <- paste("Ambiguous Case.",env$dq[,cl][i] )
@@ -508,7 +508,7 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
             }
             else { k3_rd_counter=k3_rd_counter+1
             env$dq$rdCase[i] <- "yes"
-            env$dq$unambigous_rdCase [i] = "yes"
+            env$dq$unambiguous_rdCase [i] = "yes"
             }
           }
           else{
@@ -535,7 +535,7 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
           k3_check_counter =k3_check_counter+1
           env$dq$CheckedRdCase[i] <- "yes"
           env$dq$rdCase[i] = "yes"
-          env$dq$unambigous_rdCase [i] = "yes"
+          env$dq$unambiguous_rdCase [i] = "yes"
         }
         else {
           mList <-refData1[(which(refData1$Unique_SE=="no")),]
@@ -554,11 +554,11 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
   }
  
   rd <-env$dq[ which (env$dq$rdCase=="yes"),]
-  aRd <-env$dq[ which (env$dq$unambigous_rdCase=="yes"),]
+  aRd <-env$dq[ which (env$dq$unambiguous_rdCase=="yes"),]
   checkedRd <-env$dq[ which (env$dq$CheckedRdCase=="yes"),]
   out <- list()
-  out[["k3_unambigous_rdDiag_no"]] <- length(aRd$Aufnahmenummer)
-  out[["k3_unambigous_rdCase_no"]] <- length (unique(aRd$Aufnahmenummer))
+  out[["k3_unambiguous_rdDiag_no"]] <- length(aRd$Aufnahmenummer)
+  out[["k3_unambiguous_rdCase_no"]] <- length (unique(aRd$Aufnahmenummer))
   out[["k3_checkedRdCase_no"]] <-  length (unique(checkedRd$Aufnahmenummer))
   out
 
@@ -568,22 +568,22 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
 #' @description This function adds indicators and key numbers for uniqueness dimension (D3)
 addD3<- function (tdata, uRdDiag,  uRdCase, checkNo) {
   if(checkNo >0){
-    tdata$unambigous_rdCase_no <- uRdCase
+    tdata$unambiguous_rdCase_no <- uRdCase
     tdata$rdCase_no<- checkNo
-    tdata$ambigous_rdCase_no <-checkNo- uRdCase
+    tdata$ambiguous_rdCase_no <-checkNo- uRdCase
     ur <- ( uRdCase/checkNo) * 100
     tdata$rdCase_unambiguity_rate <- round (ur,2)
-    tdata$unambigous_rdDiagnosis_no<- uRdDiag
+    tdata$unambiguous_rdDiagnosis_no<- uRdDiag
     tdata$case_dissimilarity_rate <- 100-tdata$duplication_rate
     tdata$duplicateRdCase_rate <- round((tdata$duplicateRdCase_no/checkNo)*100, 2)
     tdata$rdCase_dissimilarity_rate <-  100-tdata$duplicateRdCase_rate 
   }
   else {
-    tdata$unambigous_rdCase_no <- 0
+    tdata$unambiguous_rdCase_no <- 0
     tdata$rdCase_no <- 0
     tdata$rdCase_unambiguity_rate<- 0
-    tdata$unambigous_rdDiagnosis_no<- 0
-    tdata$ambigous_rdCase_no <- NA
+    tdata$unambiguous_rdDiagnosis_no<- 0
+    tdata$ambiguous_rdCase_no <- NA
     env$tdata$rdCase_dissimilarity_rate <- NA
     tdata$duplicated_rdCase_rate <-NA
     tdata$case_dissimilarity_rate <-NA
@@ -684,7 +684,7 @@ addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
       tdata$outlier_no_py <- tdata$outlier_no
       tdata$duplicateCase_no_py <-tdata$duplicateCase_no
       tdata$duplicateRdCase_no_py <-tdata$duplicateRdCase_no
-      tdata$ambigous_rdCase_no_py <- tdata$ambigous_rdCase_no
+      tdata$ambiguous_rdCase_no_py <- tdata$ambiguous_rdCase_no
 
       rd <- (tdata$rdCase_no_py/inPtCase) * 100
       tdata$rdCase_rel_py_ipat  <-  round (rd,2)
@@ -703,7 +703,7 @@ addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
       tdata$orphaMissing_no <- NULL
       tdata$implausible_codeLink_no<-NULL
       tdata$duplicateRdCase_no <-NULL
-      tdata$ambigous_rdCase_no <- NULL
+      tdata$ambiguous_rdCase_no <- NULL
       
       if(orphaCase>0){
         tdata$orphaCase_no_py <-orphaCase
@@ -717,13 +717,13 @@ addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
         tdata$orphaCase_no_py <- 0
       }
       if(uRd>0){
-        tdata$unambigous_rdCase_no_py <-uRd
+        tdata$unambiguous_rdCase_no_py <-uRd
         rf <- ( uRd/inPtCase) * 100
-        tdata$unambigous_rdCase_rel_py_ipat <- round (rf,2)
+        tdata$unambiguous_rdCase_rel_py_ipat <- round (rf,2)
       }
       else {
-        tdata$unambigous_rdCase_no_py <- 0
-        tdata$unambigous_rdCase_rel_py_ipat <- 0
+        tdata$unambiguous_rdCase_no_py <- 0
+        tdata$unambiguous_rdCase_rel_py_ipat <- 0
       }
       
    }
