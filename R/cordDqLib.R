@@ -301,7 +301,7 @@ checkOrphaCoding<- function (refData2, bItemCl, cl) {
 checkOutlier<-function (ddata, item, cl) {
   item.vec <- env$medData[[item]]
   index = which(ddata$basicItem==item)[1]
-  if (!is.empty (env$ddata$EngLabel)) name <- env$ddata$Eng[index]
+  if (!is.empty (env$ddata$engLabel)) name <- env$ddata$engLabel[index]
   else name<- item
   if(!is.empty(item.vec)){
     item.vec <-  as.Date(ISOdate(env$medData[[item]], 1, 1))
