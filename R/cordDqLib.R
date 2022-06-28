@@ -13,6 +13,7 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   #cl <-rev(repCol)[1]
   if (is.null (cl)) stop("No report design available")
   if (is.null (env$medData)) stop("No data available")
+  if (is.null(env$medData$ICD_Primaerkode)) stop("Missing mandatory item: ICD_Primaerkode")
   else env$dq <- { subset(env$medData, select = repCol)
     env$dq[cl]<-""
   }
