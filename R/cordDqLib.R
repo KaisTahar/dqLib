@@ -586,7 +586,7 @@ addD3<- function (tdata, uRdDiag,  uRdCase, checkNo) {
     tdata$rdCase_unambiguity_rate<- 0
     tdata$unambiguous_rdDiagnosis_no<- 0
     tdata$ambiguous_rdCase_no <- NA
-    env$tdata$rdCase_dissimilarity_rate <- NA
+    tdata$rdCase_dissimilarity_rate <- NA
     tdata$duplicated_rdCase_rate <-NA
     tdata$case_dissimilarity_rate <-NA
   }
