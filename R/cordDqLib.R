@@ -34,7 +34,8 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   row_no = nrow(inputData)
   eList <-refData1[which(refData1$Unique_SE=="yes"),]
   if(!is.empty(env$medData$PatientIdentifikator)) env$tdata$patient_no = length (unique(env$medData$PatientIdentifikator))
-  if(!is.empty(env$medData$Aufnahmenummer)) env$tdata$case_no = length (unique(env$medData$Aufnahmenummer))
+  if(!is.empty(env$medData$Aufnahmenummer)) env$tdata$case_no = length (env$medData$Aufnahmenummer[which(!duplicated(env$medData$Aufnahmenummer)& ! is.na(env$medData$Aufnahmenummer))])
+ # if(!is.empty(env$medData$Aufnahmenummer)) env$tdata$case_no = length (env$medData$Aufnahmenummer [which (unique(env$medData$Aufnahmenummer) & ! is.na(env$medData$Aufnahmenummer))])
   if(!is.empty(env$medData$PatientIdentifikator) & !is.empty(env$medData$Aufnahmenummer) & !is.empty(env$medData$ICD_Primaerkode) & !is.empty(env$medData$Orpha_Kode))
   {
     env$medData<-env$medData[!duplicated(env$medData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode","Orpha_Kode")]),]
@@ -402,14 +403,15 @@ checkUniqueIcd <- function (refData1, cl){
       }
     }
   }
-  rd <-env$dq[ which (env$dq$rdCase=="yes"),]
   
-  aRd <-env$dq[ which (env$dq$unambiguous_rdCase=="yes"),]
+  rd <-env$dq[ which (env$dq$rdCase=="yes"),]
+  aRd <-env$dq[ which(env$dq$unambiguous_rdCase=="yes"),]
   checkedRd <-env$dq[ which (env$dq$CheckedRdCase=="yes"),]
   out <- list()
   out[["k3_unambiguous_rdDiag_no"]] <- length(aRd$Aufnahmenummer)
   out[["k3_unambiguous_rdCase_no"]] <- length (unique(aRd$Aufnahmenummer))
   out[["k3_checkedRdCase_no"]] <-  length (unique(checkedRd$Aufnahmenummer))
+  out
 }
 
 #' @title checkUniqueOrphaCoding
