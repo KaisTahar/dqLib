@@ -29,14 +29,13 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   }else {
     env$tdata$inst_id <- "ID fehlt"
   }
-  row_no = nrow(env$medData)
+  #row_no = nrow(env$medData)
   rdDup_no =0
   inputData <-env$medData
   row_no = nrow(inputData)
   eList <-refData1[which(refData1$Unique_SE=="yes"),]
   if(!is.empty(env$medData$PatientIdentifikator)) env$tdata$patient_no = length (unique(env$medData$PatientIdentifikator))
   if(!is.empty(env$medData$Aufnahmenummer)) env$tdata$case_no = length (env$medData$Aufnahmenummer[which(!duplicated(env$medData$Aufnahmenummer)& ! is.na(env$medData$Aufnahmenummer))])
- # if(!is.empty(env$medData$Aufnahmenummer)) env$tdata$case_no = length (env$medData$Aufnahmenummer [which (unique(env$medData$Aufnahmenummer) & ! is.na(env$medData$Aufnahmenummer))])
   if(!is.empty(env$medData$PatientIdentifikator) & !is.empty(env$medData$Aufnahmenummer) & !is.empty(env$medData$ICD_Primaerkode) & !is.empty(env$medData$Orpha_Kode))
   {
     env$medData<-env$medData[!duplicated(env$medData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode","Orpha_Kode")]),]
@@ -83,7 +82,7 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   #D3 uniqueness
   env$tdata$duplicateCase_no = row_no - nrow(env$medData)
   env$tdata$duplicateRdCase_no =rdDup_no
-  env$tdata$duplication_rate <- round((env$tdata$duplicateCase_no/row_no)*100,2)
+ # env$tdata$duplication_rate <- round((env$tdata$duplicateCase_no/row_no)*100,2)
   keyD3 <- checkD3( refData1, refData2, cl)
   env$tdata <- addD3(env$tdata, keyD3$k3_unambiguous_rdDiag_no,  keyD3$k3_unambiguous_rdCase_no, keyD3$k3_checkedRdCase_no)
   total<-getTotalStatistic(bItemCl, totalRow)
@@ -116,7 +115,7 @@ checkD1 <- function ( refData, cl, basicItems,bItemCl){
   if (!is.null(env$medData$Orpha_Kode)) dqList <- append(checkOrphaCodingCompleteness(refData, cl), list (mItem=mItem))
   else { 
     dqList <-list(k2_orphaCheck_no =0,k2_orpha_no=0,mItem=mItem)
-    env$tdata$tracerCase_no <- 0
+    #env$tdata$tracerCase_no <- 0
   }
   dqList
 }
@@ -331,7 +330,7 @@ checkOutlier<-function (ddata, item, cl) {
     ddata <- addOutlier(item, ddata, 0,0)
   }
   ddata
-}
+} 
 
 #' @title addD2
 #' @description This function adds indicators and key numbers for the plausibility dimension (D2)
@@ -373,6 +372,8 @@ checkUniqueIcd <- function (refData1, cl){
   env$dq$rdCase <-NA
   env$dq$CheckedRdCase <- NA
   env$dq$unambiguous_rdCase <-NA
+  env$dq$ambiguous_tracer <-NA
+  env$dq$tracer <-NA
   eList <-refData1[which(refData1$Unique_SE=="yes"),]
   #eList <-refData1[(which(refData1$Type=="1:1" | refData1$Type=="n:1")),]
   k3_check_counter =0
@@ -389,17 +390,21 @@ checkUniqueIcd <- function (refData1, cl){
         env$dq$CheckedRdCase[i] <- "yes"
         env$dq$unambiguous_rdCase[i] = "yes"
         env$dq$rdCase[i] = "yes"
+        env$dq$tracer[i] <-"yes"
       }
       else {
         mList <-refData1[(which(refData1$Unique_SE=="no")),]
         iRefList<- which(stri_trim(as.character (mList$IcdCode))==iCode)
         if (!is.empty (iRefList)){
           env$dq$rdCase[i] <-"yes"
+          env$dq$tracer[i] <-"yes"
+          env$dq$ambiguous_tracer[i] <-"yes"
           #msg<- paste("ICD10 Kodierung",iCode, "ist nicht eindeutig. ICD10-Orpha Relation ist gemäß Tracer-Diagnosenliste vom Typ 1-m. ",  env$dq[,cl][i])
           msg<- paste("ICD10 Code",iCode, "ist nicht eindeutig.",  env$dq[,cl][i])
           env$dq[,cl][i] <- msg
           k3_check_counter =k3_check_counter+1
           env$dq$CheckedRdCase[i] <- "yes"
+       
         }
       }
     }
@@ -408,6 +413,10 @@ checkUniqueIcd <- function (refData1, cl){
   rd <-env$dq[ which (env$dq$rdCase=="yes"),]
   aRd <-env$dq[ which(env$dq$unambiguous_rdCase=="yes"),]
   checkedRd <-env$dq[ which (env$dq$CheckedRdCase=="yes"),]
+  tracer <-env$dq[ which (env$dq$tracer=="yes"),]
+  env$tdata$tracerCase_no <- length (unique(tracer$Aufnahmenummer))
+  ambigTracer <-env$dq[ which (env$dq$ambiguous_tracer=="yes"),]
+  env$tdata$ambiguous_tracerCase_no <- length (unique(ambigTracer$Aufnahmenummer))
   out <- list()
   out[["k3_unambiguous_rdDiag_no"]] <- length(aRd$Aufnahmenummer)
   out[["k3_unambiguous_rdCase_no"]] <- length (unique(aRd$Aufnahmenummer))
@@ -452,6 +461,7 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
   env$dq$rdCase <-NA
   env$dq$CheckedRdCase <- NA
   env$dq$unambiguous_rdCase <-NA
+  env$dq$ambiguous_tracer <-NA
   #eList <-refData1[(which(refData1$Type=="1:1" | refData1$Type=="n:1")),]
   k3_check_counter =0
   k3_rd_counter=0
@@ -547,6 +557,7 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
             env$dq$rdCase[i] = "yes"
             k3_check_counter =k3_check_counter+1
             env$dq$CheckedRdCase[i] <- "yes"
+            env$dq$ambiguous_tracer[i] <-"yes"
            # msg<- paste("ICD10 Kodierung",iCode, "ist nicht eindeutig. ICD10-Orpha Relation ist gemäß Tracer-Diagnosenliste vom Typ 1-m. ",  env$dq[,cl][i])
             msg<- paste("Ambiguous ICD10 Code",iCode, ".",  env$dq[,cl][i])
             env$dq[,cl][i] <- msg
@@ -559,6 +570,8 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
   rd <-env$dq[ which (env$dq$rdCase=="yes"),]
   aRd <-env$dq[ which (env$dq$unambiguous_rdCase=="yes"),]
   checkedRd <-env$dq[ which (env$dq$CheckedRdCase=="yes"),]
+  ambigTracer <-env$dq[ which (env$dq$ambiguous_tracer=="yes"),]
+  env$tdata$ambiguous_tracerCase_no <- length (unique(ambigTracer$Aufnahmenummer))
   out <- list()
   out[["k3_unambiguous_rdDiag_no"]] <- length(aRd$Aufnahmenummer)
   out[["k3_unambiguous_rdCase_no"]] <- length (unique(aRd$Aufnahmenummer))
@@ -577,8 +590,9 @@ addD3<- function (tdata, uRdDiag,  uRdCase, checkNo) {
     ur <- ( uRdCase/checkNo) * 100
     tdata$rdCase_unambiguity_rate <- round (ur,2)
     tdata$unambiguous_rdDiagnosis_no<- uRdDiag
+    tdata$duplication_rate <- round((tdata$duplicateCase_no/(tdata$case_no+tdata$duplicateCase_no))*100,2)
     tdata$case_dissimilarity_rate <- 100-tdata$duplication_rate
-    tdata$duplicateRdCase_rate <- round((tdata$duplicateRdCase_no/checkNo)*100, 2)
+    tdata$duplicateRdCase_rate <- round((tdata$duplicateRdCase_no/(checkNo+tdata$duplicateRdCase_no))*100, 2)
     tdata$rdCase_dissimilarity_rate <-  100-tdata$duplicateRdCase_rate 
   }
   else {
@@ -587,6 +601,7 @@ addD3<- function (tdata, uRdDiag,  uRdCase, checkNo) {
     tdata$rdCase_unambiguity_rate<- 0
     tdata$unambiguous_rdDiagnosis_no<- 0
     tdata$ambiguous_rdCase_no <- NA
+    env$tdata$duplication_rate <- NA
     tdata$rdCase_dissimilarity_rate <- NA
     tdata$duplicated_rdCase_rate <-NA
     tdata$case_dissimilarity_rate <-NA

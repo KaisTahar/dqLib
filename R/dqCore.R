@@ -134,6 +134,7 @@ getMissingItem<- function (basicItem) {
     mItem <- paste ("Folgende mandatorische Items fehlen: ", str)
   }
   env$tdata$missing_item_no<- length(diff)
+  env$tdata$item_no <- length(basicItem)
   env$tdata$missing_item_rate <- round(length(diff)/length(basicItem)*100 ,2)
   env$tdata
   mItem
@@ -219,7 +220,8 @@ getTotalStatistic <- function( col, row){
   env$cdata<- addStatistic(env$cdata, col, row)
   if (is.null(env$ddata)) bdata <-env$cdata
   else bdata <- merge(env$cdata,  addStatistic(env$ddata, col, row) , by=intersect(names(env$cdata), names(env$ddata)), all = TRUE)
-  bdata$Item_no<- 1
+  if (!is.empty (bdata$engLabel)) bdata$engLabel <-NULL
+  #bdata$Item_no<- 1
   index = which(bdata[,col]==row)
   bdata<-bdata[-index,]
   bdata[nrow(bdata) + 1, ] <- list ("Total",0,0,0,0,0, 0, nrow(bdata)-1)
