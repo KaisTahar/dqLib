@@ -212,7 +212,7 @@ addD1<- function ( tdata,  orpha, checkNo) {
     tdata$icdRd_no <- 0
     tdata$orphaMissing_no <- NA
     tdata$orphaCoding_completeness_rate<-0
-    tdata$item_completeness_rate <-0
+    #tdata$item_completeness_rate <-0
   }
   tdata
 }
