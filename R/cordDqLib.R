@@ -211,8 +211,8 @@ addD1<- function ( tdata,  orpha, checkNo) {
     tdata$orpha_no <- 0
     tdata$icdRd_no <- 0
     tdata$orphaMissing_no <- 0
-    tdata$orphaCoding_completeness_rate<-NA
-    tdata$item_completeness_rate <-NA
+    tdata$orphaCoding_completeness_rate<-0
+    tdata$item_completeness_rate <-0
   }
   tdata
 }
@@ -593,7 +593,7 @@ addD3<- function (tdata, uRdDiag,  uRdCase, checkNo) {
     tdata$duplication_rate <- round((tdata$duplicateCase_no/(tdata$case_no+tdata$duplicateCase_no))*100,2)
     tdata$case_dissimilarity_rate <- 100-tdata$duplication_rate
     tdata$duplicateRdCase_rate <- round((tdata$duplicateRdCase_no/(checkNo+tdata$duplicateRdCase_no))*100, 2)
-    tdata$rdCase_dissimilarity_rate <-  100-tdata$duplicateRdCase_rate 
+    tdata$rdCase_dissimilarity_rate <-  100-tdata$duplicateRdCase_rate
   }
   else {
     tdata$unambiguous_rdCase_no <- 0
