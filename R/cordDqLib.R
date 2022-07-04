@@ -199,13 +199,13 @@ checkOrphaCodingCompleteness <- function ( refData, cl){
 #' @description This function adds indicators and key numbers for the completeness dimension (D1)
 #'
 addD1<- function ( tdata,  orpha, checkNo) {
+  tdata$item_completeness_rate <- 100-tdata$missing_item_rate
   if(checkNo>0){
     tdata$orpha_no <- orpha
     tdata$icdRd_no<- checkNo
     tdata$orphaMissing_no <-checkNo-orpha
     or <- ( orpha/checkNo) * 100
     tdata$orphaCoding_completeness_rate <- round(or,2)
-    tdata$item_completeness_rate <- 100-tdata$missing_item_rate
   }
   else {
     tdata$orpha_no <- 0
@@ -763,7 +763,7 @@ getReport <- function (repCol, cl, td, path) {
   dfq[nrow(dfq)+1,] <- NA
   dfq[nrow(dfq)+1,1] <- env$mItem
   sheets <- list("DQ_Report"=dfq, "DQ_Metrics" = td)
-  write_xlsx(sheets, paste (path,".xlsx", sep =""))
+  write.xlsx(sheets, paste (path,".xlsx", sep =""))
   write.csv(td, paste (path,".csv", sep =""), row.names = FALSE)
   # env <-NULL
 }
