@@ -203,7 +203,7 @@ addOutlierCount<- function (bdata, col, row) {
 }
 
 isDate <- function(mydate) {
-  tryCatch(!is.na(as.Date(mydate,tryFormats = c("%Y-%m-%d", "%Y/%m/%d","%d-%m-%Y","%m-%d-%Y"))),
+  tryCatch(!is.na(as.Date(mydate,tryFormats = c("%Y-%m-%d", "%Y/%m/%d","%d-%m-%Y","%m-%d-%Y","%Y.%m.%d","%d.%m.%Y","%m.%d.%Y"))),
            error = function(err) {FALSE})
 }
 
@@ -219,7 +219,7 @@ getUserSelectedMetrics <- function(dqInd, tdata){
 getTotalStatistic <- function( col, row){
   env$cdata<- addStatistic(env$cdata, col, row)
   if (is.null(env$ddata)) bdata <-env$cdata
-  else bdata <- merge(env$cdata,  addStatistic(env$ddata, col, row) , by=intersect(names(env$cdata), names(env$ddata)), all = TRUE)
+  else bdata <- base::merge(env$cdata,  addStatistic(env$ddata, col, row) , by=intersect(names(env$cdata), names(env$ddata)), all = TRUE)
   if (!is.empty (bdata$engLabel)) bdata$engLabel <-NULL
   #bdata$Item_no<- 1
   index = which(bdata[,col]==row)
@@ -236,7 +236,7 @@ getTotalStatistic <- function( col, row){
 getTotalStatisticx <- function(dqInd, col, row){
   env$cdata<- addStatistic(env$cdata, col, row)
   if (is.null(env$ddata)) bdata <-env$cdata
-  else bdata <- merge(env$cdata,  addStatistic(env$ddata, col, row) , by=intersect(names(env$cdata), names(env$ddata)), all = TRUE)
+  else bdata <- base::merge(env$cdata,  addStatistic(env$ddata, col, row) , by=intersect(names(env$cdata), names(env$ddata)), all = TRUE)
   bdata$Item_no<- 1
   index = which(bdata[,col]==row)
   bdata<-bdata[-index,]

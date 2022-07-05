@@ -14,6 +14,7 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   if (is.null (cl)) stop("No report design available")
   if (is.null (env$medData)) stop("No data available")
   if (is.null(env$medData$ICD_Primaerkode)) stop("Missing mandatory item: ICD_Primaerkode")
+  if (is.null(env$medData$Orpha_Kode)) env$medData$Orpha_Kode <-NA
   else env$dq <- { subset(env$medData, select = repCol)
     env$dq[cl]<-""
   }
@@ -400,7 +401,8 @@ checkUniqueIcd <- function (refData1, cl){
           env$dq$tracer[i] <-"yes"
           env$dq$ambiguous_tracer[i] <-"yes"
           #msg<- paste("ICD10 Kodierung",iCode, "ist nicht eindeutig. ICD10-Orpha Relation ist gemäß Tracer-Diagnosenliste vom Typ 1-m. ",  env$dq[,cl][i])
-          msg<- paste("ICD10 Code",iCode, "ist nicht eindeutig.",  env$dq[,cl][i])
+         # msg<- paste("ICD10 Code",iCode, "ist nicht eindeutig.",  env$dq[,cl][i])
+          msg<- paste("Ambiguous ICD10 Code",iCode, ". Missing Orpha Code.",  env$dq[,cl][i])
           env$dq[,cl][i] <- msg
           k3_check_counter =k3_check_counter+1
           env$dq$CheckedRdCase[i] <- "yes"
