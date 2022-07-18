@@ -39,9 +39,9 @@ devtools::install_github("https://github.com/medizininformatik-initiative/dqLib"
 ```
 ## Example
 
-Here are [examples](https://github.com/medizininformatik-initiative/cord-dq-checker) for data quality analysis and reporting using this package
-- [cordDQCheck.R](https://github.com/medizininformatik-initiative/cord-dq-checker/blob/master/Local/cordDqChecker.R) for generating data quality reports in CORD-MI.
-- Here you can see [the resulting files](https://github.com/medizininformatik-initiative/cord-dq-checker/tree/master/Local/Data/Export)
+Here are [examples](https://github.com/KaisTahar/cordDqChecker-MIM) for data quality analysis and reporting using this package
+- [cordDQCheck.R](https://github.com/KaisTahar/cordDqChecker-MIM/blob/master/Local/cordDqChecker.R) for generating data quality reports in CORD-MI.
+- Here you can see [the resulting files](https://github.com/KaisTahar/cordDqChecker-MIM/tree/master/Local/Data/Export)
 
 ## Note
 The default data quality dimensions are completeness, plausibility, uniqueness and concordance. Howerver, this framework allows the user to select desired quality dimensions and indicators as well as to generate user defined DQ reports. 
