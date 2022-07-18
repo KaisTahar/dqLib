@@ -8,12 +8,12 @@ Acknowledgement: This work was done within the “Collaboration on Rare Diseases
 ## Data Quality Metrics
 - The following data quality dimensions and indicatos are implemented:
 
-  | Dimension  | Indicator Name|
+  | Dimension  | Data Quality Indicator Name | 
   | ------------- | ------------- |
-  | completeness  | missing_item_rate, missing_value_rate, orphaCoding_completeness_rate  |
-  | plausibility  | outlier_rate, orphaCoding_plausibility_rate |
-  | uniqueness | rdCase_uniqueness_rate, duplication_rate|
-  | concordance | orphaCoding_relativeFrequency, unique_rdCase_relativeFrequency|
+  | completeness  | item completeness rate, value completeness rate, orphaCoding completeness rate  | 
+  | plausibility  | orphaCoding plausibility rate, range plausibility rate | 
+  | uniqueness |RD case unambiguity rate, RD case dissimilarity rate|
+  | concordance |concordance of RD cases, concordance of tracer cases| 
   
 - The following references are required to assess the quality of RD documentation:
 
