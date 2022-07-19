@@ -5,8 +5,9 @@
 
 Acknowledgement: This work was done within the “Collaboration on Rare Diseases” of the Medical Informatics Initiative (CORD-MI) funded by the German Federal Ministry of Education and Research (BMBF), under grant number: FKZ-01ZZ1911R
 
-## Data Quality Metrics
-- The following data quality dimensions and indicatos are implemented:
+## Data Quality Metrics and reports
+-  `dqLib` provides functions for creating specific reporting scripts that enable user to select desired data quality dimensions and indicators. The data quality reports provide adequate information to find the data quality violations and the causes of these violations.
+- The following data quality dimensions, indicatos and parameters are implemented:
 
   | Dimension  | Data Quality Indicator Name | 
   | ------------- | ------------- |
@@ -14,6 +15,31 @@ Acknowledgement: This work was done within the “Collaboration on Rare Diseases
   | plausibility  | orphaCoding plausibility rate, range plausibility rate | 
   | uniqueness |RD case unambiguity rate, RD case dissimilarity rate|
   | concordance |concordance of RD cases, concordance of tracer cases| 
+  
+    
+  | No. | Data QualityParameter Name | Description |
+  |-----|--------------------------- | ------------|
+  |  P1 | missing data items |  number of missing data items per year |
+  |  P2 | mandatory data items | number of mandatory items per year |
+  |  P3 | missing data values| number of missing data values per year |
+  |  P4 | available data values | number of available data values per year |
+  |  P5 | missing orphacodes |  number of missing Orphacodes per year |
+  |  P6 | tracer diagnoses |  number of tracer RD diagnoses per year |
+  |  P7 | implausible links | number of implausible code links per year |
+  |  P8 | checked for outliers | number of checked data values for outliers per year |
+  |  P9 | outliers | number of detected outliers per year |
+  |  P10 | ambigous RD cases | number of ambigous RD cases per year |
+  |  P11 | RD cases | number of RD cases per year |
+  |  P13 | duplicated RD cases |  number of duplicated RD cases per year |
+  |  P14 | tracer cases |  number of tracer RD cases per year |
+  |  P15 | inpatient cases |  number of inpatient cases per year |
+  |  P16 | RD cases rel. frequency| relative frequency of inpatient RD cases per year |
+  |  P17 | tracer cases rel. frequency| relative frequency of inpatient tracer RD cases per year |
+  |  P18 | available cases |  number of available cases per year |
+  |  P19 | available patients |  number of  available patients per year |
+  |  P20 | orphacodes | number of available orphacodes per year  |
+  |  P21 | orpha-coded cases | number of available orpha-coded cases per year|
+  |  P22 | unambigous RD cases | number of unambigous RD cases per year |
   
 - The following references are required to assess the quality of RD documentation:
 
