@@ -751,6 +751,13 @@ addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
   tdata
 }
 
+#' @title getConcIndicator 
+#' @description This function calculates the z-score value to measure concordance indicators such as the concordance of RD cases or the concordance of tracer cases
+getConcIndicator <- function(dist, index){
+  concInd <-round (((dist[index]- mean(dist))/sd(dist)),2)
+  concInd
+}
+
 
 #------------------------------------------------------------------------------------------------------
 # Functions to generate data quality reports
