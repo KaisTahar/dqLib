@@ -1,11 +1,12 @@
 Package: dqLib
 Type: Package
-Title: Tools for data quality analysis and Reporting 
+Title: Tools for data quality assessment and reporting 
 Version: 0.1.0
 Author: Kais Tahar
 Maintainer: The package maintainer <kais.tahar@med.uni-goettingen.de>
-Description: Contains methods for data quality analysis and reporting in CORD project
+Description: Contains methods for data quality analysis and reporting, especially in CORD-MI project
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Imports: writexl, stringi, utils
+RoxygenNote: 7.1.2
