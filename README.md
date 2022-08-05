@@ -3,9 +3,9 @@
 `dqLib` is an R package for data quality assessment and reporting. 
 `dqLib` provides methods for calculating data quality metrics and generating reports on detected data quality issues, especially in [`CORD-MI`](https://www.medizininformatik-initiative.de/de/CORD).
 
-Acknowledgement: This work was done within the “Collaboration on Rare Diseases” of the Medical Informatics Initiative (CORD-MI) funded by the German Federal Ministry of Education and Research (BMBF), under grant number: FKZ-01ZZ1911R
+Acknowledgement: This work was done within the “Collaboration on Rare Diseases” of the Medical Informatics Initiative (CORD-MI) funded by the German Federal Ministry of Education and Research (BMBF), under grant number: 01ZZ1911R, FKZ-01ZZ1911R
 
-## Data Quality Metrics and reports
+## Data Quality Metrics and Reports
 -  `dqLib` provides functions for creating specific reporting scripts that enable user to select desired data quality dimensions and indicators. The data quality reports provide adequate information to find the data quality violations and the causes of these violations.
 - The following data quality dimensions, indicatos and parameters are implemented:
 
@@ -17,7 +17,7 @@ Acknowledgement: This work was done within the “Collaboration on Rare Diseases
   | concordance |concordance of RD cases, concordance of tracer cases| 
   
     
-  | No. | Data QualityParameter Name | Description |
+  | No. | Data Quality Parameter Name | Description |
   |-----|--------------------------- | ------------|
   |  P1 | missing data items |  number of missing data items per year |
   |  P2 | mandatory data items | number of mandatory items per year |
@@ -83,3 +83,4 @@ year = {2021}
 }
 ```
 See also: [`CORD-MI`](https://www.medizininformatik-initiative.de/de/CORD)
+
