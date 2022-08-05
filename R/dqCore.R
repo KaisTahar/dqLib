@@ -1,8 +1,7 @@
 #######################################################################################################
-#' @title dqCore.R
-#' @description This script provides core functions for data quality analysis and assessment
-#' @author Kais Tahar, University Medical Center Göttingen
-#' Date Created: 2021-02-26
+# Description: This script provides core functions for data quality analysis and assessment
+# Date Created: 2021-02-26
+# Author: Kais Tahar, University Medical Center Göttingen
 #######################################################################################################
 
 # package environment
@@ -230,7 +229,7 @@ getTotalStatistic <- function( col, row){
   total <- subset(tcdata, tcdata[,col]==row)
   env$tdata<- cbind(total,env$tdata)
   env$tdata
-  
+
 }
 
 getTotalStatisticx <- function(dqInd, col, row){
