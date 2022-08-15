@@ -596,8 +596,8 @@ addD3<- function (tdata, uRdDiag,  uRdCase, checkNo) {
     tdata$unambiguous_rdDiagnosis_no<- uRdDiag
     tdata$duplication_rate <- round((tdata$duplicateCase_no/(tdata$case_no+tdata$duplicateCase_no))*100,2)
     tdata$case_dissimilarity_rate <- 100-tdata$duplication_rate
-    tdata$duplicateRdCase_rate <- round((tdata$duplicateRdCase_no/(checkNo+tdata$duplicateRdCase_no))*100, 2)
-    tdata$rdCase_dissimilarity_rate <-  100-tdata$duplicateRdCase_rate
+    tdata$duplicated_rdCase_rate <- round((tdata$duplicateRdCase_no/(checkNo+tdata$duplicateRdCase_no))*100, 2)
+    tdata$rdCase_dissimilarity_rate <-  100-tdata$duplicated_rdCase_rate
   }
   else {
     tdata$unambiguous_rdCase_no <- 0
@@ -756,7 +756,7 @@ addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
 #' @title getConcIndicator
 #' @description This function calculates the z-score value to measure concordance indicators such as the concordance of RD cases or the concordance of tracer cases
 getConcIndicator <- function(dist, index){
-  concInd <-round (((dist[index]- mean(dist))/sd(dist)),2)
+  concInd <-round (((dist[index]- base::mean(dist))/base::sd(dist)),2)
   concInd
 }
 
@@ -786,59 +786,5 @@ getExtendedReport <- function ( repCol,cl, td, useCase, path) {
   repData <-subset(env$dq,select= repCol)
   dfq <-repData[ which(env$dq[,cl]!="")  ,]
   sheets <- list("DQ_Report"=dfq, "DQ_Metrics"= td, "Projectathon"=useCase)
-  write_xlsx(sheets, path)
+  write.xlsx(sheets, path)
 }
-
-# Reporting functions for Projecathon
-getCaseCount<- function (oRefCode, iRefCode) {
-  out <- ""
-  oCase_counter=0
-  iCase_counter=0
-  if(!is.empty(env$medData$ICD_Primaerkode)){
-    iCaseList<- which(as.character (env$medData$ICD_Primaerkode)==iRefCode)
-    if (!is.empty (iCaseList)){
-      for (j in iCaseList){
-        iCase_counter = iCase_counter+1
-        iCode <-as.character(env$medData$ICD_Primaerkode[j])
-        oCode <-as.integer(env$medData$Orpha_Kode[j])
-        if (!(is.null(oCode) |is.na(oCode) | is.empty(oCode)))
-        {
-          if ( stri_cmp_eq(oCode, oRefCode))
-          {
-            oCase_counter = oCase_counter+1
-          }
-        }
-      }
-    }
-  }
-  out <- list()
-  out$iCase_counter=iCase_counter
-  out$oCase_counter=oCase_counter
-  out
-}
-
-addRdCase<- function (item, item_text, oCode, iCode, useCase) {
-  caseCount <- getCaseCount(oCode, iCode)
-  oCase =caseCount$oCase_counter
-  iCase= caseCount$iCase_counter
-  index = which(useCase$Haus==item)
-  if(!is.empty(iCase)){
-    useCase$Diagnosetext[index] <- item_text
-    useCase$Orpha_Kode[index] <- oCode
-    useCase$ICD_Primaerkode[index] <- iCode
-    useCase$Fallzahl_ICDKode[index] <- iCase
-    useCase$Fallzahl_OrphaKode[index] <- oCase
-    useCase$Anteil_OrphaKode[index] <- round((oCase/iCase)* 100,1)
-  }
-  else {
-    useCase$Orpha_Kode[index] <-0
-    useCase$ICD_Primaerkode[index] <- 0
-    useCase$Fallzahl_ICD-Kode[index] <- 0
-    useCase$Fallzahl_OrphaKode[index] <- 0
-    useCase$Anteil_OrphaKode[index] <-0
-
-  }
-  useCase
-}
-
-
