@@ -10,8 +10,11 @@
 #' @title checkCordDQ
 #' @description This function checks the quality of loaded data regarding selected quality metrics
 #' The default data quality dimensions are completeness, plausibility, uniqueness and concordance
+#' @import stringi
+#' @export
 #'
-checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2, dqInd, repCol, cl, bItemCl, totalRow, oItem) {
+checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2, dqInd, repCol, cl, bItemCl, totalRow, oItem,...) {
+  vars <- list(...)
   #cl <-rev(repCol)[1]
   if (is.null (cl)) stop("No report design available")
   if (is.null (env$medData)) stop("No data available")
@@ -78,7 +81,8 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   #D1 completeness
   keyD1 <- checkD1( refData1, cl, basicItem, bItemCl)
   env$mItem <- keyD1$mItem
-  env$tdata <- addD1( env$tdata, keyD1$k2_orpha_no, keyD1$k2_orphaCheck_no)
+  env$tdata <- addD1(env$tdata, keyD1$k2_orpha_no, keyD1$k2_orphaCheck_no)
+  if(!is.null(vars$caseItems)) env$tdata$case_completeness_rate<- round(getCaseCompletenessRate(env$cdata, env$ddata, caseItems),2)
   #D2 plausibility
   keyD2 <- checkD2( refData2, bItemCl, cl)
   env$tdata <- addD2( env$tdata, keyD2$k1_rd_counter, keyD2$k1_check_counter)
@@ -94,7 +98,8 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   env$tdata <-total
   #D4 concordance
   keyD4 <- checkD4(cl)
-  env$tdata <- addD4( env$tdata,  keyD4$k4_counter_orpha, keyD4$k4_counter_orphaCase, keyD3$k3_unambiguous_rdCase_no, inpatientCases)
+  env$tdata <- addD4(env$tdata,  keyD4$k4_counter_orpha, keyD4$k4_counter_orphaCase, keyD3$k3_unambiguous_rdCase_no, inpatientCases)
+  if(!is.null(vars$concRef)) env$tdata$conc_with_refValues<-getConcWithRefValues(env$tdata$tracerCase_rel_py_ipat, concRef)
   td<-getUserSelectedMetrics(dqInd, env$tdata)
   out <- list()
   out[["metric"]] <-td
@@ -123,8 +128,33 @@ checkD1 <- function ( refData, cl, basicItems,bItemCl){
   dqList
 }
 
+#' @title getCaseCompletenessRate
+#' @description This function evaluates the completeness of cases
+#'
+getCaseCompletenessRate<-function (cdata, ddata, caseItems){
+  mvr =0
+  for (item in caseItems) {
+    index = which(cdata$basicItem==item)[1]
+    if (!is.null(index) & !is.na(index) ) {
+      if (cdata$N_Item[index]==0)   mvr <-mvr +100
+      else mvr <-mvr+cdata$missing_value_rate[index]
+    }
+    else{
+      index = which(ddata$basicItem==item)[1]
+      if (!is.null(index) & !is.na(index)){
+        if (ddata$N_Item[index]==0)   mvr <-mvr +100
+        else mvr <-mvr+ddata$missing_value_rate[index]
+      }
+    }
+
+  }
+  cc <-(100-(mvr/length(caseItems)))
+  cc
+}
+
 #' @title checkOrphaCodingCompleteness
 #' @description This function checks the completeness of OrphaCoding
+#' @import stringi
 #'
 checkOrphaCodingCompleteness <- function ( refData, cl){
   env$dq$tracer <-NA
@@ -247,6 +277,7 @@ checkD2 <- function (refData2, bItemCl, cl){
 
 #' @title checkOrphaCoding
 #' @description This function checks the plausibility of ICD-Orpha Coding
+#' @import stringi
 #'
 checkOrphaCoding<- function (refData2, bItemCl, cl) {
   k1_check_counter =0
@@ -370,6 +401,7 @@ checkD3 <- function (refData1, refData2, cl){
 }
 #' @title checkUniqueIcd
 #' @description This function checks the uniqueness of SE cases coded using ICD-10
+#' @import stringi
 #'
 checkUniqueIcd <- function (refData1, cl){
   env$dq$rdCase <-NA
@@ -460,6 +492,7 @@ checkUniqueOrphaCoding <- function (cl){
 
 #' @title checkUniqueIcdOrphaCoding
 #' @description This function checks the uniqueness of RD cases coded with ICD-Orpha mapping
+#' @import stringi
 #'
 checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
   env$dq$rdCase <-NA
@@ -586,6 +619,7 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
 
 #' @title addD3
 #' @description This function adds indicators and key numbers for uniqueness dimension (D3)
+#'
 addD3<- function (tdata, uRdDiag,  uRdCase, checkNo) {
   if(checkNo >0){
     tdata$unambiguous_rdCase_no <- uRdCase
@@ -618,6 +652,7 @@ addD3<- function (tdata, uRdDiag,  uRdCase, checkNo) {
 #------------------------------------------------------------------------------------------------------
 #' @title checkD4
 #' @description This function checks the quality of loaded data regarding the concordance dimension (D4)
+#'
 checkD4 <- function (cl) {
   iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode)  & !is.empty(env$medData$ICD_Primaerkode))
   k4_counter_icd= length(iList)
@@ -637,6 +672,7 @@ checkD4 <- function (cl) {
 
 #' @title getOrphaCaseNo
 #' @description This function calculates the number of Orpha cases
+#'
 getOrphaCaseNox <- function (cl) {
   orphaCaseNo =0
   dup<-env$medData[(duplicated(env$medData[c("Aufnahmenummer")]) | duplicated(env$medData[c("Aufnahmenummer")], fromLast=TRUE))&is.na(env$medData$Orpha_Kode),]
@@ -676,6 +712,7 @@ getOrphaCaseNo<- function (cl){
 
 #' @title getOrphaCodeNo
 #' @description This function calculates the number of Orpha codes
+#'
 getOrphaCodeNo <- function (cl) {
   k4_counter_orpha =0
   oList <-which(env$medData$Orpha_Kode !="" & !is.na(env$medData$Orpha_Kode)  & !is.empty(env$medData$Orpha_Kode) & !is.null(env$medData$Orpha_Kode))
@@ -690,6 +727,7 @@ getOrphaCodeNo <- function (cl) {
 
 #' @title addD4
 #' @description This function adds indicators and key numbers for the concordance dimension (D4)
+#'
 addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
    if (! (is.empty(tdata$report_year) | is.na(tdata$report_year)))
     {
@@ -708,9 +746,9 @@ addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
       tdata$duplicateRdCase_no_py <-tdata$duplicateRdCase_no
       tdata$ambiguous_rdCase_no_py <- tdata$ambiguous_rdCase_no
 
-      rd <- (tdata$rdCase_no_py/inPtCase) * 100
+      rd <- (tdata$rdCase_no_py/inPtCase) * 100000
       tdata$rdCase_rel_py_ipat  <-  round (rd,2)
-      tracer <- (tdata$tracerCase_no_py/inPtCase) * 100
+      tracer <- (tdata$tracerCase_no_py/inPtCase) * 100000
       tdata$tracerCase_rel_py_ipat  <-  round (tracer,2)
 
       tdata$case_no <-NULL
@@ -729,7 +767,7 @@ addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
 
       if(orphaCase>0){
         tdata$orphaCase_no_py <-orphaCase
-        or <- ( orphaCase/inPtCase) * 100
+        or <- ( orphaCase/inPtCase) * 100000
         tdata$orphaCase_rel_py_ipat   <- round (or,2)
         #tdata$orphaCase_rel_py  <- getPercentFormat(or)
 
@@ -752,11 +790,23 @@ addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
 
   tdata
 }
+#' @title getConcWithRefValues
+#' @description This function evaluates the concordance of tracer cases with reference values from the literature of national references
+#'
+getConcWithRefValues <- function(tracerCase_rel_py_ipat, concRef){
+  conc =0
+  if (concRef[["min"]] <= tracerCase_rel_py_ipat && tracerCase_rel_py_ipat<=concRef[["max"]] ) conc=1
+  else conc =0
+  #env$tdata$conc_with_refValues =conc
+  conc
+}
 
 #' @title getConcIndicator
 #' @description This function calculates the z-score value to measure concordance indicators such as the concordance of RD cases or the concordance of tracer cases
+#' @import stats
+#'
 getConcIndicator <- function(dist, index){
-  concInd <-round (((dist[index]- base::mean(dist))/base::sd(dist)),2)
+  concInd <-round (((dist[index]- mean(dist))/sd(dist)),2)
   concInd
 }
 
@@ -764,8 +814,10 @@ getConcIndicator <- function(dist, index){
 #------------------------------------------------------------------------------------------------------
 # Functions to generate data quality reports
 #------------------------------------------------------------------------------------------------------
-#' @name geReport
+#' @title geReport
 #' @description This function generates data quality reports about detected quality issues, user selected indicators and key numbers
+#' @import openxlsx utils
+#' @export
 #'
 getReport <- function (repCol, cl, td, path) {
   repCol = append (repCol, cl)
@@ -781,6 +833,8 @@ getReport <- function (repCol, cl, td, path) {
 
 #' @title getExtendedReport
 #' @description This function generates an extended data quality reports with infos about Projecathon use cases
+#' @import openxlsx
+#' @export
 #'
 getExtendedReport <- function ( repCol,cl, td, useCase, path) {
   repData <-subset(env$dq,select= repCol)
