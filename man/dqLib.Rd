@@ -6,7 +6,7 @@
 \alias{dqLib-package}
 \title{dqLib: Tools for data quality assessment and reporting}
 \description{
-Contains methods for data quality analysis and reporting, especially in CORD-MI project
+Contains methods for data quality analysis and reporting, especially in CORD-MI project.
 }
 \author{
 : Kais Tahar, University Medical Center Göttingen
