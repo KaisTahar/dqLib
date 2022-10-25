@@ -15,7 +15,8 @@ checkCordDQ(
   cl,
   bItemCl,
   totalRow,
-  oItem
+  oItem,
+  ...
 )
 }
 \description{
