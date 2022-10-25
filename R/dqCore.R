@@ -4,13 +4,17 @@
 # Author: Kais Tahar, University Medical Center Göttingen
 #######################################################################################################
 
-# package environment
+#' @title env
+#' @description Package environment
+#' @export
+#'
 env <- new.env()
 #env <- new.env(parent=globalenv())
 #env <- new.env(parent = emptyenv())
 
 #' @title  setGlobals
 #' @description Function to define global variables
+#' @export
 #'
 setGlobals <- function(medData, repCol, cdata,ddata, tdata) {
   env$medData <- medData
@@ -141,8 +145,27 @@ getMissingItem<- function (basicItem) {
 
 #' @title is.empty
 #' @description This function checks whether a vector (data item) is empty
+#' @export
 #'
 is.empty <- function(x) return(length(x) ==0 )
+
+#' @title getFileExtension
+#' @description Function to get the file extension of a given file
+#' @export
+#'
+getFileExtension <- function(filePath){
+  ext <- strsplit(basename(filePath), split="\\.")[[1]]
+  return(ext[-1])
+}
+
+#' @title isDate
+#' @description This function checks whether a given data value has date format
+#' @export
+#'
+isDate <- function(mydate) {
+  tryCatch(!is.na(as.Date(mydate,tryFormats = c("%Y-%m-%d", "%Y/%m/%d","%d-%m-%Y","%m-%d-%Y","%Y.%m.%d","%d.%m.%Y","%m.%d.%Y"))),
+           error = function(err) {FALSE})
+}
 
 #------------------------------------------------------------------------------------------------------
 # functions to calculate DQ metrics for D2 plausibility dimension
@@ -199,11 +222,6 @@ addOutlierCount<- function (bdata, col, row) {
     bdata$outlier_rate[index] <- round (or,2)}
   else  bdata$outlier_rate[index] <- 0
   bdata
-}
-
-isDate <- function(mydate) {
-  tryCatch(!is.na(as.Date(mydate,tryFormats = c("%Y-%m-%d", "%Y/%m/%d","%d-%m-%Y","%m-%d-%Y","%Y.%m.%d","%d.%m.%Y","%m.%d.%Y"))),
-           error = function(err) {FALSE})
 }
 
 #------------------------------------------------------------------------------------------------------
@@ -272,11 +290,6 @@ addStatistic<- function (bdata, col, row) {
   bdata =addMissingCount(bdata,col,row)
   bdata = addOutlierCount(bdata,col,row)
   bdata
-}
-
-getFileExtension <- function(filePath){
-  ext <- strsplit(basename(filePath), split="\\.")[[1]]
-  return(ext[-1])
 }
 
 getPercentFormat <- function(x, digits = 2, format = "f", ...) {
