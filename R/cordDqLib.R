@@ -82,7 +82,9 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   keyD1 <- checkD1( refData1, cl, basicItem, bItemCl)
   env$mItem <- keyD1$mItem
   env$tdata <- addD1(env$tdata, keyD1$k2_orpha_no, keyD1$k2_orphaCheck_no)
-  if(!is.null(vars[[1]])) env$tdata$case_completeness_rate<- round(getCaseCompletenessRate(env$cdata, env$ddata, vars[[1]]),2)
+  if(!is.empty(vars)) caseItems <- vars[[1]]
+  else caseItems <- NULL
+  if(!is.null(caseItems)) env$tdata$case_completeness_rate<- round(getCaseCompletenessRate(env$cdata, env$ddata, caseItems),2)
   #D2 plausibility
   keyD2 <- checkD2( refData2, bItemCl, cl)
   env$tdata <- addD2( env$tdata, keyD2$k1_rd_counter, keyD2$k1_check_counter)
@@ -99,7 +101,9 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   #D4 concordance
   keyD4 <- checkD4(cl)
   env$tdata <- addD4(env$tdata,  keyD4$k4_counter_orpha, keyD4$k4_counter_orphaCase, keyD3$k3_unambiguous_rdCase_no, inpatientCases)
-  if(!is.null(vars[[2]])) env$tdata$conc_with_refValues<-getConcWithRefValues(env$tdata$tracerCase_rel_py_ipat, vars[[2]])
+  if(!is.empty(vars) & length(var)>=2) concRef <- vars[[2]]
+  else concRef <- NULL
+  if(!is.null(concRef)) env$tdata$conc_with_refValues<-getConcWithRefValues(env$tdata$tracerCase_rel_py_ipat, concRef)
   td<-getUserSelectedMetrics(dqInd, env$tdata)
   out <- list()
   out[["metric"]] <-td
