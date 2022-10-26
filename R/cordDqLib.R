@@ -101,7 +101,7 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   #D4 concordance
   keyD4 <- checkD4(cl)
   env$tdata <- addD4(env$tdata,  keyD4$k4_counter_orpha, keyD4$k4_counter_orphaCase, keyD3$k3_unambiguous_rdCase_no, inpatientCases)
-  if(!is.empty(vars) & length(var)>=2) concRef <- vars[[2]]
+  if(!is.empty(vars) & length(vars)>=2) concRef <- vars[[2]]
   else concRef <- NULL
   if(!is.null(concRef)) env$tdata$conc_with_refValues<-getConcWithRefValues(env$tdata$tracerCase_rel_py_ipat, concRef)
   td<-getUserSelectedMetrics(dqInd, env$tdata)
