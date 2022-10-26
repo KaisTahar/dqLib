@@ -134,7 +134,7 @@ getMissingItem<- function (basicItem) {
   mItem <-""
   if (!is.empty (diff)){
     str<- paste (diff,collapse=" , " )
-    mItem <- paste ("Folgende mandatorische Items fehlen: ", str)
+    mItem <- paste ("Following items are missing: ", str)
   }
   env$tdata$missing_item_no<- length(diff)
   env$tdata$item_no <- length(basicItem)
