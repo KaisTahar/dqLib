@@ -146,7 +146,7 @@ getSubjCompleteness <-function(rep, subj, itemVec, medData) {
     subj_no <-length(unique(basicData[[subj]]))
     completeData <- na.omit(basicData)
     complete_subj_no_py <-length(unique(completeData[[subj]]))
-    rep$incomplete_subj_no_py <-subj_no-complete_subj_no
+    rep$incomplete_subj_no_py <-subj_no-complete_subj_no_py
     rep$subj_completeness_rate <-100-round((rep$incomplete_subj_no_py/subj_no)*100,2)
   }
   else {
