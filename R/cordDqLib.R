@@ -82,6 +82,9 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   keyD1 <- checkD1( refData1, cl, basicItem, bItemCl)
   env$mItem <- keyD1$mItem
   env$tdata <- addD1(env$tdata, keyD1$k2_orpha_no, keyD1$k2_orphaCheck_no)
+  itemVec <- names (env$medData)
+  inter <- intersect (basicItem, itemVec)
+  env$tdata <- getSubjCompleteness(env$tdata,"PatientIdentifikator", inter, env$medData)
   if(!is.empty(vars)) caseItems <- vars[[1]]
   else caseItems <- NULL
   if(!is.null(caseItems)) env$tdata$case_completeness_rate<- round(getCaseCompletenessRate(env$cdata, env$ddata, caseItems),2)
@@ -142,12 +145,12 @@ getSubjCompleteness <-function(rep, subj, itemVec, medData) {
     basicData <-subset(medData, select= itemVec)
     subj_no <-length(unique(basicData[[subj]]))
     completeData <- na.omit(basicData)
-    complete_subj_no <-length(unique(completeData[[subj]]))
-    rep$incomplete_subj_no <-subj_no-complete_subj_no
-    rep$subj_completeness_rate <-100-round((rep$incomplete_subj_no/subj_no)*100,2)
+    complete_subj_no_py <-length(unique(completeData[[subj]]))
+    rep$incomplete_subj_no_py <-subj_no-complete_subj_no
+    rep$subj_completeness_rate <-100-round((rep$incomplete_subj_no_py/subj_no)*100,2)
   }
   else {
-    rep$incomplete_subj_no <-subj_no
+    rep$incomplete_subj_no_py <-subj_no
     rep$subj_completeness_rate <-0
   }
   
