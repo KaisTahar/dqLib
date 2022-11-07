@@ -132,7 +132,7 @@ checkD1 <- function ( refData, cl, basicItems,bItemCl){
   dqList
 }
 
-#' @title getSubjCompletenessRate
+#' @title getSubjCompleteness
 #' @description This function evaluates the completeness of recorded subjects such as inpatient or outpatients
 #' @export
 #'
