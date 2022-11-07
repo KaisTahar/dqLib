@@ -132,8 +132,30 @@ checkD1 <- function ( refData, cl, basicItems,bItemCl){
   dqList
 }
 
+#' @title getSubjCompletenessRate
+#' @description This function evaluates the completeness of recorded subjects such as inpatient or outpatients
+#' @export
+#'
+getSubjCompleteness <-function(rep, subj, itemVec, medData) {
+  if (all(itemVec %in%  colnames(medData)==TRUE))
+  {
+    basicData <-subset(medData, select= itemVec)
+    subj_no <-length(unique(basicData[[subj]]))
+    completeData <- na.omit(basicData)
+    complete_subj_no <-length(unique(completeData[[subj]]))
+    rep$incomplete_subj_no <-subj_no-complete_subj_no
+    rep$subj_completeness_rate <-100-round((rep$incomplete_subj_no/subj_no)*100,2)
+  }
+  else {
+    rep$incomplete_subj_no <-subj_no
+    rep$subj_completeness_rate <-0
+  }
+  
+  rep
+}
+
 #' @title getCaseCompletenessRate
-#' @description This function evaluates the completeness of cases
+#' @description This function evaluates the completeness of case module
 #'
 getCaseCompletenessRate<-function (cdata, ddata, caseItems){
   mvr =0
