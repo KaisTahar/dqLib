@@ -9,20 +9,20 @@ Acknowledgement: This work was done within the “Collaboration on Rare Diseases
 -  `dqLib` provides functions for creating specific reporting scripts that enable user to select desired data quality dimensions and indicators. The data quality reports provide adequate information to find the data quality violations and the causes of these violations.
 - The following data quality dimensions, indicatos and parameters are implemented:
 
-  | Dimension  | Data Quality Indicator Name | 
+  | Dimension  | Data Quality Indicator | 
   | ------------- | ------------- |
-  | completeness  | item completeness rate, value completeness rate, orphaCoding completeness rate  | 
+  | completeness  | item completeness rate, value completeness rate, subject completeness rate, case completeness rate, orphaCoding completeness rate  | 
   | plausibility  | orphaCoding plausibility rate, range plausibility rate | 
   | uniqueness |RD case unambiguity rate, RD case dissimilarity rate|
-  | concordance |concordance of RD cases, concordance of tracer cases| 
+  | concordance |concordance with reference values| 
   
     
-  | No. | Data Quality Parameter Name | Description |
+  | No. | Data Quality Parameter | Description |
   |-----|--------------------------- | ------------|
-  |  P1 | missing data items |  number of missing data items per year |
-  |  P2 | mandatory data items | number of mandatory items per year |
-  |  P3 | missing data values| number of missing data values per year |
-  |  P4 | available data values | number of available data values per year |
+  |  P1 | mandatory data items | number of mandatory items per year |
+  |  P2 | missing data items |  number of missing data items per year |
+  |  P3 | mandatory data values | number of available mandatory data values per year |
+  |  P4 | missing mandatory data values| number of missing data values per year |
   |  P5 | missing orphacodes |  number of missing Orphacodes per year |
   |  P6 | tracer diagnoses |  number of tracer RD diagnoses per year |
   |  P7 | implausible links | number of implausible code links per year |
@@ -34,13 +34,9 @@ Acknowledgement: This work was done within the “Collaboration on Rare Diseases
   |  P14 | tracer cases |  number of tracer RD cases per year |
   |  P15 | inpatient cases |  number of inpatient cases per year |
   |  P16 | RD cases rel. frequency| relative frequency of inpatient RD cases per year |
-  |  P17 | tracer cases rel. frequency| relative frequency of inpatient tracer RD cases per year |
-  |  P18 | available cases |  number of available cases per year |
-  |  P19 | available patients |  number of  available patients per year |
-  |  P20 | orphacodes | number of available orphacodes per year  |
-  |  P21 | orpha-coded cases | number of available orpha-coded cases per year|
-  |  P22 | unambigous RD cases | number of unambigous RD cases per year |
-  
+  |  P17 | Orpha cases | number of available orpha-coded cases per year|
+  |  P18 | tracer cases rel. frequency| relative frequency of inpatient tracer RD cases per year |
+
 - The following references are required to assess the quality of RD documentation:
 
   - Current Version of Alpha-ID-SE Terminology [1]
@@ -48,7 +44,7 @@ Acknowledgement: This work was done within the “Collaboration on Rare Diseases
   
     [1]   BfArM - Alpha-ID-SE [Internet]. [cited 2022 May 23]. Available from: https://www.bfarm.de/EN/Code-systems/Terminologies/Alpha-ID-SE/_node.html 
     
-    [2]   List of Tracer Diagnoses Extracted from Alpha-ID-SE Terminology [Internet]. 2022 [cited 2022May 24]. Available from:  https://doi.org/21.11101/0000-0007-F6DF-9
+    [2]   List of Tracer Diagnoses Extracted from Alpha-ID-SE Terminology [Internet]. 2022 [cited 2022 May 24]. Available from:  https://doi.org/21.11101/0000-0007-F6DF-9
 ------------------------------------------------------------------------
 
 ## Installation
@@ -61,7 +57,7 @@ devtools::install_local("./dqLib")
 You can also install it directly from github with:
 
 ``` r
-devtools::install_github("https://github.com/medizininformatik-initiative/dqLib")
+devtools::install_github("https://github.com/KaisTahar/dqLib")
 ```
 ## Example
 
@@ -83,4 +79,5 @@ year = {2021}
 }
 ```
 See also: [`CORD-MI`](https://www.medizininformatik-initiative.de/de/CORD)
+
 
