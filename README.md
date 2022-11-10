@@ -6,7 +6,8 @@ The data quality library (`dqLib`) is an R package for data quality (DQ) assessm
 Acknowledgment: This work was done within the “Collaboration on Rare Diseases” of the Medical Informatics Initiative (CORD-MI) funded by the German Federal Ministry of Education and Research (BMBF), under grant number: 01ZZ1911R, FKZ-01ZZ1911R
 
 ## Data Quality Metrics and Reports
--  `dqLib` provides functions for creating specific reporting scripts that enable user to select desired DQ dimensions, indicators and parameters. The DQ reports provide adequate information to find the data quality violations and the causes of these violations. `dqLib` also enables annual assessments of desired DQ metrics. The following DQ metrics are already implemented:
+- `dqLib` provides functions for creating specific reporting scripts that enable user to select desired DQ dimensions, indicators and parameters. The DQ reports provide adequate information to find the data quality violations and the causes of these violations. 
+- `dqLib` also enables annual assessments of selected DQ metrics. The following DQ metrics are already implemented:
 
   | Dimension  | DQ Indicator | 
   | ------------- | ------------- |
@@ -44,14 +45,11 @@ Acknowledgment: This work was done within the “Collaboration on Rare Diseases�
   |  P24 | minimal tracer cases in reference values| min. rel. frequency of tracer cases normalized to 100.000 inpatient cases found in the literature |
   |  P25 | maximale tracer cases in reference values| max. rel. frequency of tracer cases normalized to 100.000 inpatient cases found  found in the literature   |
 
-- The following references are required to assess the quality of RD documentation:
+- The following references are required to assess the quality of RD documentation: (1) Current Version of Alpha-ID-SE Terminology [1] and (2) A reference for tracer diagnoses such as the list provided in [2].
 
-  - Current Version of Alpha-ID-SE Terminology [1]
-  - A reference for tracer diagnoses such as the list provided in [2]
-  
-  [1]   BfArM - Alpha-ID-SE [Internet]. [cited 2022 May 23]. Available from: [BfArM](https://www.bfarm.de/EN/Code-systems/Terminologies/Alpha-ID-SE/_node.html) 
-	
-	[2]   Tahar K, Martin T, Mou Y, et al. Distributed Data Quality Assessment Across CORD-MI Consortia. [doi:10.3205/22gmds116](https://www.egms.de/static/en/meetings/gmds2022/22gmds116.shtml)
+  [1] BfArM - Alpha-ID-SE [Internet]. [cited 2022 May 23]. Available from: [BfArM](https://www.bfarm.de/EN/Code-systems/Terminologies/Alpha-ID-SE/_node.html)
+ 
+  [2] Tahar K, Martin T, Mou Y, et al. Distributed Data Quality Assessment Across CORD-MI Consortia.[doi:10.3205/22gmds116](https://www.egms.de/static/en/meetings/gmds2022/22gmds116.shtml)
 ------------------------------------------------------------------------
 
 ## Installation
@@ -86,4 +84,3 @@ year = {2021}
 }
 ```
 See also: [`CORD-MI`](https://www.medizininformatik-initiative.de/de/CORD)
-
