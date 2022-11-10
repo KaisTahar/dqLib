@@ -79,5 +79,3 @@ year = {2021}
 }
 ```
 See also: [`CORD-MI`](https://www.medizininformatik-initiative.de/de/CORD)
-
-
