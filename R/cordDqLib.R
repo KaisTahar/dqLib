@@ -15,7 +15,6 @@
 #'
 checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2, dqInd, repCol, cl, bItemCl, totalRow, oItem,...) {
   vars <- list(...)
-  #cl <-rev(repCol)[1]
   if (is.null (cl)) stop("No report design available")
   if (is.null (env$medData)) stop("No data available")
   if (is.null(env$medData$ICD_Primaerkode)) stop("Missing mandatory item: ICD_Primaerkode")
@@ -35,7 +34,7 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   }else {
     env$tdata$inst_id <- "ID fehlt"
   }
-  #row_no = nrow(env$medData)
+
   rdDup_no =0
   inputData <-env$medData
   row_no = nrow(inputData)
@@ -66,7 +65,6 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
     env$medData<-env$medData[!duplicated(env$medData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode")]),]
     env$dq <- subset(env$medData, select = repCol)
     env$dq[cl]<-""
-    #dup <-which(duplicated(medData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode")], fromLast=TRUE))
     dup <-inputData[duplicated(inputData[c("PatientIdentifikator", "Aufnahmenummer", "ICD_Primaerkode")], fromLast=TRUE),]
     icdList <-which(!( dup$ICD_Primaerkode =="" | is.na(dup$ICD_Primaerkode) | is.empty(dup$ICD_Primaerkode)))
     for(i in icdList){
@@ -94,7 +92,6 @@ checkCordDQ <- function ( instID, reportYear, inpatientCases, refData1, refData2
   #D3 uniqueness
   env$tdata$duplicateCase_no = row_no - nrow(env$medData)
   env$tdata$duplicateRdCase_no =rdDup_no
- # env$tdata$duplication_rate <- round((env$tdata$duplicateCase_no/row_no)*100,2)
   keyD3 <- checkD3( refData1, refData2, cl)
   env$tdata <- addD3(env$tdata, keyD3$k3_unambiguous_rdDiag_no,  keyD3$k3_unambiguous_rdCase_no, keyD3$k3_checkedRdCase_no)
   total<-getTotalStatistic(bItemCl, totalRow)
@@ -137,7 +134,6 @@ checkD1 <- function ( refData, cl, basicItems,bItemCl){
 
 #' @title getSubjCompleteness
 #' @description This function evaluates the completeness of recorded subjects such as inpatient or outpatients
-#' @export
 #'
 getSubjCompleteness <-function(rep, subj, itemVec, medData) {
   if (all(itemVec %in%  colnames(medData)==TRUE))
@@ -153,7 +149,7 @@ getSubjCompleteness <-function(rep, subj, itemVec, medData) {
     rep$incomplete_subject_no_py <-subj_no
     rep$subject_completeness_rate <-0
   }
-  
+
   rep
 }
 
@@ -202,7 +198,6 @@ checkOrphaCodingCompleteness <- function ( refData, cl){
       iCode <- stri_trim(as.character(env$medData$ICD_Primaerkode[i]))
       rdRefList<- which(stri_trim(as.character(refData$IcdCode))==iCode)
       if (!is.empty(rdRefList)) {
-       #k2_orphaCheck_no = k2_orphaCheck_no +1
         env$dq$tracer[i] <-"yes"
         if("Orpha_Kode" %in% colnames(env$medData)){
           code <-as.character(env$medData$Orpha_Kode[i])
@@ -210,7 +205,6 @@ checkOrphaCodingCompleteness <- function ( refData, cl){
           {
             oCode <-as.numeric(code)
             if (is.na(oCode)){
-              #env$dq[,cl][i] <- paste("Orpha Code",code, "ist nicht valide. ", env$dq[,cl][i] )
               k2_orphaCheck_no = k2_orphaCheck_no +1
               missing_counter1 =missing_counter1 +1
             }
@@ -273,8 +267,7 @@ addD1<- function ( tdata,  orpha, checkNo) {
     tdata$orpha_no <- 0
     tdata$icdRd_no <- 0
     tdata$orphaMissing_no <- NA
-    tdata$orphaCoding_completeness_rate<-0
-    #tdata$item_completeness_rate <-0
+    tdata$orphaCoding_completeness_rate <-0
   }
   tdata
 }
@@ -319,7 +312,6 @@ checkOrphaCoding<- function (refData2, bItemCl, cl) {
       code <-as.character(env$medData$Orpha_Kode[i])
       if (is.na(oCode) & !is.na(code) ) {
         k1_check_counter =k1_check_counter+1
-        #env$dq[,cl][i] <- paste("Orpha Code ist nicht valide. ", env$dq[,cl][i] )
         msg<- paste("ICD10-Orpha combination:" , iCode,"-", code ,  "is implausible according to Alpha-ID-SE.",  env$dq[,cl][i])
         env$dq[,cl][i] <- msg
 
@@ -381,7 +373,8 @@ checkOutlier<-function (ddata, item, cl) {
     {
       item1.vec <-  as.Date(ISOdate(env$medData[["Geburtsdatum"]], 1, 1))
       now<- as.Date(Sys.Date())
-      out<-getAgeMaxOutlier(item1.vec,  now, 105)
+      if (!exists("ageMax")) ageMax=105
+      out<-getAgeMaxOutlier(item1.vec,  now, ageMax)
       if (!is.empty(out)) {
         ddata<- addOutlier (item, ddata, length(out), length(item1.vec) )
         for(i in out) env$dq[,cl][i] <- paste( "Implausible birthdate", item1.vec[i] , "maximal age 105.",  env$dq[,cl][i])
@@ -463,8 +456,6 @@ checkUniqueIcd <- function (refData1, cl){
           env$dq$rdCase[i] <-"yes"
           env$dq$tracer[i] <-"yes"
           env$dq$ambiguous_tracer[i] <-"yes"
-          #msg<- paste("ICD10 Kodierung",iCode, "ist nicht eindeutig. ICD10-Orpha Relation ist gemäß Tracer-Diagnosenliste vom Typ 1-m. ",  env$dq[,cl][i])
-         # msg<- paste("ICD10 Code",iCode, "ist nicht eindeutig.",  env$dq[,cl][i])
           msg<- paste("Ambiguous ICD10 Code",iCode, ". Missing Orpha Code.",  env$dq[,cl][i])
           env$dq[,cl][i] <- msg
           k3_check_counter =k3_check_counter+1
@@ -534,7 +525,6 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
 
   if(!is.empty(env$medData$ICD_Primaerkode)){
     cq <- which(env$medData$ICD_Primaerkode=="" | is.na(env$medData$ICD_Primaerkode))
-    #env$cdata <- addMissing("ICD_Primaerkode", env$cdata, length (cq), length(env$medData$ICD_Primaerkode))
     if (!is.empty (cq)) for(i in cq) {
       env$dq[,cl][i]<- paste("Missing ICD-Code. ", env$dq[,cl][i])
       code <- env$medData$Orpha_Kode[i]
@@ -550,7 +540,6 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
         }
         else{
           env$dq[,cl][i] <- paste("Ambiguous Case.",env$dq[,cl][i] )
-         # env$dq[,cl][i] <- paste("Orpha Code",code, "ist nicht valide. ", env$dq[,cl][i] )
         }
       }
     }
@@ -562,7 +551,6 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
       if (!(is.null(oCode) |is.na(oCode) | is.empty(oCode))){
         if ( is.na(numCode))
         {
-          # nicht valid
           msg<- paste("Ambiguous Coding.",  env$dq[,cl][i])
           env$dq[,cl][i] <- msg
 
@@ -582,7 +570,6 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
             if ( !is.element(numCode, oRefList))
             {
               msg<- paste("Ambiguous Coding.",  env$dq[,cl][i])
-              # msg<- paste("Kodierung ist nicht eindeutig. Relation",iCode,"-", oCode , "ist im BfArM nicht vorhanden. ",  env$dq[,cl][i])
               env$dq[,cl][i] <- msg
             }
             else { k3_rd_counter=k3_rd_counter+1
@@ -597,7 +584,6 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
               oRef<- which(as.numeric(as.character(refData2$Orpha_Kode))==numCode)
               if (!is.empty ( oRef)){
                 msg<- paste("Ambiguous Coding.",  env$dq[,cl][i])
-                #msg<- paste("Kodierung ist nicht eindeutig. ICD10 Code",iCode , "ist im BfArM Mapping nicht enthalten. ",  env$dq[,cl][i])
                 env$dq[,cl][i] <- msg
               }
             }
@@ -624,7 +610,6 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
             k3_check_counter =k3_check_counter+1
             env$dq$CheckedRdCase[i] <- "yes"
             env$dq$ambiguous_tracer[i] <-"yes"
-           # msg<- paste("ICD10 Kodierung",iCode, "ist nicht eindeutig. ICD10-Orpha Relation ist gemäß Tracer-Diagnosenliste vom Typ 1-m. ",  env$dq[,cl][i])
             msg<- paste("Ambiguous ICD10 Code",iCode, ".",  env$dq[,cl][i])
             env$dq[,cl][i] <- msg
           }
@@ -702,26 +687,6 @@ checkD4 <- function (cl) {
 #' @title getOrphaCaseNo
 #' @description This function calculates the number of Orpha cases
 #'
-getOrphaCaseNox <- function (cl) {
-  orphaCaseNo =0
-  dup<-env$medData[(duplicated(env$medData[c("Aufnahmenummer")]) | duplicated(env$medData[c("Aufnahmenummer")], fromLast=TRUE))&is.na(env$medData$Orpha_Kode),]
-  if (nrow(dup)>0)
-  {
-    medData<-env$medData[!(duplicated(env$medData[c("Aufnahmenummer")], fromLast=TRUE)&is.na(env$medData$Orpha_Kode)),]
-    medData<-medData[!duplicated(env$medData[c("Aufnahmenummer")]),]
-
-  }
-  else medData<- env$medData[!duplicated(env$medData[c("Aufnahmenummer")]),]
-  oList <-which(medData$Orpha_Kode !="" & !is.na(medData$Orpha_Kode)  & !is.empty(medData$Orpha_Kode) & !is.null(medData$Orpha_Kode))
-  if (!is.empty (oList)) for(i in oList) {
-    code <-medData$Orpha_Kode[i]
-    oCode <-as.numeric(as.character(medData$Orpha_Kode[i]))
-    if (!is.na(oCode))  orphaCaseNo =  orphaCaseNo +1
-    else env$dq[,cl][i] <- paste("Invalid Orpha code",code, env$dq[,cl][i] )
-  }
-  orphaCaseNo
-}
-
 getOrphaCaseNo<- function (cl){
   env$dq$orphaCase <- NA
   orphaCaseNo =0
@@ -731,7 +696,6 @@ getOrphaCaseNo<- function (cl){
     code <-env$medData$Orpha_Kode[i]
     oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
     if (!is.na(oCode)) env$dq$orphaCase[i] = "yes"
-    #else env$dq[,cl][i] <- paste("Orpha Code",code, "ist nicht valide. ", env$dq[,cl][i] )
 
   }
   oc <-env$dq[ which (env$dq$orphaCase=="yes"),]
@@ -798,8 +762,6 @@ addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
         tdata$orphaCase_no_py <-orphaCase
         or <- ( orphaCase/inPtCase) * 100000
         tdata$orphaCase_rel_py_ipat   <- round (or,0)
-        #tdata$orphaCase_rel_py  <- getPercentFormat(or)
-
       }
       else {
         tdata$orphaCase_rel_py_ipat  <- 0
@@ -826,7 +788,6 @@ getConcWithRefValues <- function(tracerCase_rel_py_ipat, concRef){
   conc =0
   if (concRef[["min"]] <= tracerCase_rel_py_ipat && tracerCase_rel_py_ipat<=concRef[["max"]] ) conc=1
   else conc =0
-  #env$tdata$conc_with_refValues =conc
   conc
 }
 
@@ -857,17 +818,4 @@ getReport <- function (repCol, cl, td, path) {
   sheets <- list("DQ_Report"=dfq, "DQ_Metrics" = td)
   write.xlsx(sheets, paste (path,".xlsx", sep =""))
   write.csv(td, paste (path,".csv", sep =""), row.names = FALSE)
-  # env <-NULL
-}
-
-#' @title getExtendedReport
-#' @description This function generates an extended data quality reports with infos about Projecathon use cases
-#' @import openxlsx
-#' @export
-#'
-getExtendedReport <- function ( repCol,cl, td, useCase, path) {
-  repData <-subset(env$dq,select= repCol)
-  dfq <-repData[ which(env$dq[,cl]!="")  ,]
-  sheets <- list("DQ_Report"=dfq, "DQ_Metrics"= td, "Projectathon"=useCase)
-  write.xlsx(sheets, path)
 }
