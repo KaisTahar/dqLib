@@ -1,7 +1,7 @@
 Package: dqLib
 Type: Package
 Title: Tools for data quality assessment and reporting 
-Version: 1.0.0
+Version: 1.3.1
 Author: Kais Tahar
 Maintainer: The package maintainer <kais.tahar@med.uni-goettingen.de>
 Description: Contains methods for data quality analysis and reporting, especially in CORD-MI project.
