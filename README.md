@@ -1,13 +1,11 @@
 # `dqLib`
 
-The data quality library (`dqLib`) is an R package for data quality (DQ) assessment and reporting. 
-`dqLib` provides methods for calculating DQ metrics and generating reports on detected DQ issues, especially in [`CORD-MI`](https://www.medizininformatik-initiative.de/de/CORD).
+The data quality library (`dqLib`) is an R package for data quality (DQ) assessment and reporting. The library provides methods for calculating DQ metrics and generating reports on detected DQ issues, especially in the field of Rare Diseases(RDs)
 
 Acknowledgment: This work was done within the “Collaboration on Rare Diseases” of the Medical Informatics Initiative (CORD-MI) funded by the German Federal Ministry of Education and Research (BMBF), under grant number: 01ZZ1911R, FKZ-01ZZ1911R
 
 ## DQ Metrics and Reports
-`dqLib` provides functions for creating specific reporting scripts that enable user to select desired DQ dimensions, indicators and parameters. The DQ reports provide adequate information to find the data quality violations and the causes of these violations. 
-`dqLib` also enables annual assessments of selected DQ metrics. The following DQ metrics are already implemented:
+`dqLib` provides functions that enable users to select desired dimensions, indicators, and parameters as well as to define specific DQ reports. The DQ reports include the resulting DQ metrics and adequate information to identify potential DQ violations.`dqLib` also enables annual assessments of selected DQ metrics. The following DQ metrics are already implemented:
 
   | Dimension  | DQ Indicator | 
   | ------------- | ------------- |
@@ -37,7 +35,7 @@ Acknowledgment: This work was done within the “Collaboration on Rare Diseases�
   |  P16 | RD cases | number of RD cases |
   |  P17 | ambiguous RD cases | number of ambiguous RD cases |
   |  P18 | duplicated RD cases |  number of duplicated RD cases |
-  |  P19 | tracer cases |  number of tracer cases per year |
+  |  P19 | tracer cases |  number of tracer cases |
   |  P20 | Orpha cases | number of available orpha-coded cases|
   |  P21 | RD cases rel. frequency| relative frequency of RD cases |
   |  P22 | tracer cases rel. frequency| relative frequency of tracer cases normalized to 100.000 inpatient cases  |
@@ -67,9 +65,9 @@ devtools::install_github("https://github.com/KaisTahar/dqLib")
 ```
 ## Example
 
-[Here](https://github.com/KaisTahar/cordDqChecker-MIM/tree/methods_dqTools) are examples of DQ assessments using `dqLib`
-- [cordDQCheck.R](https://github.com/KaisTahar/cordDqChecker-MIM/blob/methods_dqTools/Local/cordDqChecker.R): A reporting script for DQ assessment in CORD-MI
-- Here you can see [the resulting files](https://github.com/KaisTahar/cordDqChecker-MIM/tree/methods_dqTools/Local/Data/Export)
+- [cordDQCheck](https://github.com/KaisTahar/cordDqChecker/blob/bmc_dqTools/Local/cordDqChecker.R): A reporting tool for DQ assessment on RD data implemented using `dqLib`
+- Here are some [examples](https://github.com/KaisTahar/cordDqChecker/tree/bmc_dqTools/Local/Data/Export) of DQ reports generated using `dqLib`
+
 
 ## Note
 The default data quality dimensions are completeness, plausibility, uniqueness and concordance. However, this framework allows the user to select desired DQ dimensions and metrics as well as to generate user defined annual reports.
