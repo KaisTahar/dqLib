@@ -1,7 +1,12 @@
 #######################################################################################################
-# Description: This script provides core functions for data quality analysis and assessment
+# Description: The data quality library (dqLib) is an R package for data quality (DQ) assessment and reporting.
+# This package provides functions that enable users to select desired dimensions, indicators, and parameters as well as to define specific DQ reports.
+# This script is part of the "dqLib" package and provides core functions for data quality assessment.
 # Date Created: 2021-02-26
-# Author: Kais Tahar, University Medical Center Göttingen
+#' @author: Kais Tahar, University Medical Center Göttingen
+#' @keywords internal
+#' @name dqLib
+"_PACKAGE"
 #######################################################################################################
 
 #' @title env
@@ -9,8 +14,6 @@
 #' @export
 #'
 env <- new.env()
-#env <- new.env(parent=globalenv())
-#env <- new.env(parent = emptyenv())
 
 #' @title  setGlobals
 #' @description Function to define global variables
@@ -19,10 +22,8 @@ env <- new.env()
 setGlobals <- function(medData, repCol, cdata,ddata, tdata) {
   env$medData <- medData
   env$cdata <- cdata
-  env$ddata <-ddata
+  env$ddata <- ddata
   env$tdata <- tdata
-  #env$dq <- subset(medData, select = repCol)
-  #env$dq$dq_msg<-""
 }
 
 #------------------------------------------------------------------------------------------------------
@@ -30,7 +31,7 @@ setGlobals <- function(medData, repCol, cdata,ddata, tdata) {
 #------------------------------------------------------------------------------------------------------
 
 #' @title addCompletness
-#' @description This function calculates the completeness rate
+#' @description Function to calculate the completeness rate
 #'
 addCompletness<- function (tdata, col, row) {
   index = which( tdata[,col]==row)
@@ -59,7 +60,7 @@ getMissingValue<-function (df, bItemCol, outCol1,outCol2){
     }
   }
   df
-
+  
 }
 
 #' @title missingCheck
@@ -86,15 +87,14 @@ missingCheck<- function (df, item, bItems, cl1, cl2) {
     df <- addMissingValue(item, df, 0,0)
     env$dq[,cl2]<- paste( item, " wurde nicht erhoben ", env$dq[,cl2])
   }
-
+  
   df
 }
 
 #' @title addMissingValue
-#' @description Function to add missing value indicator for each data item
+#' @description Function to add missing value metrics for each data item
 #'
 addMissingValue<- function (item, bdata, m, n) {
-  #index <- which(dqItem.vec==item)[[1]]
   index = which(bdata$basicItem==item)[1]
   if (is.null(index)) bdata$basicItem[1]=item
   if(!"missing_value_no" %in% colnames(bdata)) bdata$missing_value_no <-0
@@ -116,7 +116,7 @@ addMissingValue<- function (item, bdata, m, n) {
 }
 
 #' @title addMissingCount
-#' @description This function adds the overall missing indicator and key numbers
+#' @description This function adds the overall metrics for missing values 
 #'
 addMissingCount<- function (bdata, col, row) {
   index = which( bdata[,col]==row)
@@ -127,7 +127,7 @@ addMissingCount<- function (bdata, col, row) {
   bdata
 }
 #' @title getMissingItem
-#' @description Function to check the loaded data for missing mandatory items
+#' @description Function to check the loaded data for missing of mandatory data items
 #'
 getMissingItem<- function (basicItem) {
   diff <- setdiff (basicItem, names (env$medData))
@@ -149,28 +149,15 @@ getMissingItem<- function (basicItem) {
 #'
 is.empty <- function(x) return(length(x) ==0 )
 
-#' @title getFileExtension
-#' @description Function to get the file extension of a given file
-#' @export
-#'
-getFileExtension <- function(filePath){
-  ext <- strsplit(basename(filePath), split="\\.")[[1]]
-  return(ext[-1])
-}
-
-#' @title isDate
-#' @description This function checks whether a given data value has date format
-#' @export
-#'
-isDate <- function(mydate) {
-  tryCatch(!is.na(as.Date(mydate,tryFormats = c("%Y-%m-%d", "%Y/%m/%d","%d-%m-%Y","%m-%d-%Y","%Y.%m.%d","%d.%m.%Y","%m.%d.%Y"))),
-           error = function(err) {FALSE})
-}
 
 #------------------------------------------------------------------------------------------------------
 # functions to calculate DQ metrics for D2 plausibility dimension
 #------------------------------------------------------------------------------------------------------
 
+#' @title addOutlier
+#' @description Function to add outlier metrics for each data item
+#' @export
+#'
 addOutlier<- function (item, bdata, m,n) {
   index = which(bdata$basicItem==item)[1]
   if (is.null(index)) bdata$basicItem[1]=item
@@ -184,7 +171,6 @@ addOutlier<- function (item, bdata, m,n) {
     bdata$outlier_check_no[index] <- bdata$N_Item[index]-bdata$missing_value_no[index]
     if (!is.na(bdata$outlier_no[index]) && is.numeric(bdata$outlier_no[index]) ) bdata$outlier_no[index] <- bdata$outlier_no[index]+m
     else bdata$outlier_no[index] <- m
-    #or <- (bdata$outlier_no[index]/ bdata$N_Item[index]) * 100
     if (bdata$outlier_no[index]>0) {
       or <- (bdata$outlier_no[index]/ bdata$outlier_check_no[index]) * 100
       bdata$outlier_rate[index] <- round (or,1)
@@ -195,23 +181,14 @@ addOutlier<- function (item, bdata, m,n) {
     bdata$outlier_no[index] <- NA
     bdata$outlier_rate[index] <- NA
   }
-
+  
   bdata
 }
 
-getDateOutlier<- function (dItem.vec){
-  now<- as.Date(Sys.Date())
-  out <-  vector()
-  out <- which(isDate(dItem.vec) & (as.Date(dItem.vec)>now))
-  out
-}
-
-getAgeMaxOutlier<- function ( dItem1.vec, dItem2.vec, n){
-  diff <-  ifelse ((isDate(dItem1.vec) & isDate(dItem2.vec)), as.numeric(difftime(dItem1.vec, dItem2.vec),units="weeks")/52.25 , 0 )
-  out <- which(abs(diff)>n)
-  out
-}
-
+#' @title addOutlierCount
+#' @description Function to add the overall outlier metrics 
+#' @export
+#'
 addOutlierCount<- function (bdata, col, row) {
   index = which( bdata[,col]==row)
   bdata$N_Item[index]<-sum(bdata$N_Item[-index],na.rm=TRUE)
@@ -224,21 +201,83 @@ addOutlierCount<- function (bdata, col, row) {
   bdata
 }
 
+#' @title getDateOutlier
+#' @description Function to check the loaded data for implausible date values
+#' @export
+#'
+getDateOutlier<- function (dItem.vec){
+  now<- as.Date(Sys.Date())
+  out <-  vector()
+  out <- which(isDate(dItem.vec) & (as.Date(dItem.vec)>now))
+  out
+}
+
+#' @title getAgeMaxOutlier
+#' @description This Function checks the data item "birthdate" for implausible values
+#' @export
+#'
+getAgeMaxOutlierx<- function ( dItem1.vec, dItem2.vec, n){
+  diff <-  ifelse ((isDate(dItem1.vec) & isDate(dItem2.vec)), as.numeric(difftime(dItem1.vec, dItem2.vec),units="weeks")/52.25 , 0 )
+  out <- which(abs(diff)>n)
+  out
+}
+getAgeMaxOutlier<- function ( dItem1.vec, dItem2.vec, n){
+  diff <-  ifelse ((isDate(dItem1.vec) & isDate(dItem2.vec)), as.numeric(difftime(dItem1.vec, dItem2.vec),units="weeks")/52.25 , 0 )
+  out <- which(abs(diff)>n)
+  out
+}
+
 #------------------------------------------------------------------------------------------------------
-# functions to calculate overall data quality metrics
+# Utility functions
 #------------------------------------------------------------------------------------------------------
 
+#' @title isDate
+#' @description This function checks whether a given data value has date format
+#' @export
+#'
+isDate <- function(mydate) {
+  tryCatch(!is.na(as.Date(mydate,tryFormats = c("%Y-%m-%d", "%Y/%m/%d","%d-%m-%Y","%m-%d-%Y","%Y.%m.%d","%d.%m.%Y","%m.%d.%Y"))),
+           error = function(err) {FALSE})
+}
+
+#' @title getUserSelectedMetrics
+#' @description This function enable users to select desired DQ metrics
+#' @export
+#'
 getUserSelectedMetrics <- function(dqInd, tdata){
   dqMetrics <- subset(tdata, select= dqInd)
   dqMetrics
 }
 
+#' @title getFileExtension
+#' @description Function to get the file extension of a given file
+#' @export
+#'
+getFileExtension <- function(filePath){
+  ext <- strsplit(basename(filePath), split="\\.")[[1]]
+  return(ext[-1])
+}
+
+
+#' @title addStatistic
+#' @description Function to add statistics on detected outliers and missing values
+#' @export
+#'
+addStatistic<- function (bdata, col, row) {
+  bdata = addMissingCount(bdata,col,row)
+  bdata = addOutlierCount(bdata,col,row)
+  bdata
+}
+
+#' @title getTotalStatistic
+#' @description Function to get overall report on calculated DQ metrics
+#' @export
+#'
 getTotalStatistic <- function( col, row){
   env$cdata<- addStatistic(env$cdata, col, row)
   if (is.null(env$ddata)) bdata <-env$cdata
   else bdata <- base::merge(env$cdata,  addStatistic(env$ddata, col, row) , by=intersect(names(env$cdata), names(env$ddata)), all = TRUE)
   if (!is.empty (bdata$engLabel)) bdata$engLabel <-NULL
-  #bdata$Item_no<- 1
   index = which(bdata[,col]==row)
   bdata<-bdata[-index,]
   bdata[nrow(bdata) + 1, ] <- list ("Total",0,0,0,0,0, 0, nrow(bdata)-1)
@@ -247,51 +286,4 @@ getTotalStatistic <- function( col, row){
   total <- subset(tcdata, tcdata[,col]==row)
   env$tdata<- cbind(total,env$tdata)
   env$tdata
-
-}
-
-getTotalStatisticx <- function(dqInd, col, row){
-  env$cdata<- addStatistic(env$cdata, col, row)
-  if (is.null(env$ddata)) bdata <-env$cdata
-  else bdata <- base::merge(env$cdata,  addStatistic(env$ddata, col, row) , by=intersect(names(env$cdata), names(env$ddata)), all = TRUE)
-  bdata$Item_no<- 1
-  index = which(bdata[,col]==row)
-  bdata<-bdata[-index,]
-  bdata[nrow(bdata) + 1, ] <- list ("Total",0,0,0,0,0, 0, nrow(bdata)-1)
-  bdata<- addStatistic(bdata, col, row)
-  tcdata <- addCompletness (bdata, col, row)
-  total <- subset(tcdata, tcdata[,col]==row)
-  env$tdata<- cbind(total,env$tdata)
-  stotal <- subset(env$tdata, select= dqInd)
-  stotal
-}
-
-getDQStatis <-function(bdata, col, row){
-  tdata<- addTotalCount(bdata, col, row)
-  tcdata <-addCompletness (tdata, col, row)
-  sdata <-subset(tcdata, tcdata[,col]==row)
-  sdata$N_Item <- NULL
-  return <-sdata
-}
-
-addTotalCount<- function (bdata, col, row) {
-  index = which( bdata[,col]==row)
-  bdata$missing_value_no[index] <- sum(as.integer(as.character(bdata$missing_value_no[-index])),na.rm=TRUE)
-  bdata$N[index]<-sum(bdata$N_Item[-index],na.rm=TRUE)
-  mr <- (bdata$missing_value_no[index]/ bdata$N[index])* 100
-  bdata$missing_value_rate[index] <- round (mr,2)
-  bdata$outlier_no[index] <- sum (as.integer(as.character( bdata$outlier_no[-index] )), na.rm=TRUE)
-  or <- (bdata$outlier_no[index] / bdata$N_Item[index] )* 100
-  bdata$outlier_rate[index] <- round (or,2)
-  bdata
-}
-
-addStatistic<- function (bdata, col, row) {
-  bdata =addMissingCount(bdata,col,row)
-  bdata = addOutlierCount(bdata,col,row)
-  bdata
-}
-
-getPercentFormat <- function(x, digits = 2, format = "f", ...) {
-  paste0(formatC(x * 100, format = format, digits = digits, ...), "%")
 }
