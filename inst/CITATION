@@ -1,0 +1,37 @@
+citHeader("To cite dqLib in publications, please use:")
+
+## Metadata generated from the DESCRIPTION file
+if(!exists("meta") || is.null(meta)) meta <- packageDescription("dqLib")
+if (is.null(meta$Date)) meta$Date <- Sys.Date()
+year <- format(as.Date(meta$Date), "%Y")
+title <- paste("dqLib:", meta$Title)
+auth <- paste(meta$Author)
+note <- paste("R package version", meta$Version)
+url <- meta$URL
+
+## Software
+bibentry(
+  bibtype = "manual",
+  title = title,
+  author = auth,
+  year = year,
+  note = note,
+  url = url
+)
+
+## Journal article
+bibentry(bibtype = "Article",
+         title = "Rare Diseases in Hospital Information Systems — An Interoperable Methodology for Distributed Data Quality Assessments",
+         author = c(as.person("Kais Tahar"),
+                   as.person("Tamara Martin"),
+                   as.person("Yongli Mou"),
+                   as.person("Raphael Verbuecheln"),
+                   as.person("Holm Graessner"),
+                   as.person("Dagmar Krefting")),
+         journal = "Methods of Information in Medicine",
+         volume = "62",
+         number = "3",
+         pages = "71-89",
+         year = "2023",
+         publisher = "Georg Thieme Verlag KG",
+         doi = "10.1055/a-2006-1018")
