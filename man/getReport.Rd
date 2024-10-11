@@ -7,5 +7,5 @@
 getReport(repMeta, cl, td, path)
 }
 \description{
-This function generates data quality reports about detected quality issues, user selected indicators and key numbers
+This function generates data quality reports about detected quality issues, and user-selected DQ metrics such as indicators and parameters
 }
