@@ -2,6 +2,7 @@
 
 export(addMissingValue)
 export(addOutlier)
+export(addSemantics)
 export(checkCordDQ)
 export(getMissingItem)
 export(getReport)

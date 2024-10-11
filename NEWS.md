@@ -1,3 +1,9 @@
+# dqLib 0.3
+
+- Added function for semantic enrichment
+- Improved function to generate DQ report
+- Updated documentation
+
 # dqLib 0.2.0
 
 - Added new functions to assess data quality (DQ) parameters and indicators for completeness and concordance dimensions

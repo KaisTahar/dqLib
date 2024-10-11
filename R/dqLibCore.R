@@ -1,5 +1,6 @@
 #######################################################################################################
-# Description: This script provides core functions for data quality analysis and assessment
+# Description: The data quality library (dqLib) is an R package for data quality (DQ) assessment and reporting.
+# This script is part of the "dqLib" package and provides core functions for data quality assessment.
 # Date Created: 2021-02-26
 # Author: Kais Tahar, University Medical Center Göttingen
 #######################################################################################################
@@ -20,12 +21,13 @@ setGlobals <- function(medData, repCol, cdata, ddata, tdata) {
   env$tdata <- tdata
 }
 
+
 #------------------------------------------------------------------------------------------------------
 # functions to calculate DQ metrics for D1 completeness dimension
 #------------------------------------------------------------------------------------------------------
 
 #' @title addCompleteness
-#' @description This function calculates the completeness rate
+#' @description This function to calculate the completeness rate
 #'
 addCompleteness<- function (tdata, col, row) {
   index = which( tdata[,col]==row)
@@ -54,7 +56,6 @@ getMissingValue<-function (df, bItemCol, outCol1,outCol2){
     }
   }
   df
-
 }
 
 #' @title missingCheck
@@ -87,7 +88,7 @@ missingCheck<- function (df, item, bItems, cl1, cl2) {
 }
 
 #' @title addMissingValue
-#' @description Function to add missing value indicator for each data item
+#' @description Function to add missing value metrics for each data item
 #' @export
 #'
 addMissingValue<- function (item, bdata, m, n) {
@@ -112,7 +113,7 @@ addMissingValue<- function (item, bdata, m, n) {
 }
 
 #' @title addMissingCount
-#' @description This function adds the overall missing indicator and key numbers
+#' @description This function adds the overall metrics for missing values
 #'
 addMissingCount<- function (bdata, col, row) {
   index = which( bdata[,col]==row)
@@ -124,7 +125,7 @@ addMissingCount<- function (bdata, col, row) {
 }
 
 #' @title getMissingItem
-#' @description Function to check the loaded data for missing mandatory items
+#' @description Function to check the loaded data for missing of mandatory data items
 #' @export
 #'
 getMissingItem<- function (basicItem) {
@@ -146,6 +147,7 @@ getMissingItem<- function (basicItem) {
 #' @export
 #'
 is.empty <- function(x) return(length(x) ==0 )
+
 
 #------------------------------------------------------------------------------------------------------
 # functions to calculate DQ metrics for D2 plausibility dimension
@@ -211,9 +213,53 @@ getDateOutlier<- function (dItem.vec){
   out
 }
 
+
+
 #------------------------------------------------------------------------------------------------------
-# functions to calculate overall data quality metrics
+# Utility functions
 #------------------------------------------------------------------------------------------------------
+
+#' @title isDate
+#' @description This function checks whether a given data value has date format
+#' @export
+#'
+isDate <- function(mydate) {
+  tryCatch(!is.na(as.Date(mydate,tryFormats = c("%Y-%m-%d", "%Y/%m/%d","%d-%m-%Y","%m-%d-%Y","%Y.%m.%d","%d.%m.%Y","%m.%d.%Y"))),
+           error = function(err) {FALSE})
+}
+
+#' @title getUserSelectedMetrics
+#' @description This function enable users to select desired DQ metrics
+#'
+getUserSelectedMetrics <- function(dqInd, tdata){
+  dqMetrics <- subset(tdata, select= dqInd)
+  dqMetrics
+}
+
+#' @title getFileExtension
+#' @description Function to get the file extension of a given file
+#'
+getFileExtension <- function(filePath){
+  ext <- strsplit(basename(filePath), split="\\.")[[1]]
+  return(ext[-1])
+}
+
+#' @title getPercentFormat
+#' @description This function formats values as a percentage
+#'
+getPercentFormat <- function(x, digits = 2, format = "f", ...) {
+  paste0(formatC(x * 100, format = format, digits = digits, ...), "%")
+}
+
+
+#' @title addStatistic
+#' @description Funtion to calculate the overall DQ metrics for the completeness and plausibility dimensions
+#'
+addStatistic<- function (bdata, col, row) {
+  bdata = addMissingCount(bdata,col,row)
+  bdata = addOutlierCount(bdata,col,row)
+  bdata
+}
 
 #' @title getTotalStatistic
 #' @description Function to calculate the overall DQ metrics
@@ -234,47 +280,3 @@ getTotalStatistic <- function(col, row){
   env$tdata
 }
 
-#' @title addStatistic
-#' @description Funtion to calculate the overall DQ metrics for the completeness and plausibility dimensions
-#'
-addStatistic<- function (bdata, col, row) {
-  bdata = addMissingCount(bdata,col,row)
-  bdata = addOutlierCount(bdata,col,row)
-  bdata
-}
-
-#' @title getUserSelectedMetrics
-#' @description This function enable users to select desired DQ metrics
-#'
-getUserSelectedMetrics <- function(dqInd, tdata){
-  dqMetrics <- subset(tdata, select= dqInd)
-  dqMetrics
-}
-
-#------------------------------------------------------------------------------------------------------
-# Utils: multiple helper functions
-#------------------------------------------------------------------------------------------------------
-
-#' @title isDate
-#' @description This function checks whether a given data value has date format
-#' @export
-#'
-isDate <- function(mydate) {
-  tryCatch(!is.na(as.Date(mydate,tryFormats = c("%Y-%m-%d", "%Y/%m/%d","%d-%m-%Y","%m-%d-%Y","%Y.%m.%d","%d.%m.%Y","%m.%d.%Y"))),
-           error = function(err) {FALSE})
-}
-
-#' @title getFileExtension
-#' @description Function to get the file extension of a given file
-#'
-getFileExtension <- function(filePath){
-  ext <- strsplit(basename(filePath), split="\\.")[[1]]
-  return(ext[-1])
-}
-
-#' @title getPercentFormat
-#' @description This function formats values as a percentage
-#'
-getPercentFormat <- function(x, digits = 2, format = "f", ...) {
-  paste0(formatC(x * 100, format = format, digits = digits, ...), "%")
-}
