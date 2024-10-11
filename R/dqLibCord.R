@@ -809,14 +809,19 @@ getConcIndicator <- function(dist, index){
 #' @import openxlsx utils
 #' @export
 #'
-getReport <- function (repCol, cl, td, path) {
-  repCol = append (repCol, cl)
+getReport <- function (repMeta, cl, td, path) {
+  if (is.data.frame(repMeta)) repCol <-repMeta$repCol
+  else  repCol = append (repMeta, cl)
   repData <-subset(env$dq, select= repCol)
   dfq <-repData[ which(env$dq[,cl]!="")  ,]
-  dfq[nrow(dfq)+1,] <- NA
-  dfq[nrow(dfq)+1,1] <- env$mItem
-  sheets <- list("DQ_Report"=dfq, "DQ_Metrics" = td)
-  write.xlsx(sheets, paste (path,".xlsx", sep =""))
+  if (is.data.frame(repMeta)) {
+    englCol <-repMeta$engLabel 
+    names(dfq)=englCol
+  }
+  dfq[nrow(dfq)+1,5] <- env$mItem
+  sheets <- list("DQ_Metrics" = td, "DQ_Violations"=dfq)
+  header_st <- createStyle(textDecoration = "Bold")
+  write.xlsx(sheets, paste (path,".xlsx", sep =""), headerStyle = header_st, colWidths="auto")
   write.csv(td, paste (path,".csv", sep =""), row.names = FALSE)
 }
 
