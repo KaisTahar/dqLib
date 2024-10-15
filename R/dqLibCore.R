@@ -39,7 +39,7 @@ setMissingCodes <- function(codeList) {
 #------------------------------------------------------------------------------------------------------
 
 #' @title addCompleteness
-#' @description This function to calculate the completeness rate
+#' @description This function to calculate the value completeness rate 
 #'
 addCompleteness<- function (tdata, col, row) {
   index = which( tdata[,col]==row)
@@ -71,29 +71,52 @@ getMissingValue<-function (df, bItemCol, outCol1,outCol2){
 }
 
 #' @title missingCheck
-#' @description Function to check individual data items for missing values
+#' @description Function to check individual data items for coded missing values
 #' @export
 #'
-missingCheck<- function (df, item, bItems, cl1, cl2) {
-  index <- which(bItems==item)[[1]]
+missingCheck<- function (df, item, itemCol, cl1, cl2) {
+  if (!all(is.na(env$dq)))
+  {
+    if(!cl1 %in% colnames(env$dq)) env$dq[,cl1]<-""
+    if(!cl2 %in% colnames(env$dq)) env$dq[,cl2] <-""
+  }
+  else
+  {
+    env$dq[nrow(env$dq)+1,] <- NA
+    if(!cl1 %in% colnames(env$dq)) env$dq[,cl1]<-""
+    if(!cl2 %in% colnames(env$dq)) env$dq[,cl2] <-""
+  }
+  index <- which (df[, itemCol]==item)
+  m <- NULL
   item.vec <- env$medData[[item]]
   if(!is.empty(item.vec)){
-    nq <- which(as.character(item.vec) =="" | is.na(item.vec))
-    if (!is.empty (nq))
-      for(i in nq)
-      {
-        msg <- paste("Fehlendes ", item)
-        if (index >1) {
-          if (!is.na(env$dq[,cl1][i])) env$dq[,cl1][i] <- paste(msg, "; ", env$dq[,cl1][i])
-          else env$dq [,cl1] [i] <- msg
-        }
-        else env$dq [,cl1] [i] <- paste (msg, ".")
+    if (!is.empty(env$missingCode)) {
+      for (code in env$missingCode) {
+        if (is.na(code)) v <-which(is.na(item.vec)) else if(is.null(code)) v <-which(is.null(item.vec))
+        else  v <-which(as.character(item.vec) == code)
+        m <-c(m, v)
       }
-    df <- addMissingValue(item, df,length(nq), length(item.vec))
+    }
+    else m <- which(as.character(item.vec) =="" | is.na(item.vec))
+    if (!is.empty (m))
+    {
+      for(i in m)
+      {
+        msg <- paste("Missing ", item, sep="")
+        if (index >=1) {
+          if (!is.na(env$dq[,cl1][i])) env$dq[,cl1][i] <- paste(msg, ". ", env$dq[,cl1][i], sep="")
+          else env$dq[,cl1][i] <- msg
+        }
+        else env$dq [,cl1][i] <- paste(msg, ".", sep="")
+      }
+      df <- addMissingValue(item, df,length(m), length(item.vec), itemCol)
+    }
+    else df <- addMissingValue(item, df,0, length(item.vec), itemCol)
+    
   }
   else if (item!="Total"){
-    df <- addMissingValue(item, df, 0,0)
-    env$dq[,cl2]<- paste( item, " wurde nicht erhoben ", env$dq[,cl2])
+    df <- addMissingValue(item, df, 0,0, itemCol)
+    env$dq[,cl2]<- paste( item, " was not collected ", env$dq[,cl2])
   }
 
   df
@@ -103,25 +126,29 @@ missingCheck<- function (df, item, bItems, cl1, cl2) {
 #' @description Function to add missing value metrics for each data item
 #' @export
 #'
-addMissingValue<- function (item, bdata, m, n) {
-  index = which(bdata$basicItem==item)[1]
-  if (is.null(index)) bdata$basicItem[1]=item
-  if(!"missing_value_no" %in% colnames(bdata)) bdata$missing_value_no <-0
-  if(!"missing_value_rate" %in% colnames(bdata)) bdata$missing_value_rate <-0
-  if(!"N_Item" %in% colnames(bdata)) bdata$N_Item <-0
-  if(n>0){
-    bdata$N_Item[index] <-n
-    if (!is.na(bdata$missing_value_no[index]) && is.numeric(bdata$missing_value_no[index]) ) bdata$missing_value_no[index] <- bdata$missing_value_no[index]+m
-    else bdata$missing_value_no[index] <- m
-    mr <-(bdata$missing_value_no[index]/ bdata$N_Item[index]) * 100
-    bdata$missing_value_rate[index] <- round (mr,1)
+addMissingValue<- function (item, bdata, m, n, ...) {
+  vars <- list(...)
+  bItemCl = "basicItem"
+  if(!(is.empty(vars))){
+    bItemCl <- vars[[1]]
   }
-  else if (item!="Total"){
-    bdata$N_Item[index] <- 0
-    bdata$missing_value_no[index] <- 0
-    bdata$missing_value_rate[index] <-0
-  }
-  bdata
+  index = which(bdata[, bItemCl]==item)
+  if ( length(index)>0){
+    if(!"im_misg" %in% colnames(bdata)) bdata$im_misg <-0
+    if(!"vm_misg" %in% colnames(bdata)) bdata$vm_misg <-0
+    if(!"vm" %in% colnames(bdata)) bdata$vm <-0
+    if(n>0){
+      bdata$vm[index] <-n
+      if (!is.na(bdata$vm_misg[index]) && is.numeric(bdata$vm_misg[index]) ) bdata$vm_misg[index] <- bdata$vm_misg[index]+m
+      else bdata$vm_misg[index] <- m
+    }
+    else{
+      bdata$im_misg[index] <- 1
+      bdata$vm[index] <- 0
+      bdata$vm_misg[index] <- 0
+    }
+    bdata
+  }else bdata
 }
 
 #' @title addMissingCount
