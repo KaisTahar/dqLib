@@ -5,6 +5,10 @@
 # Author: Kais Tahar, University Medical Center Göttingen
 #######################################################################################################
 
+#------------------------------------------------------------------------------------------------------
+# functions to set package environment
+#------------------------------------------------------------------------------------------------------
+
 #' @title env
 #' @description Package environment
 #'
@@ -19,8 +23,16 @@ setGlobals <- function(medData, repCol, cdata, ddata, tdata) {
   env$cdata <- cdata
   env$ddata <- ddata
   env$tdata <- tdata
+  env$repMeta <-repCol
 }
 
+#' @title  setMissingCodes
+#' @description Function to define missing values
+#' @export
+#'
+setMissingCodes <- function(codeList) {
+  env$missingCode <-codeList
+}
 
 #------------------------------------------------------------------------------------------------------
 # functions to calculate DQ metrics for D1 completeness dimension
