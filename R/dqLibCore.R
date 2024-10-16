@@ -182,6 +182,60 @@ missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
   df
 }
 
+#' @title checkSubjCompleteness
+#' @description This function evaluates the completeness of recorded subjects such as inpatient or outpatients
+#' @export
+#'
+checkSubjCompleteness <-function(subj, itemVec){
+  df <-data.frame(s = 0, s_inc= 0)
+  if (all(itemVec %in%  colnames(env$medData)==TRUE))
+  {
+    basicData <-subset(env$medData, select= itemVec)
+    df$s <-length(unique(basicData[[subj]]))
+    completeData <- na.omit(basicData)
+    complete_subj_no_py <-length(unique(completeData[[subj]]))
+    df$s_inc <-df$s-complete_subj_no_py
+  } else {
+    df$s <-length(unique(basicData[[subj]]))
+    df$s_inc <-df$s
+  }
+  if (is.null(env$metrics)) env$metrics <-df
+  else env$metrics <-cbind(env$metrics,df)
+  df
+}
+
+#' @title checkCaseCompleteness
+#' @description This function evaluates the completeness of case module
+#'
+checkCaseCompleteness<-function (caseItems, bItemCol){
+  df <-data.frame(vm_case =0, vm_case_misg= 0)
+  for (item in caseItems) {
+    index1 = which(cdata[, bItemCol]==item)
+    if (length(index1) >0) {
+      if (env$cdata$vm[index1]==0) {
+        df$vm_case_misg <- df$vm_case_misg+nrow(env$medData)
+        df$vm_case <- df$vm_case+nrow(env$medData)
+      }
+      df$vm_case <- df$vm_case+env$cdata$vm[index1]
+      df$vm_case_misg <- df$vm_case_misg+env$cdata$vm_misg[index1]
+    }
+    else{
+      index2 = which(ddata[, bItemCol]==item)
+      if (!is.null(index2) & !is.na(index2)){
+        if (env$ddata$vm[index2]==0) {
+          df$vm_case_misg <- df$vm_case_misg+nrow(env$medData)
+          df$vm_case <- df$vm_case+nrow(env$medData)
+        }
+        df$vm_case <- df$vm_case+env$ddata$vm[index2]
+        df$vm_case_misg <- df$vm_case_misg+env$ddata$vm_misg[index2]
+      }
+    }
+  }
+  if (is.null(env$metrics)) env$metrics <-df
+  else env$metrics <-cbind(env$metrics,df)
+  df
+}
+
 #' @title addMissingValue
 #' @description Function to add missing value metrics for each data item
 #' @export

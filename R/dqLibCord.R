@@ -157,6 +157,7 @@ checkD1 <- function ( refData, cl, basicItems,bItemCl){
 
 #' @title getSubjCompleteness
 #' @description This function evaluates the completeness of recorded subjects such as inpatient or outpatients
+#' @deprecated replaced by checkSubjCompleteness()
 #'
 getSubjCompleteness <-function(rep, subj, itemVec, medData) {
   if (all(itemVec %in%  colnames(medData)==TRUE))
@@ -179,6 +180,7 @@ getSubjCompleteness <-function(rep, subj, itemVec, medData) {
 
 #' @title getCaseCompletenessRate
 #' @description This function evaluates the completeness of case module
+#' @deprecated replaced by checkCaseCompleteness()
 #'
 getCaseCompletenessRate<-function (cdata, ddata, caseItems){
   mvr =0
