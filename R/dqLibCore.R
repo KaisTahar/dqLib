@@ -71,54 +71,104 @@ getMissingValue<-function (df, bItemCol, outCol1,outCol2){
 }
 
 #' @title missingCheck
-#' @description Function to check individual data items for coded missing values
+#' @description Function to check individual data items for missing values. The new version also supports coded missing values and data blanking rules. Data values hidden due to data blanking rules are not considered missing values
 #' @export
 #'
-missingCheck<- function (df, item, itemCol, cl1, cl2) {
-  if (!all(is.na(env$dq)))
-  {
-    if(!cl1 %in% colnames(env$dq)) env$dq[,cl1]<-""
-    if(!cl2 %in% colnames(env$dq)) env$dq[,cl2] <-""
-  }
-  else
-  {
-    env$dq[nrow(env$dq)+1,] <- NA
-    if(!cl1 %in% colnames(env$dq)) env$dq[,cl1]<-""
-    if(!cl2 %in% colnames(env$dq)) env$dq[,cl2] <-""
-  }
-  index <- which (df[, itemCol]==item)
-  m <- NULL
-  item.vec <- env$medData[[item]]
-  if(!is.empty(item.vec)){
-    if (!is.empty(env$missingCode)) {
-      for (code in env$missingCode) {
-        if (is.na(code)) v <-which(is.na(item.vec)) else if(is.null(code)) v <-which(is.null(item.vec))
-        else  v <-which(as.character(item.vec) == code)
-        m <-c(m, v)
-      }
+missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
+  vars <- list(...)
+  if(length(vars)==2) {
+    itemCond <- vars[[1]]
+    cond <- vars[[2]]
+    if (!all(is.na(env$dq))){
+      if(!cl1 %in% colnames(env$dq)) env$dq[,cl1]<-""
+      if(!cl2 %in% colnames(env$dq)) env$dq[,cl2] <-""
+    } else {
+      env$dq[nrow(env$dq)+1,] <- NA
+      if(!cl1 %in% colnames(env$dq)) env$dq[,cl1]<-""
+      if(!cl2 %in% colnames(env$dq)) env$dq[,cl2] <-""
     }
-    else m <- which(as.character(item.vec) =="" | is.na(item.vec))
-    if (!is.empty (m))
-    {
-      for(i in m)
-      {
-        msg <- paste("Missing ", item, sep="")
-        if (index >=1) {
-          if (!is.na(env$dq[,cl1][i])) env$dq[,cl1][i] <- paste(msg, ". ", env$dq[,cl1][i], sep="")
-          else env$dq[,cl1][i] <- msg
+    dqItem.vec<- df[, itemCol]
+    index <- which (df[, itemCol]==item)
+    item.vec <- env$medData[[item]] 
+    if(!is.empty(item.vec)){
+      if(!is.empty(env$medData[[itemCond]])) {
+        a <- which(env$medData[[itemCond]]!=cond)
+        for (j in a) { 
+          env$dq[,item][j] <- paste("hidden")
+          env$medData[,item][j] <- paste("hidden")
         }
-        else env$dq [,cl1][i] <- paste(msg, ".", sep="")
       }
-      df <- addMissingValue(item, df,length(m), length(item.vec), itemCol)
+      df$vm_misg[index] <-0
+      m <- NULL
+      if(!is.empty(env$medData[[itemCond]])) cond.vec <- env$medData[which(env$medData[[itemCond]]==cond), item]
+      if(!is.empty(cond.vec)){
+        if (!is.empty(env$missingCode)) {   
+          for (code in env$missingCode) {
+            if (is.na(code)) v <-  which(env$medData[[itemCond]]==cond & is.na(env$medData[[item]]))
+            else if(is.null(code)) v <-  which(env$medData[[itemCond]]==cond & is.null(env$medData[[item]]))
+            else  v <-  which(env$medData[[itemCond]]==cond & as.character(env$medData[[item]])==code)
+            m <-c(m, v)
+          }
+        }
+        else m <- which((env$medData[[itemCond]]==cond & as.character(env$medData[[item]])=="") |(env$medData[[itemCond]]==cond & is.na(env$medData[[item]])))
+        if (!is.empty (m)) {
+          for(i in m) {
+            msg <- paste("Missing ", item, sep="")
+            if (index >=1) { 
+              if (!is.na(env$dq[,cl1][i])) env$dq[,cl1][i] <- paste(msg, ". ", env$dq[,cl1][i], sep="")
+              else env$dq[,cl1][i] <- msg
+            }
+            else env$dq [,cl1][i] <- paste(msg, ".", sep="")
+          }
+          df <- addMissingValue(item,df,length(m),length(cond.vec),itemCol)
+        }else df <- addMissingValue(item, df,0,length(cond.vec), itemCol)
+      }else df <-addMissingValue(item, df,0, length(item.vec), itemCol)
     }
-    else df <- addMissingValue(item, df,0, length(item.vec), itemCol)
-    
+    else if (item!="Total"){
+      df <- addMissingValue(item, df, 0,0, itemCol)
+      env$dq[,cl2]<- paste( item," was not collected ", env$dq[,cl2])
+    }
+  } else {
+      if (!all(is.na(env$dq))) {
+        if(!cl1 %in% colnames(env$dq)) env$dq[,cl1]<-""
+        if(!cl2 %in% colnames(env$dq)) env$dq[,cl2] <-""
+      } else {
+        env$dq[nrow(env$dq)+1,] <- NA
+        if(!cl1 %in% colnames(env$dq)) env$dq[,cl1]<-""
+        if(!cl2 %in% colnames(env$dq)) env$dq[,cl2] <-""
+      }
+      index <- which (df[, itemCol]==item)
+      m <- NULL
+      item.vec <- env$medData[[item]]
+      if(!is.empty(item.vec)){
+        if (!is.empty(env$missingCode)) {
+          for (code in env$missingCode) {
+            if (is.na(code)) v <-which(is.na(item.vec)) else if(is.null(code)) v <-which(is.null(item.vec))
+            else  v <-which(as.character(item.vec) == code)
+            m <-c(m, v)
+          }
+        }
+        else m <- which(as.character(item.vec) =="" | is.na(item.vec))
+        if (!is.empty (m)) {
+          for(i in m)
+          {
+            msg <- paste("Missing ", item, sep="")
+            if (index >=1) {
+              if (!is.na(env$dq[,cl1][i])) env$dq[,cl1][i] <- paste(msg, ". ", env$dq[,cl1][i], sep="")
+              else env$dq[,cl1][i] <- msg
+            }
+            else env$dq [,cl1][i] <- paste(msg, ".", sep="")
+          }
+          df <- addMissingValue(item, df,length(m), length(item.vec), itemCol)
+        }
+        else df <- addMissingValue(item, df,0, length(item.vec), itemCol)
+      }
+      else if (item!="Total"){
+        df <- addMissingValue(item, df, 0,0, itemCol)
+        env$dq[,cl2]<- paste( item, " was not collected ", env$dq[,cl2])
+      }
   }
-  else if (item!="Total"){
-    df <- addMissingValue(item, df, 0,0, itemCol)
-    env$dq[,cl2]<- paste( item, " was not collected ", env$dq[,cl2])
-  }
-
+  
   df
 }
 
