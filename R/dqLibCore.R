@@ -37,9 +37,76 @@ setMissingCodes <- function(codeList) {
 #------------------------------------------------------------------------------------------------------
 # functions to calculate DQ metrics for D1 completeness dimension
 #------------------------------------------------------------------------------------------------------
+#' @title itemCompletenessIndicator
+#' @description This function adds generic DQ metrics to evaluate the completeness of mandatory data items
+#'
+itemCompletenessIndicator <- function(im, im_misg) {
+  df <-data.frame( im = c(im), im_misg = c(im_misg))
+  if (im>0) df$dqi_co_icr<- round (((im-im_misg)/im )*100,2)
+  else df$dqi_co_icr<- NA
+  if (is.null(env$report)) env$report <-df
+  else env$report <-cbind(env$report,df)
+  df
+}
+
+#' @title valueCompletenessIndicator
+#' @description  This function adds generic DQ metrics to evaluate the completeness of mandatory data values
+#'
+valueCompletenessIndicator<- function(vm, vm_misg) {
+  df <-data.frame( vm = c (vm), vm_misg = c(vm_misg))
+  if (vm>0) df$dqi_co_vcr<- round (((vm-vm_misg)/vm )*100,2)
+  else df$dqi_co_vcr<-NA
+  if (is.null(env$report)) env$report <-df
+  else env$report <-cbind(env$report,df)
+  df
+}
+
+#' @title subjectCompletenessIndicator
+#' @description  This function adds generic DQ metrics to evaluate the completeness of recorded subjects such as inpatient or outpatients
+#'
+subjectCompletenessIndicator <- function(s, s_inc) {
+  df <-data.frame( s = c (s), s_inc= c(s_inc))
+  if (s >0) df$dqi_co_scr<- round (((s-s_inc)/s )*100,2)
+  else df$dqi_co_scr<-NA
+  if (is.null(env$report)) env$report <-df
+  else env$report <-cbind(env$report,df)
+  df
+  #env$report
+}
+
+#' @title caseCompletenessIndicator
+#' @description  This function adds generic DQ metrics to evaluate the completeness of recorded case module
+#'
+caseCompletenessIndicator <- function(vm_case, vm_case_misg) {
+  df <-data.frame(vm_case = c (vm_case), vm_case_misg= c(vm_case_misg))
+  if (vm_case >0) df$dqi_co_ccr<- round (((vm_case-vm_case_misg)/vm_case )*100,2)
+  else df$dqi_co_ccr<- NA
+  if (is.null(env$report)) env$report <-df
+  else env$report <-cbind(env$report,df)
+  df
+}
+
+#' @title addMissingValueCount
+#' @description This function adds the overall missing values
+#'
+addMissingValueCount<- function (bdata, col, row) {
+  index = which( bdata[,col]==row)
+  bdata$vm[index]<-sum(as.integer(as.character(bdata$vm[-index])), na.rm=TRUE)
+  bdata$vm_misg[index] <- sum(as.integer(as.character(bdata$vm_misg[-index])), na.rm=TRUE)
+  bdata
+}
+#' @title addMissingItemCount
+#' @description This function adds the overall missing items
+#'
+addMissingItemCount<- function (bdata, col, row) {
+  index = which( bdata[,col]==row)
+  bdata$im_misg[index] <- sum(as.integer(as.character(bdata$im_misg[-index])), na.rm=TRUE)
+  bdata
+}
 
 #' @title addCompleteness
-#' @description This function to calculate the value completeness rate 
+#' @description This function to calculate the value completeness rate
+#' @deprecated replaced by addValueCompleteness()
 #'
 addCompleteness<- function (tdata, col, row) {
   index = which( tdata[,col]==row)
@@ -267,6 +334,7 @@ addMissingValue<- function (item, bdata, m, n, ...) {
 
 #' @title addMissingCount
 #' @description This function adds the overall metrics for missing values
+#' @deprecated replaced by addMissingItemCount
 #'
 addMissingCount<- function (bdata, col, row) {
   index = which( bdata[,col]==row)
@@ -282,16 +350,19 @@ addMissingCount<- function (bdata, col, row) {
 #' @export
 #'
 getMissingItem<- function (basicItem) {
-  diff <- setdiff (basicItem, names (env$medData))
+  df <-data.frame( im = 0, im_misg = 0, im_misg_msg =0)
+  diff <- setdiff(basicItem, names(env$medData))
   mItem <-""
   if (!is.empty (diff)){
     str<- paste (diff,collapse=" , " )
-    mItem <- paste ("Following items are missing: ", str)
+    mItem <- paste ("Following data items are missing: ", str)
   }
-  env$tdata$missing_item_no<- length(diff)
-  env$tdata$item_no <- length(basicItem)
-  env$tdata$missing_item_rate <- round(length(diff)/length(basicItem)*100 ,2)
-  env$tdata
+  df$im <- length(basicItem)
+  df$im_misg<- length(diff)
+  df$im_misg_msg<- mItem
+  if (is.null(env$metrics)) env$metrics <-df
+  else env$metrics <-cbind(env$metrics,df)
+  
   mItem
 }
 
@@ -433,3 +504,21 @@ getTotalStatistic <- function(col, row){
   env$tdata
 }
 
+#' @title deprecatedMetrics
+#' @description Function to handle deprecated DQ metrics that were renamed according to the abbreviations specified in the publication DOI:10.1055/a-2006-1018.
+#' The aim of this function is to support legacy versions and migrate from deprecated code without introducing bugs.
+#'
+deprecatedMetrics<- function (df) {
+  if (! is.empty(df))
+  {
+    if ("vm_misg" %in% names(df))  df$missing_value_no_py <- df$vm_misg
+    if ("im_misg" %in% names(df))  df$missing_item_no_py <- df$im_misg
+    if ("s_inc" %in% names (df))    df$incomplete_subject_no_py <- df$s_inc
+    if ("dqi_co_icr" %in% names(df))  df$item_completeness_rate <- df$dqi_co_icr
+    if ("dqi_co_vcr" %in% names(df))  df$value_completeness_rate <- df$dqi_co_vcr
+    if ("dqi_co_scr" %in% names(df))  df$subject_completeness_rate <-df$dqi_co_scr
+    if ("dqi_co_ccr" %in% names(df))  df$case_completeness_rate <-df$dqi_co_ccr
+  }
+  
+  df
+}
