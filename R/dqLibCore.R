@@ -480,7 +480,12 @@ getPercentFormat <- function(x, digits = 2, format = "f", ...) {
 #' @description Funtion to calculate the overall DQ metrics for the completeness and plausibility dimensions
 #'
 addStatistic<- function (bdata, col, row) {
-  bdata = addMissingCount(bdata,col,row)
+  index = which(bdata[,col]==row)
+  if (length(index) >0) bdata<-bdata[-index,]
+  bdata[nrow(bdata) + 1, ] <-  NA
+  bdata[nrow(bdata), col] <-row
+  bdata = addMissingValueCount(bdata,col,row)
+  bdata = addMissingItemCount(bdata,col,row)
   bdata = addOutlierCount(bdata,col,row)
   bdata
 }
@@ -490,18 +495,39 @@ addStatistic<- function (bdata, col, row) {
 #' @export
 #'
 getTotalStatistic <- function(col, row){
-  env$cdata<- addStatistic(env$cdata, col, row)
-  if (is.null(env$ddata)) bdata <-env$cdata
-  else bdata <- base::merge(env$cdata,  addStatistic(env$ddata, col, row) , by=intersect(names(env$cdata), names(env$ddata)), all = TRUE)
-  if (!is.empty (bdata$engLabel)) bdata$engLabel <-NULL
-  index = which(bdata[,col]==row)
-  bdata<-bdata[-index,]
-  bdata[nrow(bdata) + 1, ] <- list ("Total",0,0,0,0,0, 0, nrow(bdata)-1)
+  if (!is.empty(env$cdata) & !is.empty (env$ddata)) {
+    bdata <- base::merge(env$cdata, env$ddata, by=intersect(names(env$cdata), names(env$ddata)), all = TRUE)
+    env$cdata<- addStatistic(env$cdata, col, row)
+    env$ddata<- addStatistic(env$ddata, col, row)
+  }
+  else if (!is.empty(env$cdata)) {
+    bdata <- env$cdata
+    env$cdata<- addStatistic(env$cdata, col, row)
+  }
+  else if (!is.empty(env$ddata)) {
+    bdata <- env$ddata
+    env$ddata<- addStatistic(env$ddata, col, row)
+  }
+  if (!is.empty (env$ndata)) {
+    bdata<- base::merge(bdata, env$ndata, by=intersect(names(bdata), names(env$ndata)), all = TRUE)
+    env$ndata<- addStatistic(env$ndata, col, row)
+  }
+  if (!is.empty(bdata$engLabel)) bdata$engLabel <-NULL
+  if (!is.empty(env$oItem)) {
+    for (i in env$oItem){
+      index = which(bdata[,col]==i)
+      bdata$im_misg[index] <- 0
+    }
+  }
   bdata<- addStatistic(bdata, col, row)
-  tcdata <- addCompleteness (bdata, col, row)
-  total <- subset(tcdata, tcdata[,col]==row)
-  env$tdata<- cbind(total,env$tdata)
-  env$tdata
+  env$adata <-bdata
+  total <- subset(bdata, bdata[,col]==row)
+  inter <-intersect(colnames(total), colnames(env$metrics))
+  if (!is.null(inter)){
+    df <-env$metrics[!colnames(env$metrics) %in% inter]
+    env$metrics<-cbind(total, df)
+  } else env$metrics<-cbind(total, env$metrics)
+  env$metrics
 }
 
 #' @title deprecatedMetrics
