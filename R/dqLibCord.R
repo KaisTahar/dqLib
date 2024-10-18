@@ -842,32 +842,57 @@ getConcIndicator <- function(dist, index){
 # Functions to generate data quality reports
 #------------------------------------------------------------------------------------------------------
 #' @title geReport
-#' @description This function generates data quality reports about detected quality issues, user-selected indicators and key numbers
+#' @description This function generates data quality reports about detected quality issues, user-selected indicators and parameters
 #' @import openxlsx utils
 #' @export
 #'
-getReport <- function (repMeta, cl, td, path) {
-  if (is.data.frame(repMeta)){
-    repCol <-repMeta$repCol
-    repCol <- append(repCol, cl)
-    englCol <-repMeta$engLabel
-    englCol = append(englCol, cl)}
-  else  repCol = append(repMeta, cl)
-  repData <-subset(env$dq, select= repCol)
-  dfq <-repData[which(env$dq[,cl]!="")  ,]
-  if (exists("englCol")) names(dfq)=englCol
-  dfq[nrow(dfq)+1,5] <- env$mItem
-  sheets <- list("DQ_Metrics" = td, "DQ_Violations"=dfq)
-  header_st <- createStyle(textDecoration = "Bold")
-  write.xlsx(sheets, paste (path,".xlsx", sep =""), headerStyle = header_st, colWidths="auto")
-  write.csv(td, paste (path,".csv", sep =""), row.names = FALSE)
+getReport <- function(repMeta, sheetName, df, path){
+  if (is.list(df)) dfList <- df
+  else dfList <- list ("DQ_Metrics"=df)
+  if (is.list(sheetName)) sheetList <- sheetName
+  else sheetList <- c ("DQ_Metrics", sheetName)
+  if (grepl("csv", path, fixed=TRUE))  write.csv(dfList[[1]], path,  row.names = FALSE)
+  else {
+    if (!is.null(repMeta)) {
+      if (is.data.frame(repMeta)) {
+        repCol <-repMeta$repCol
+        englCol <-repMeta$engLabel
+        repCol = append(repCol, sheetName)
+        englCol = append(englCol, sheetName)
+      }
+      else  repCol = append (repCol, sheetName)
+      repData <-subset(env$dq, select= repCol)
+      dfq <-repData[ which(env$dq[,sheetName]!="")  ,]
+      if (exists("englCol")) names(dfq)=englCol
+      dfq[nrow(dfq)+1,5] <- env$mItem
+      dfList <- list("DQ_Metrics" = df, "DQ_Violations"=dfq)
+      write.csv(df, paste (path,".csv", sep =""), row.names = FALSE)
+      path <-  paste (path,".xlsx", sep ="")
+    }
+    index=0
+    wb <- createWorkbook()
+    header_st <- createStyle(textDecoration = "Bold")
+    for (df in dfList)
+    {
+      index=index+1
+      addWorksheet(wb, sheetList[index])
+      setColWidths(wb, sheet=sheetList[index], cols =1:30, widths = "auto")
+      writeData(wb, sheet = sheetList[index], x = df,  headerStyle = header_st)
+    }
+    saveWorkbook(wb, path, overwrite = TRUE)
+  }
 }
 
 #' @title addSemantics
 #' @description This function adds semantic enrichment to resulting DQ metrics in the DQ report
 #' @export
 #'
-addSemantics <- function (dqRep, semData) {
+addSemantics <- function (dqRep, semData, ...) {
+  vars <- list(...)
+  if(!(is.empty(vars))){
+    cl <- vars[[1]]
+  }
+  else cl <-semData$SymbolicName
   tRep <- as.data.frame(t(dqRep))
   Abbreviation  <- rownames (tRep)
   Label <-NA
@@ -877,15 +902,16 @@ addSemantics <- function (dqRep, semData) {
   colnames(tRep)[3] <-  "Value"
   for (item in tRep$Abbreviation)
   {
-    if (item  %in%  semData$SymbolicName){
+    if (item  %in%  cl){
       k<- which(tRep$Abbreviation==item)
-      l<- which(semData$SymbolicName==item)
+      l<- which(cl==item)
       tRep$Label[k]=semData$Label[l]
       abr<-semData$Abbreviation[l]
       tRep$Abbreviation[k]=abr
       if ( grepl( "dqi", abr, fixed=TRUE))
       {
-        tRep$Value[k]<-paste0(gsub("\\.", ",", tRep$Value[k]), '%')
+        if (abr !="dqi_cc_rvl") tRep$Value[k]<-paste0(gsub("\\.", ",", tRep$Value[k]), '%')
+        #tRep$Value[k]<-paste0(gsub("\\.", ",", tRep$Value[k]), '%')
       }
     }
   }
