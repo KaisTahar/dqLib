@@ -38,52 +38,106 @@ setMissingCodes <- function(codeList) {
 # functions to calculate DQ metrics for D1 completeness dimension
 #------------------------------------------------------------------------------------------------------
 #' @title itemCompletenessIndicator
-#' @description This function adds generic DQ metrics to evaluate the completeness of mandatory data items
+#' @description This function calculates the Item Completeness Rate (dqi_cc_icr), a generic indicator that assesses the completeness of mandatory data items, and adds related metadata and DQ parameters.
 #'
 itemCompletenessIndicator <- function(im, im_misg) {
-  df <-data.frame( im = c(im), im_misg = c(im_misg))
-  if (im>0) df$dqi_co_icr<- round (((im-im_misg)/im )*100,2)
-  else df$dqi_co_icr<- NA
+  ind <-data.frame(
+    Abbreviation= "dqi_co_icr",
+    Label = "Item Completeness Rate",
+    Dimension ="Completeness",
+    Short_Description = "This indicator assesses the metadata completeness. Further details and examples are available under DOI:10.1055/a-2006-1018."
+  )
+  if (is.null(env$semantics)) env$semantics <- ind
+  if (is.numeric(im) & is.numeric(im_misg)) {
+    if (im>0) ind$value <-round(((im - im_misg)/im)*100,2)
+    else ind$value <- NA
+  } else {
+    ind$value <- NA
+    if (!is.numeric(im)) im <-NA
+    if (!is.numeric(im_misg)) im_misg <-NA
+  }
+  df <-data.frame( im = c(im), im_misg = c(im_misg), dqi_co_icr = c(ind$value))
   if (is.null(env$report)) env$report <-df
   else env$report <-cbind(env$report,df)
-  df
+  ind
 }
 
 #' @title valueCompletenessIndicator
-#' @description  This function adds generic DQ metrics to evaluate the completeness of mandatory data values
+#' @description  This function determines the Value Completeness Rate (dqi_cc_vcr), a generic indicator for assessing the completeness of mandatory data values. It also adds related metadata and parameters in the DQ report.
 #'
 valueCompletenessIndicator<- function(vm, vm_misg) {
-  df <-data.frame( vm = c (vm), vm_misg = c(vm_misg))
-  if (vm>0) df$dqi_co_vcr<- round (((vm-vm_misg)/vm )*100,2)
-  else df$dqi_co_vcr<-NA
+  ind <-data.frame(
+    Abbreviation= "dqi_co_vcr",
+    Label = "Value Completeness Rate",
+    Dimension ="Completeness",
+    Short_Description = "This indicator assesses the data completeness of a given data set. The publication DOI:10.1055/a-2006-1018 provides more details and examples."
+  )
+  if (is.null(env$semantics)) env$semantics <- ind
+  else env$semantics <-rbind(env$semantics,ind)
+  if (is.numeric(vm) & is.numeric(vm_misg)) {
+    if (vm>0) ind$value <-round (((vm-vm_misg)/vm )*100,2)
+    else ind$value <- NA
+  } else {
+    ind$value <- NA
+    if (!is.numeric(vm)) vm <-NA
+    if (!is.numeric(vm_misg)) vm_misg <-NA
+  }
+  df <- data.frame( vm = c(vm), vm_misg= c(vm_misg), dqi_co_vcr = c(ind$value))
   if (is.null(env$report)) env$report <-df
   else env$report <-cbind(env$report,df)
-  df
+  ind
 }
 
 #' @title subjectCompletenessIndicator
-#' @description  This function adds generic DQ metrics to evaluate the completeness of recorded subjects such as inpatient or outpatients
+#' @description  Function to calculate the indicator for Subject Completeness (dqi_cc_scr), and adds related metadata and parameters in the DQ report.
 #'
 subjectCompletenessIndicator <- function(s, s_inc) {
-  df <-data.frame( s = c (s), s_inc= c(s_inc))
-  if (s >0) df$dqi_co_scr<- round (((s-s_inc)/s )*100,2)
-  else df$dqi_co_scr<-NA
+  ind <-data.frame(
+    Abbreviation= "dqi_co_scr",
+    Label = "Subject Completeness Rate",
+    Dimension ="Completeness",
+    Short_Description = "This indicator assesses the completeness of subject records. Further details and examples can be found under DOI:10.1055/a-2006-1018."
+  )
+  if (is.null(env$semantics)) env$semantics <- ind
+  else env$semantics <-rbind(env$semantics,ind)
+  if (is.numeric(s) & is.numeric(s_inc)) {
+    if (s>0) ind$value <- round (((s-s_inc)/s )*100,2)
+    else ind$value <- NA
+  } else {
+    ind$value <- NA
+    if (!is.numeric(s)) s <-NA
+    if (!is.numeric(s_inc)) s_inc <-NA
+  }
+  df <-data.frame( s = c (s), s_inc= c(s_inc), dqi_co_scr = c(ind$value))
   if (is.null(env$report)) env$report <-df
   else env$report <-cbind(env$report,df)
-  df
-  #env$report
+  ind
 }
 
 #' @title caseCompletenessIndicator
-#' @description  This function adds generic DQ metrics to evaluate the completeness of recorded case module
+#' @description This function calculate the indicator for Case Completeness (dqi_cc_ccr), and adds related metadata and parameters.
 #'
 caseCompletenessIndicator <- function(vm_case, vm_case_misg) {
-  df <-data.frame(vm_case = c (vm_case), vm_case_misg= c(vm_case_misg))
-  if (vm_case >0) df$dqi_co_ccr<- round (((vm_case-vm_case_misg)/vm_case )*100,2)
-  else df$dqi_co_ccr<- NA
+  ind <-data.frame(
+    Abbreviation= "dqi_co_ccr",
+    Label = "Case Completeness Rate",
+    Dimension ="Completeness",
+    Short_Description = "This indicator assesses the completeness of data values required for recording the case module in a given data set. Further details and examples are available under DOI:10.1055/a-2006-1018."
+  )
+  if (is.null(env$semantics)) env$semantics <- ind
+  else env$semantics <-rbind(env$semantics,ind)
+  if (is.numeric(vm_case) & is.numeric(vm_case_misg)) {
+    if (vm_case>0) ind$value <-  round (((vm_case-vm_case_misg)/vm_case )*100,2)
+    else ind$value <- NA
+  } else {
+    ind$value <- NA
+    if (!is.numeric(vm_case)) vm_case <-NA
+    if (!is.numeric(vm_case_misg)) vm_case_misg <-NA
+  }
+  df <-data.frame(vm_case = c (vm_case), vm_case_misg= c(vm_case_misg), dqi_co_ccr = c(ind$value))
   if (is.null(env$report)) env$report <-df
   else env$report <-cbind(env$report,df)
-  df
+  ind
 }
 
 #' @title addMissingValueCount
