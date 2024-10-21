@@ -34,9 +34,11 @@ setMissingCodes <- function(codeList) {
   env$missingCode <-codeList
 }
 
+
 #------------------------------------------------------------------------------------------------------
-# functions to calculate DQ metrics for D1 completeness dimension
+# functions to specify and calculate data quality (DQ) metrics for the completeness dimension (D1)
 #------------------------------------------------------------------------------------------------------
+
 #' @title itemCompletenessIndicator
 #' @description This function calculates the Item Completeness Rate (dqi_cc_icr), a generic indicator that assesses the completeness of mandatory data items, and adds related metadata and DQ parameters.
 #'
@@ -140,6 +142,35 @@ caseCompletenessIndicator <- function(vm_case, vm_case_misg) {
   ind
 }
 
+#' @title addMissingValue
+#' @description Function to add missing value metrics for each data item
+#' @export
+#'
+addMissingValue<- function (item, bdata, m, n, ...) {
+  vars <- list(...)
+  bItemCl = "basicItem"
+  if(!(is.empty(vars))){
+    bItemCl <- vars[[1]]
+  }
+  index = which(bdata[, bItemCl]==item)
+  if ( length(index)>0){
+    if(!"im_misg" %in% colnames(bdata)) bdata$im_misg <-0
+    if(!"vm_misg" %in% colnames(bdata)) bdata$vm_misg <-0
+    if(!"vm" %in% colnames(bdata)) bdata$vm <-0
+    if(n>0){
+      bdata$vm[index] <-n
+      if (!is.na(bdata$vm_misg[index]) && is.numeric(bdata$vm_misg[index]) ) bdata$vm_misg[index] <- bdata$vm_misg[index]+m
+      else bdata$vm_misg[index] <- m
+    }
+    else{
+      bdata$im_misg[index] <- 1
+      bdata$vm[index] <- 0
+      bdata$vm_misg[index] <- 0
+    }
+    bdata
+  }else bdata
+}
+
 #' @title addMissingValueCount
 #' @description This function adds the overall missing values
 #'
@@ -158,15 +189,9 @@ addMissingItemCount<- function (bdata, col, row) {
   bdata
 }
 
-#' @title addCompleteness
-#' @description This function to calculate the value completeness rate
-#' @deprecated replaced by addValueCompleteness()
-#'
-addCompleteness<- function (tdata, col, row) {
-  index = which( tdata[,col]==row)
-  tdata$completness_rate[index]<-round (100-tdata$missing_value_rate[index],2)
-  return <- tdata
-}
+#------------------------------------------------------------------------------------------------------
+# functions to detect completeness issues
+#------------------------------------------------------------------------------------------------------
 
 #' @title getMissingValue
 #' @description This function checks the loaded data for missing values
@@ -357,48 +382,6 @@ checkCaseCompleteness<-function (caseItems, bItemCol){
   df
 }
 
-#' @title addMissingValue
-#' @description Function to add missing value metrics for each data item
-#' @export
-#'
-addMissingValue<- function (item, bdata, m, n, ...) {
-  vars <- list(...)
-  bItemCl = "basicItem"
-  if(!(is.empty(vars))){
-    bItemCl <- vars[[1]]
-  }
-  index = which(bdata[, bItemCl]==item)
-  if ( length(index)>0){
-    if(!"im_misg" %in% colnames(bdata)) bdata$im_misg <-0
-    if(!"vm_misg" %in% colnames(bdata)) bdata$vm_misg <-0
-    if(!"vm" %in% colnames(bdata)) bdata$vm <-0
-    if(n>0){
-      bdata$vm[index] <-n
-      if (!is.na(bdata$vm_misg[index]) && is.numeric(bdata$vm_misg[index]) ) bdata$vm_misg[index] <- bdata$vm_misg[index]+m
-      else bdata$vm_misg[index] <- m
-    }
-    else{
-      bdata$im_misg[index] <- 1
-      bdata$vm[index] <- 0
-      bdata$vm_misg[index] <- 0
-    }
-    bdata
-  }else bdata
-}
-
-#' @title addMissingCount
-#' @description This function adds the overall metrics for missing values
-#' @deprecated replaced by addMissingItemCount
-#'
-addMissingCount<- function (bdata, col, row) {
-  index = which( bdata[,col]==row)
-  bdata$N_Item[index]<-sum(bdata$N_Item[-index], na.rm=TRUE)
-  bdata$missing_value_no[index] <- sum(as.integer(as.character(bdata$missing_value_no[-index])), na.rm=TRUE)
-  mr <- (bdata$missing_value_no[index]/ bdata$N[index])* 100
-  bdata$missing_value_rate[index] <- round (mr,2)
-  bdata
-}
-
 #' @title getMissingItem
 #' @description Function to check the loaded data for missing of mandatory data items
 #' @export
@@ -491,44 +474,9 @@ getDateOutlier<- function (dItem.vec){
   out
 }
 
-
-
 #------------------------------------------------------------------------------------------------------
-# Utility functions
+# functions to calculate overall metrics and generate DQ reports
 #------------------------------------------------------------------------------------------------------
-
-#' @title isDate
-#' @description This function checks whether a given data value has date format
-#' @export
-#'
-isDate <- function(mydate) {
-  tryCatch(!is.na(as.Date(mydate,tryFormats = c("%Y-%m-%d", "%Y/%m/%d","%d-%m-%Y","%m-%d-%Y","%Y.%m.%d","%d.%m.%Y","%m.%d.%Y"))),
-           error = function(err) {FALSE})
-}
-
-#' @title getUserSelectedMetrics
-#' @description This function enable users to select desired DQ metrics
-#'
-getUserSelectedMetrics <- function(dqInd, tdata){
-  dqMetrics <- subset(tdata, select= dqInd)
-  dqMetrics
-}
-
-#' @title getFileExtension
-#' @description Function to get the file extension of a given file
-#'
-getFileExtension <- function(filePath){
-  ext <- strsplit(basename(filePath), split="\\.")[[1]]
-  return(ext[-1])
-}
-
-#' @title getPercentFormat
-#' @description This function formats values as a percentage
-#'
-getPercentFormat <- function(x, digits = 2, format = "f", ...) {
-  paste0(formatC(x * 100, format = format, digits = digits, ...), "%")
-}
-
 
 #' @title addStatistic
 #' @description Funtion to calculate the overall DQ metrics for the completeness and plausibility dimensions
@@ -584,6 +532,146 @@ getTotalStatistic <- function(col, row){
   env$metrics
 }
 
+#' @title geReport
+#' @description This function generates data quality reports about detected quality issues, user-selected indicators and parameters
+#' @import openxlsx utils
+#' @export
+#'
+getReport <- function(repMeta, sheetName, df, path){
+  if (is.list(df)) dfList <- df
+  else dfList <- list ("DQ_Metrics"=df)
+  if (is.list(sheetName)) sheetList <- sheetName
+  else sheetList <- c ("DQ_Metrics", sheetName)
+  if (grepl("csv", path, fixed=TRUE))  write.csv(dfList[[1]], path,  row.names = FALSE)
+  else {
+    if (!is.null(repMeta)) {
+      if (is.data.frame(repMeta)) {
+        repCol <-repMeta$repCol
+        englCol <-repMeta$engLabel
+        repCol = append(repCol, sheetName)
+        englCol = append(englCol, sheetName)
+      }
+      else  repCol = append (repCol, sheetName)
+      repData <-subset(env$dq, select= repCol)
+      dfq <-repData[ which(env$dq[,sheetName]!="")  ,]
+      if (exists("englCol")) names(dfq)=englCol
+      dfq[nrow(dfq)+1,5] <- env$mItem
+      dfList <- list("DQ_Metrics" = df, "DQ_Violations"=dfq)
+      write.csv(df, paste (path,".csv", sep =""), row.names = FALSE)
+      path <-  paste (path,".xlsx", sep ="")
+    }
+    index=0
+    wb <- createWorkbook()
+    header_st <- createStyle(textDecoration = "Bold")
+    for (df in dfList)
+    {
+      index=index+1
+      addWorksheet(wb, sheetList[index])
+      setColWidths(wb, sheet=sheetList[index], cols =1:30, widths = "auto")
+      writeData(wb, sheet = sheetList[index], x = df,  headerStyle = header_st)
+    }
+    saveWorkbook(wb, path, overwrite = TRUE)
+  }
+}
+
+#' @title addSemantics
+#' @description This function adds semantic enrichment to resulting DQ metrics in the DQ report
+#' @export
+#'
+addSemantics <- function (dqRep, semData, ...) {
+  vars <- list(...)
+  if(!(is.empty(vars))){
+    cl <- vars[[1]]
+  }
+  else cl <-semData$SymbolicName
+  tRep <- as.data.frame(t(dqRep))
+  Abbreviation  <- rownames (tRep)
+  Label <-NA
+  tRep <- cbind (Label, tRep)
+  tRep <- cbind (Abbreviation, tRep)
+  rownames(tRep) <- NULL
+  colnames(tRep)[3] <-  "Value"
+  for (item in tRep$Abbreviation)
+  {
+    if (item  %in%  cl){
+      k<- which(tRep$Abbreviation==item)
+      l<- which(cl==item)
+      tRep$Label[k]=semData$Label[l]
+      abr<-semData$Abbreviation[l]
+      tRep$Abbreviation[k]=abr
+      if ( grepl( "dqi", abr, fixed=TRUE))
+      {
+        if (abr !="dqi_cc_rvl") tRep$Value[k]<-paste0(gsub("\\.", ",", tRep$Value[k]), '%')
+        #tRep$Value[k]<-paste0(gsub("\\.", ",", tRep$Value[k]), '%')
+      }
+    }
+  }
+  tRep
+}
+
+#------------------------------------------------------------------------------------------------------
+# Utility: helper functions
+#------------------------------------------------------------------------------------------------------
+
+#' @title isDate
+#' @description This function checks whether a given data value has date format
+#' @export
+#'
+isDate <- function(mydate) {
+  tryCatch(!is.na(as.Date(mydate,tryFormats = c("%Y-%m-%d", "%Y/%m/%d","%d-%m-%Y","%m-%d-%Y","%Y.%m.%d","%d.%m.%Y","%m.%d.%Y"))),
+           error = function(err) {FALSE})
+}
+
+#' @title getUserSelectedMetrics
+#' @description This function enable users to select desired DQ metrics
+#'
+getUserSelectedMetrics <- function(dqInd, tdata){
+  dqMetrics <- subset(tdata, select= dqInd)
+  dqMetrics
+}
+
+#' @title getFileExtension
+#' @description Function to get the file extension of a given file
+#'
+getFileExtension <- function(filePath){
+  ext <- strsplit(basename(filePath), split="\\.")[[1]]
+  return(ext[-1])
+}
+
+#' @title getPercentFormat
+#' @description This function formats values as a percentage
+#'
+getPercentFormat <- function(x, digits = 2, format = "f", ...) {
+  paste0(formatC(x * 100, format = format, digits = digits, ...), "%")
+}
+
+#------------------------------------------------------------------------------------------------------
+# Deprecated code 
+#------------------------------------------------------------------------------------------------------
+
+#' @title addCompleteness
+#' @description This function to calculate the value completeness rate
+#' @deprecated replaced by addValueCompleteness()
+#'
+addCompleteness<- function (tdata, col, row) {
+  index = which( tdata[,col]==row)
+  tdata$completness_rate[index]<-round (100-tdata$missing_value_rate[index],2)
+  return <- tdata
+}
+
+#' @title addMissingCount
+#' @description This function adds the overall metrics for missing values
+#' @deprecated replaced by addMissingItemCount
+#'
+addMissingCount<- function (bdata, col, row) {
+  index = which( bdata[,col]==row)
+  bdata$N_Item[index]<-sum(bdata$N_Item[-index], na.rm=TRUE)
+  bdata$missing_value_no[index] <- sum(as.integer(as.character(bdata$missing_value_no[-index])), na.rm=TRUE)
+  mr <- (bdata$missing_value_no[index]/ bdata$N[index])* 100
+  bdata$missing_value_rate[index] <- round (mr,2)
+  bdata
+}
+
 #' @title deprecatedMetrics
 #' @description Function to handle deprecated DQ metrics that were renamed according to the abbreviations specified in the publication DOI:10.1055/a-2006-1018.
 #' The aim of this function is to support legacy versions and migrate from deprecated code without introducing bugs.
@@ -593,11 +681,15 @@ deprecatedMetrics<- function (df) {
   {
     if ("vm_misg" %in% names(df))  df$missing_value_no_py <- df$vm_misg
     if ("im_misg" %in% names(df))  df$missing_item_no_py <- df$im_misg
-    if ("s_inc" %in% names (df))    df$incomplete_subject_no_py <- df$s_inc
+    if ("s_inc" %in% names (df))   df$incomplete_subject_no_py <- df$s_inc
     if ("dqi_co_icr" %in% names(df))  df$item_completeness_rate <- df$dqi_co_icr
     if ("dqi_co_vcr" %in% names(df))  df$value_completeness_rate <- df$dqi_co_vcr
     if ("dqi_co_scr" %in% names(df))  df$subject_completeness_rate <-df$dqi_co_scr
     if ("dqi_co_ccr" %in% names(df))  df$case_completeness_rate <-df$dqi_co_ccr
+    if ("dqi_co_ocr" %in% names(df))  df$orphaCoding_completeness_rate <-df$dqi_co_ocr
+    if ("dqi_pl_opr" %in% names(df))  df$orphaCoding_plausibility_rate <-df$dqi_pl_opr
+    if ("dqi_un_cur" %in% names(df))  df$rdCase_unambiguity_rate <-df$dqi_un_cur
+    if ("dqi_un_cdr" %in% names(df))  df$rdCase_dissimilarity_rate <-df$dqi_un_cdr
   }
   
   df
