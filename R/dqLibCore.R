@@ -570,6 +570,11 @@ getReport <- function(repMeta, sheetName, df, path){
       setColWidths(wb, sheet=sheetList[index], cols =1:30, widths = "auto")
       writeData(wb, sheet = sheetList[index], x = df,  headerStyle = header_st)
     }
+    if (!is.null(env$semantics)) {
+      addWorksheet(wb, "Semantics")
+      setColWidths(wb, sheet="Semantics", cols =1:30, widths = "auto")
+      writeData(wb, sheet = "Semantics", env$semantics,  headerStyle = header_st)
+    }
     saveWorkbook(wb, path, overwrite = TRUE)
   }
 }
@@ -625,8 +630,15 @@ isDate <- function(mydate) {
 #' @title getUserSelectedMetrics
 #' @description This function enable users to select desired DQ metrics
 #'
-getUserSelectedMetrics <- function(dqInd, tdata){
-  dqMetrics <- subset(tdata, select= dqInd)
+getUserSelectedMetrics <- function(dqInd, df){
+  for (m in dqInd){
+    if (!(m  %in% names(df))) {
+      stop ("undefined DQ metric: ", m)
+      #print(paste(" undefined DQ metric:", m))
+      #quit()
+    }
+  }
+  dqMetrics <- subset(df, select= dqInd)
   dqMetrics
 }
 
