@@ -446,6 +446,29 @@ rangePlausibilityIndicator<- function(v_slc, v_ip) {
   ind
 }
 
+semanticPlausibilityIndicator<- function(vs_cd, vc) {
+  ind <-data.frame(
+    Abbreviation= "dqi_pl_spr",
+    Label = "Semantic Plausibility Rate",
+    Dimension = "Plausibility",
+    Short_Description = "This indicator assesses the plausibility of selected data values regarding semantic contradictions. The publication DOI:10.1055/a-2006-1018 provides more details and examples."
+  )
+  if (is.null(env$semantics)) env$semantics <- ind
+  else env$semantics <-rbind(env$semantics,ind)
+  if (is.numeric(vs_cd) & is.numeric(vc)){
+    if (vs_cd>0) ind$value<- round (((vs_cd-vc)/vs_cd)*100,2)
+    else ind$value<- NA
+  } else {
+    ind$value<- NA
+    if (!is.numeric(vs_cd)) vs_cd <-NA
+    if (!is.numeric(vc)) vc <-NA
+  }
+  df <-data.frame(vs_cd = c(vs_cd), vc= c(vc), dqi_pl_spr = c(ind$value))
+  if (is.null(env$report)) env$report <-df
+  else env$report <-cbind(env$report,df)
+  ind
+}
+
 #' @title addOutlier
 #' @description Function to add detected outliers for each data item.
 #' @export
@@ -656,6 +679,25 @@ addSemantics <- function (dqRep, semData, ...) {
 #------------------------------------------------------------------------------------------------------
 # Utility: helper functions
 #------------------------------------------------------------------------------------------------------
+
+getMandatoryItems <- function (imCol, opt, df, ...){
+  vars <- list(...)
+  df <- setdiff(df[, imCol], opt)
+  im <- df
+  if(length(vars)==1){
+    df1 <- vars[[1]]
+    df1 <- setdiff(df1[, imCol], opt)
+    im<- union(im, df1)
+  }
+  if(length(vars)==2){
+    df1 <- vars[[1]]
+    df2 <- vars[[2]]
+    df1 <- setdiff(df1[, imCol], opt)
+    df2 <- setdiff(df2[, imCol], opt)
+    im<- Reduce(union, list(im, df1, df2))
+  }
+  im
+}
 
 #' @title isDate
 #' @description This function checks whether a given data value has date format.
