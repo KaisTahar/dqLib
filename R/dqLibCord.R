@@ -6,6 +6,39 @@
 # Kais Tahar, University Medical Center Göttingen
 # ######################################################################################################
 
+dqChecker <- function (data, domain, itemMandatoryCol, ...)
+{
+  vars <- list(...)
+  env$medData <-data
+  env$metrics <- data.frame(indicators =NA, parameters =NA)
+  indInstance <- data.frame(dqi_co_icr =NA)
+  if (domain=="CD") {
+    if (! is.empty (vars)) {
+      # Semantic Rules for detecting missing data values and recognizing the intentionally hidden data values
+      rulePath <- vars[[1]]
+      paramInstance <- cdDqChecker(itemMandatoryCol, rulePath)
+    }
+  }
+  if (domain =="RD") {
+    if(length(vars)==3){
+      # tracer diagnoses list
+      tracerRef <- vars[[1]] 
+      # standard terminology for semantic annotation of RDs
+      rdStandard <- vars[[2]]
+      # mandatory data items for the case module
+      caseModule <- vars[[3]]
+      paramInstance  <-rdDqChecker(itemMandatoryCol, tracerRef, rdStandard, caseModule)
+    }
+  }
+  # DQ metrics (parameters and indicators) implemented based on the DQ concept published under doi DOI:10.1055/a-2006-1018.
+  env$metrics$parameters <- paramInstance
+  indInstance$dqi_co_icr <- itemCompletenessIndicator(paramInstance$im, paramInstance$im_misg)$value
+  indInstance$dqi_co_vcr <- valueCompletenessIndicator(paramInstance$vm, paramInstance$vm_misg)$value
+  indInstance$dqi_pl_rpr <- rangePlausibilityIndicator(paramInstance$vs_od, paramInstance$vo)$value
+  env$metrics$indicators <- indInstance 
+  env$metrics
+}
+
 #' @title checkCordDQ
 #' @description This function checks the quality of loaded data regarding selected DQ metrics.
 #' The default DQ dimensions are completeness, plausibility, uniqueness and concordance.
@@ -137,6 +170,7 @@ checkCordDQ <- function (instID, reportYear, inpatientCases, refData1, refData2,
   out[["mItem"]] <-env$mItem
   out
 }
+
 
 #------------------------------------------------------------------------------------------------------
 # functions for the completeness dimension (D1)
