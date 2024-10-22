@@ -3,19 +3,15 @@
 # This package provides functions that enable users to select desired dimensions, indicators, and parameters as well as to define specific DQ reports.
 # As part of the "dqLib" package this script includes functions for calculating DQ metrics and generating reports on detected DQ issues, especially in the field of Rare Diseases(RDs)
 # Date Created: 2021-02-26
-#' @author: Kais Tahar, University Medical Center Göttingen
-#' @keywords internal
-#' @name dqLib
-"_PACKAGE"
+# Kais Tahar, University Medical Center Göttingen
 # ######################################################################################################
 
 #' @title checkCordDQ
-#' @description This function checks the quality of loaded data regarding selected DQ metrics
-#' The default data quality dimensions are completeness, plausibility, uniqueness and concordance
+#' @description This function checks the quality of loaded data regarding selected DQ metrics.
+#' The default DQ dimensions are completeness, plausibility, uniqueness and concordance.
 #' @import stringi
 #' @export
 #'
-
 checkCordDQ <- function (instID, reportYear, inpatientCases, refData1, refData2, dqInd, repCol, cl, bItemCl, totalRow, oItem,...) {
   vars <- list(...)
   if (is.null (cl)) stop("No report design available")
@@ -128,12 +124,13 @@ checkCordDQ <- function (instID, reportYear, inpatientCases, refData1, refData2,
   # DQ metrics
   metrics<-getTotalStatistic(bItemCl, totalRow)
   metrics<-cbind(metrics, env$tdata)
+  metrics <- cbind(metrics, env$tdata)
+  metrics$range_plausibility_rate <-100-metrics$outlier_rate
+  metrics$outlier_no_py <- metrics$outlier_no
   metrics$dqi_co_icr <- itemCompletenessIndicator(metrics$im, metrics$im_misg)$value
   metrics$dqi_co_vcr <- valueCompletenessIndicator(metrics$vm, metrics$vm_misg)$value
   metrics$dqi_co_scr <- subjectCompletenessIndicator(metrics$s, metrics$s_inc)$value
   metrics$dqi_co_ccr <- caseCompletenessIndicator(metrics$vm_case, metrics$vm_case_misg)$value
-  metrics$range_plausibility_rate <-100-metrics$outlier_rate
-  metrics$outlier_no_py <- metrics$outlier_no
   env$report <- deprecatedMetrics(metrics)
   userMetrics<- getUserSelectedMetrics(dqInd, env$report)
   out <- list()
@@ -146,6 +143,10 @@ checkCordDQ <- function (instID, reportYear, inpatientCases, refData1, refData2,
 # functions for the completeness dimension (D1)
 #------------------------------------------------------------------------------------------------------
 
+#' @title orphaCompletenessIndicator
+#' @description This function calculates the Orphacoding Completeness Rate  (dqi_cc_ocr), a specific indicator for RD coding, and adds related metadata and DQ parameters.
+#' @export
+#'
 orphaCompletenessIndicator <- function(icd_tracer, oc_misg) {
   ind <-data.frame(
     Abbreviation= "dqi_co_ocr",
@@ -170,7 +171,7 @@ orphaCompletenessIndicator <- function(icd_tracer, oc_misg) {
 }
 
 #' @title checkD1
-#' @description This function checks the quality of loaded data regarding the completeness dimension (D1)
+#' @description This function checks the quality of loaded data regarding the completeness dimension (D1).
 #'
 checkD1 <- function ( refData, cl, basicItems,bItemCl){
   env$medData<- env$medData[!sapply(env$medData, function(x) all( is.empty(x) | is.na(x)))]
@@ -185,7 +186,7 @@ checkD1 <- function ( refData, cl, basicItems,bItemCl){
 }
 
 #' @title checkOrphaCodingCompleteness
-#' @description This function checks the completeness of Orphacoding
+#' @description This function checks the completeness of Orphacoding.
 #' @import stringi
 #'
 checkOrphaCodingCompleteness <- function (refData, cl){
@@ -259,7 +260,7 @@ checkOrphaCodingCompleteness <- function (refData, cl){
 
 
 #' @title addD1
-#' @description This function adds DQ metrics for the completeness dimension (D1)
+#' @description This function adds DQ metrics for the completeness dimension (D1).
 #'
 addD1<- function (tdata,  orpha, icd_tracer) {
   if(icd_tracer>0){
@@ -279,6 +280,10 @@ addD1<- function (tdata,  orpha, icd_tracer) {
 # functions for the plausibility dimension (D2)
 #------------------------------------------------------------------------------------------------------
 
+#' @title orphaPlausibilityIndicator
+#' @description This function calculates the Orphacoding Plausibility Rate (dqi_pl_opr), a specific indicator for assessing the semantic plausibility of RD diagnoses, and adds related metadata and DQ parameters.
+#' @export
+#'
 orphaPlausibilityIndicator <- function(link, link_ip) {
   ind <-data.frame(
     Abbreviation= "dqi_pl_opr",
@@ -304,7 +309,7 @@ orphaPlausibilityIndicator <- function(link, link_ip) {
 
 
 #' @title checkD2
-#' @description This function checks the quality of loaded data regarding the plausibility dimension (D2)
+#' @description This function checks the quality of loaded data regarding the plausibility dimension (D2).
 #'
 checkD2 <- function (refData2, bItemCl, cl){
   # get outliers
@@ -325,7 +330,7 @@ checkD2 <- function (refData2, bItemCl, cl){
 }
 
 #' @title checkOrphaCoding
-#' @description This function checks the plausibility of ICD-Orpha links
+#' @description This function checks the plausibility of ICD-Orpha links.
 #' @import stringi
 #'
 checkOrphaCoding<- function (refData2, cl) {
@@ -379,7 +384,7 @@ checkOrphaCoding<- function (refData2, cl) {
 }
 
 #' @title checkOutlier
-#' @description This function checks the loaded data for outliers
+#' @description This function checks the loaded data for outliers.
 #'
 checkOutlier<-function (ddata, item, cl) {
   item.vec <- env$medData[[item]]
@@ -417,7 +422,7 @@ checkOutlier<-function (ddata, item, cl) {
 
 
 #' @title addD2
-#' @description This function adds DQ indicators and parameters for the plausibility dimension (D2)
+#' @description This function adds DQ indicators and parameters for the plausibility dimension (D2).
 #'
 addD2<- function (tdata, link_pl, link) {
   if(link_pl>0 & link >0){
@@ -436,6 +441,10 @@ addD2<- function (tdata, link_pl, link) {
 #------------------------------------------------------------------------------------------------------
 # functions for D3 uniqueness dimension
 #------------------------------------------------------------------------------------------------------
+
+#' @title rdCaseUnambiguityIndicator
+#' @description This function calculates the RD Case unambiguity Rate (dqi_un_cur), a specific indicator for assessing the semantic uniqueness of RD diagnoses, and adds related metadata and DQ parameters.
+#' @export
 
 rdCaseUnambiguityIndicator <- function(rdCase, rdCase_amb) {
   ind <-data.frame(
@@ -460,6 +469,10 @@ rdCaseUnambiguityIndicator <- function(rdCase, rdCase_amb) {
   ind
 }
 
+#' @title rdCaseDissimilarityIndicator
+#' @description This function calculates the RD Case Dissimilarity Rate(dqi_un_cdr), a specific indicator for assessing the syntactic uniqueness of RD diagnoses, and adds related metadata and DQ parameters.
+#'@export
+#'
 rdCaseDissimilarityIndicator <- function(rdCase, rdCase_dup) {
   ind <-data.frame(
     Abbreviation= "dqi_un_cdr",
@@ -484,7 +497,7 @@ rdCaseDissimilarityIndicator <- function(rdCase, rdCase_dup) {
 }
 
 #' @title checkD3
-#' @description This function checks the quality of loaded data regarding uniqueness dimension (D3)
+#' @description This function checks the quality of loaded data regarding the uniqueness dimension (D3).
 #'
 checkD3 <- function (refData1, refData2, cl){
   if (is.null(env$medData$ICD_Primaerkode)) out <-checkUniqueOrphaCoding(cl)
@@ -492,8 +505,9 @@ checkD3 <- function (refData1, refData2, cl){
   else out <- checkUniqueIcd(refData1, cl)
   out
 }
+
 #' @title checkUniqueIcd
-#' @description This function checks the uniqueness of RD cases coded using ICD-10 codes
+#' @description This function checks the uniqueness of RD cases diagnosed using ICD-10 codes.
 #' @import stringi
 #'
 checkUniqueIcd <- function (refData1, cl){
@@ -551,7 +565,7 @@ checkUniqueIcd <- function (refData1, cl){
 }
 
 #' @title checkUniqueOrphaCoding
-#' @description This function checks the uniqueness of RD cases coded with Orphacodes
+#' @description This function checks the uniqueness of RD cases diagnosed with Orphacodes.
 #'
 checkUniqueOrphaCoding <- function (cl){
   oList <-which(env$medData$Orpha_Kode !="" & !is.na(env$medData$Orpha_Kode)  & !is.empty(env$medData$Orpha_Kode)& !is.null(env$medData$Orpha_Kode))
@@ -581,7 +595,7 @@ checkUniqueOrphaCoding <- function (cl){
 }
 
 #' @title checkUniqueIcdOrphaCoding
-#' @description This function checks the uniqueness of RD cases coded with ICD-Orpha links
+#' @description This function checks the uniqueness of RD cases coded with ICD-Orpha links.
 #' @import stringi
 #'
 checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
@@ -713,7 +727,7 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
 
 
 #' @title addD3
-#' @description This function adds DQ indicators and parameters for uniqueness dimension (D3)
+#' @description This function adds DQ indicators and parameters for uniqueness dimension (D3).
 #'
 addD3<- function (tdata, rdDiag_unamb, rdCase_unamb, rdCase) {
   if(rdCase >0){
@@ -736,8 +750,9 @@ addD3<- function (tdata, rdDiag_unamb, rdCase_unamb, rdCase) {
 #------------------------------------------------------------------------------------------------------
 # functions for concordance dimension (D4)
 #------------------------------------------------------------------------------------------------------
+
 #' @title checkD4
-#' @description This function checks the quality of loaded data regarding the concordance dimension (D4)
+#' @description This function checks the quality of loaded data regarding the concordance dimension (D4).
 #'
 checkD4 <- function (cl) {
   iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode)  & !is.empty(env$medData$ICD_Primaerkode))
@@ -757,7 +772,7 @@ checkD4 <- function (cl) {
 }
 
 #' @title getOrphaCaseNo
-#' @description This function calculates the number of Orpha cases
+#' @description This function calculates the number of Orpha cases.
 #'
 getOrphaCaseNo<- function (cl){
   env$dq$orphaCase <- NA
@@ -776,7 +791,7 @@ getOrphaCaseNo<- function (cl){
 }
 
 #' @title getOrphaCodeNo
-#' @description This function calculates the number of Orphacodes
+#' @description This function calculates the number of Orphacodes.
 #'
 getOrphaCodeNo <- function (cl) {
   k4_counter_orpha =0
@@ -791,7 +806,7 @@ getOrphaCodeNo <- function (cl) {
 }
 
 #' @title addD4
-#' @description This function adds DQ metrics for the concordance dimension (D4)
+#' @description This function adds DQ metrics for the concordance dimension (D4).
 #'
 addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
   if (! (is.empty(tdata$report_year) | is.na(tdata$report_year)))
@@ -828,7 +843,7 @@ addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
 }
 
 #' @title getConcWithRefValues
-#' @description This function evaluates the concordance of tracer cases with reference values from the literature of national references
+#' @description This function evaluates the concordance of tracer cases with reference values from the literature of national references.
 #'
 getConcWithRefValues <- function(tracerCase_rel_py_ipat, concRef){
   conc =NA
@@ -842,7 +857,7 @@ getConcWithRefValues <- function(tracerCase_rel_py_ipat, concRef){
 }
 
 #' @title getConcIndicator
-#' @description This function calculates the z-score value to measure concordance indicators such as the concordance of RD cases or the concordance of tracer cases
+#' @description This function calculates the z-score value to measure concordance indicators such as the concordance of RD cases or the concordance of tracer cases.
 #' @import stats
 #'
 getConcIndicator <- function(dist, index){
@@ -851,8 +866,7 @@ getConcIndicator <- function(dist, index){
 }
 
 #' @title setAnnualVars
-#' @description Function to set annual parameters
-#' @import stats
+#' @description Function to set annual parameters.
 #'
 setAnnualVars<- function (tdata) {
   if (! (is.empty(tdata$report_year) | is.na(tdata$report_year)))

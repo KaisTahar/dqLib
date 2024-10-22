@@ -3,6 +3,9 @@
 # This script is part of the "dqLib" package and provides core functions for data quality assessment.
 # Date Created: 2021-02-26
 # Author: Kais Tahar, University Medical Center Göttingen
+#' @keywords internal
+#' @name dqLib
+"_PACKAGE"
 #######################################################################################################
 
 #------------------------------------------------------------------------------------------------------
@@ -15,7 +18,7 @@
 env <- new.env()
 
 #' @title  setGlobals
-#' @description Function to define global variables
+#' @description Function to define global variables.
 #' @export
 #'
 setGlobals <- function(medData, repCol, cdata, ddata, tdata) {
@@ -27,7 +30,7 @@ setGlobals <- function(medData, repCol, cdata, ddata, tdata) {
 }
 
 #' @title  setMissingCodes
-#' @description Function to define missing values
+#' @description Function to define missing values.
 #' @export
 #'
 setMissingCodes <- function(codeList) {
@@ -41,6 +44,7 @@ setMissingCodes <- function(codeList) {
 
 #' @title itemCompletenessIndicator
 #' @description This function calculates the Item Completeness Rate (dqi_cc_icr), a generic indicator that assesses the completeness of mandatory data items, and adds related metadata and DQ parameters.
+#' @export
 #'
 itemCompletenessIndicator <- function(im, im_misg) {
   ind <-data.frame(
@@ -66,6 +70,7 @@ itemCompletenessIndicator <- function(im, im_misg) {
 
 #' @title valueCompletenessIndicator
 #' @description  This function determines the Value Completeness Rate (dqi_cc_vcr), a generic indicator for assessing the completeness of mandatory data values. It also adds related metadata and parameters in the DQ report.
+#' @export
 #'
 valueCompletenessIndicator<- function(vm, vm_misg) {
   ind <-data.frame(
@@ -92,7 +97,8 @@ valueCompletenessIndicator<- function(vm, vm_misg) {
 
 #' @title subjectCompletenessIndicator
 #' @description  Function to calculate the indicator for Subject Completeness (dqi_cc_scr), and adds related metadata and parameters in the DQ report.
-#'
+#' @export
+#' 
 subjectCompletenessIndicator <- function(s, s_inc) {
   ind <-data.frame(
     Abbreviation= "dqi_co_scr",
@@ -118,7 +124,8 @@ subjectCompletenessIndicator <- function(s, s_inc) {
 
 #' @title caseCompletenessIndicator
 #' @description This function calculate the indicator for Case Completeness (dqi_cc_ccr), and adds related metadata and parameters.
-#'
+#' @export
+#' 
 caseCompletenessIndicator <- function(vm_case, vm_case_misg) {
   ind <-data.frame(
     Abbreviation= "dqi_co_ccr",
@@ -143,7 +150,7 @@ caseCompletenessIndicator <- function(vm_case, vm_case_misg) {
 }
 
 #' @title addMissingValue
-#' @description Function to add missing value metrics for each data item
+#' @description Function to add missing value metrics for each data item.
 #' @export
 #'
 addMissingValue<- function (item, bdata, m, n, ...) {
@@ -172,7 +179,7 @@ addMissingValue<- function (item, bdata, m, n, ...) {
 }
 
 #' @title addMissingValueCount
-#' @description This function adds the overall missing values
+#' @description Function to count the overall missing data values.
 #'
 addMissingValueCount<- function (bdata, col, row) {
   index = which( bdata[,col]==row)
@@ -181,7 +188,7 @@ addMissingValueCount<- function (bdata, col, row) {
   bdata
 }
 #' @title addMissingItemCount
-#' @description This function adds the overall missing items
+#' @description Function to count the overall missing data items.
 #'
 addMissingItemCount<- function (bdata, col, row) {
   index = which( bdata[,col]==row)
@@ -194,7 +201,7 @@ addMissingItemCount<- function (bdata, col, row) {
 #------------------------------------------------------------------------------------------------------
 
 #' @title getMissingValue
-#' @description This function checks the loaded data for missing values
+#' @description This function checks the loaded data for missing data values.
 #'
 getMissingValue<-function (df, bItemCol, outCol1,outCol2){
   if (!all(is.na(env$dq)))
@@ -227,7 +234,7 @@ getMissingValue<-function (df, bItemCol, outCol1,outCol2){
 }
 
 #' @title missingCheck
-#' @description Function to check individual data items for missing values. The new version also supports coded missing values and data blanking rules. Data values hidden due to data blanking rules are not considered missing values
+#' @description Function to check individual data items for missing values. The new version also supports coded missing values and data blanking rules. Data values hidden due to data blanking rules are not considered missing values.
 #' @export
 #'
 missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
@@ -329,7 +336,7 @@ missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
 }
 
 #' @title checkSubjCompleteness
-#' @description This function evaluates the completeness of recorded subjects such as inpatient or outpatients
+#' @description Function to check the completeness of recorded subjects such as inpatient or outpatients.
 #' @export
 #'
 checkSubjCompleteness <-function(subj, itemVec){
@@ -351,7 +358,7 @@ checkSubjCompleteness <-function(subj, itemVec){
 }
 
 #' @title checkCaseCompleteness
-#' @description This function evaluates the completeness of case module
+#' @description Function to check the completeness of case module.
 #'
 checkCaseCompleteness<-function (caseItems, bItemCol){
   df <-data.frame(vm_case =0, vm_case_misg= 0)
@@ -383,7 +390,7 @@ checkCaseCompleteness<-function (caseItems, bItemCol){
 }
 
 #' @title getMissingItem
-#' @description Function to check the loaded data for missing of mandatory data items
+#' @description This function checks the loaded data items for completeness issues and returns the detected missing data items.
 #' @export
 #'
 getMissingItem<- function (basicItem) {
@@ -404,7 +411,7 @@ getMissingItem<- function (basicItem) {
 }
 
 #' @title is.empty
-#' @description This function checks whether a vector (data item) is empty
+#' @description This function checks whether a vector (data item) is empty.
 #' @export
 #'
 is.empty <- function(x) return(length(x) ==0 )
@@ -415,7 +422,7 @@ is.empty <- function(x) return(length(x) ==0 )
 #------------------------------------------------------------------------------------------------------
 
 #' @title addOutlier
-#' @description Function to add detected outliers for each data item
+#' @description Function to add detected outliers for each data item.
 #' @export
 #'
 addOutlier<- function (item, bdata, m,n) {
@@ -445,7 +452,7 @@ addOutlier<- function (item, bdata, m,n) {
 }
 
 #' @title addOutlierCount
-#' @description Funtion to count detected outliers and checked data
+#' @description Funtion to count detected outliers and checked data.
 #'
 addOutlierCount<- function (bdata, col, row) {
   index = which( bdata[,col]==row)
@@ -459,14 +466,14 @@ addOutlierCount<- function (bdata, col, row) {
   bdata
 }
 
-# This Function checks the data item "birthdate" for implausible values
+# This Function checks the data item "birthdate" fo implausible values and returns the detected outliers.
 getAgeMaxOutlier<- function ( dItem1.vec, dItem2.vec, n){
   diff <-  ifelse ((isDate(dItem1.vec) & isDate(dItem2.vec)), as.numeric(difftime(dItem1.vec, dItem2.vec),units="weeks")/52.25 , 0 )
   out <- which(abs(diff)>n)
   out
 }
 
-# This function checks the loaded temporal data for outliers
+# This function checks the loaded temporal data for implausible values and return the values dated to the future.
 getDateOutlier<- function (dItem.vec){
   now<- as.Date(Sys.Date())
   out <-  vector()
@@ -479,7 +486,7 @@ getDateOutlier<- function (dItem.vec){
 #------------------------------------------------------------------------------------------------------
 
 #' @title addStatistic
-#' @description Funtion to calculate the overall DQ metrics for the completeness and plausibility dimensions
+#' @description Funtion to calculate the overall DQ metrics for the completeness and plausibility dimensions.
 #'
 addStatistic<- function (bdata, col, row) {
   index = which(bdata[,col]==row)
@@ -493,7 +500,7 @@ addStatistic<- function (bdata, col, row) {
 }
 
 #' @title getTotalStatistic
-#' @description Function to calculate the overall DQ metrics
+#' @description Function to calculate the overall DQ metrics.
 #' @export
 #'
 getTotalStatistic <- function(col, row){
@@ -533,7 +540,7 @@ getTotalStatistic <- function(col, row){
 }
 
 #' @title geReport
-#' @description This function generates data quality reports about detected quality issues, user-selected indicators and parameters
+#' @description This function generates data quality reports about detected quality issues, user-selected indicators and parameters.
 #' @import openxlsx utils
 #' @export
 #'
@@ -580,7 +587,7 @@ getReport <- function(repMeta, sheetName, df, path){
 }
 
 #' @title addSemantics
-#' @description This function adds semantic enrichment to resulting DQ metrics in the DQ report
+#' @description This function adds semantic enrichment to resulting DQ metrics in the DQ report.
 #' @export
 #'
 addSemantics <- function (dqRep, semData, ...) {
@@ -619,7 +626,7 @@ addSemantics <- function (dqRep, semData, ...) {
 #------------------------------------------------------------------------------------------------------
 
 #' @title isDate
-#' @description This function checks whether a given data value has date format
+#' @description This function checks whether a given data value has date format.
 #' @export
 #'
 isDate <- function(mydate) {
@@ -628,7 +635,7 @@ isDate <- function(mydate) {
 }
 
 #' @title getUserSelectedMetrics
-#' @description This function enable users to select desired DQ metrics
+#' @description This function enable users to select desired DQ metrics.
 #'
 getUserSelectedMetrics <- function(dqInd, df){
   for (m in dqInd){
@@ -643,7 +650,7 @@ getUserSelectedMetrics <- function(dqInd, df){
 }
 
 #' @title getFileExtension
-#' @description Function to get the file extension of a given file
+#' @description Function to get the file extension of a given file.
 #'
 getFileExtension <- function(filePath){
   ext <- strsplit(basename(filePath), split="\\.")[[1]]
@@ -662,7 +669,7 @@ getPercentFormat <- function(x, digits = 2, format = "f", ...) {
 #------------------------------------------------------------------------------------------------------
 
 #' @title addCompleteness
-#' @description This function to calculate the value completeness rate
+#' @description This function to calculate the value completeness rate.
 #' @deprecated replaced by addValueCompleteness()
 #'
 addCompleteness<- function (tdata, col, row) {
@@ -672,7 +679,7 @@ addCompleteness<- function (tdata, col, row) {
 }
 
 #' @title addMissingCount
-#' @description This function adds the overall metrics for missing values
+#' @description This function adds the overall metrics for missing values.
 #' @deprecated replaced by addMissingItemCount
 #'
 addMissingCount<- function (bdata, col, row) {
@@ -706,3 +713,4 @@ deprecatedMetrics<- function (df) {
   
   df
 }
+
