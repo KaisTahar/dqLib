@@ -121,16 +121,15 @@ checkCordDQ <- function (instID, reportYear, inpatientCases, refData1, refData2,
   rdCases <- env$dq[which (env$dq$CheckedRdCase=="yes"),]
   env$tdata$orphaPatient_no_py = length(unique(orphaCases$PatientIdentifikator))
   env$tdata$rdPatient_no_py = length(unique(rdCases$PatientIdentifikator))
-  # DQ metrics
+  # get the total number of detected DQ issues for all data items
   metrics<-getTotalStatistic(bItemCl, totalRow)
   metrics<-cbind(metrics, env$tdata)
-  metrics <- cbind(metrics, env$tdata)
-  metrics$range_plausibility_rate <-100-metrics$outlier_rate
-  metrics$outlier_no_py <- metrics$outlier_no
+  # adds generic DQ metrics and generate DQ report about user-selected metrics
   metrics$dqi_co_icr <- itemCompletenessIndicator(metrics$im, metrics$im_misg)$value
   metrics$dqi_co_vcr <- valueCompletenessIndicator(metrics$vm, metrics$vm_misg)$value
   metrics$dqi_co_scr <- subjectCompletenessIndicator(metrics$s, metrics$s_inc)$value
   metrics$dqi_co_ccr <- caseCompletenessIndicator(metrics$vm_case, metrics$vm_case_misg)$value
+  metrics$dqi_pl_rpr <- rangePlausibilityIndicator(metrics$vs_od, metrics$vo)$value
   env$report <- deprecatedMetrics(metrics)
   userMetrics<- getUserSelectedMetrics(dqInd, env$report)
   out <- list()
@@ -318,7 +317,7 @@ checkD2 <- function (refData2, bItemCl, cl){
     dItem <- env$ddata[, bItemCl]
     if (!is.empty(dItem)) {
       for (item in unique(dItem)) {
-        env$ddata  <-checkOutlier(env$ddata, item, cl)
+        env$ddata  <-checkDatePlausibility(env$ddata, item, cl)
       }
     }
     
@@ -383,17 +382,33 @@ checkOrphaCoding<- function (refData2, cl) {
   out
 }
 
-#' @title checkOutlier
-#' @description This function checks the loaded data for outliers.
+#' @title checkDateOutlier
+#' @description This function checks the loaded data for outliers
 #'
-checkOutlier<-function (ddata, item, cl) {
+checkOutlier<-function (data, itemCol, cl) {
+  if (!is.null(data))
+  {
+    dItem <- data[, itemCol]
+    if (!is.empty(dItem)) {
+      for (item in unique(dItem)) {
+        data  <-checkDatePlausibility(data, item, cl)
+      }
+    }
+  }
+  data
+}
+
+#' @title checkDatePlausibility
+#' @description This function checks the plausibility of loaded date values.
+#'
+checkDatePlausibility<-function (ddata, item, cl) {
   item.vec <- env$medData[[item]]
   index = which(ddata$basicItem==item)[1]
   if (!is.empty (env$ddata$engLabel)) name <- env$ddata$engLabel[index]
   else name<- item
   if(!is.empty(item.vec)){
     item.vec <-  as.Date(ISOdate(env$medData[[item]], 1, 1))
-    out <- getDateOutlier(item.vec)
+    out <- checkFutureDate(item.vec)
     if (!is.empty(out)) {
       ddata<- addOutlier (item, ddata, length(out), length(item.vec))
       for(i in out) {
@@ -406,7 +421,7 @@ checkOutlier<-function (ddata, item, cl) {
       item1.vec <-  as.Date(ISOdate(env$medData[["Geburtsdatum"]], 1, 1))
       now<- as.Date(Sys.Date())
       if (!exists("ageMax")) ageMax=105
-      out<-getAgeMaxOutlier(item1.vec,  now, ageMax)
+      out<-checkAgePlausibility(item1.vec,  now, ageMax)
       if (!is.empty(out)) {
         ddata<- addOutlier (item, ddata, length(out), length(item1.vec) )
         maxAge <-paste( "maximal age ", ageMax, ".", sep = "")

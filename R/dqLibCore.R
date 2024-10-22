@@ -416,68 +416,100 @@ getMissingItem<- function (basicItem) {
 #'
 is.empty <- function(x) return(length(x) ==0 )
 
+#------------------------------------------------------------------------------------------------------
+# functions to specify and  calculate DQ metrics for the plausibility dimension (D2)
+#------------------------------------------------------------------------------------------------------
 
-#------------------------------------------------------------------------------------------------------
-# functions to calculate DQ metrics for D2 plausibility dimension
-#------------------------------------------------------------------------------------------------------
+#' @title rangePlausibilityIndicator
+#' @description  This function calculates the Range Plausibility Indicator (dqi_pl_rpr), a generic metric to assess the range plausibility of selected data values. It also adds related metadata and parameters in the DQ report.
+#'
+rangePlausibilityIndicator<- function(v_slc, v_ip) {
+  ind <-data.frame(
+    Abbreviation= "dqi_pl_rpr",
+    Label = "Range Plausibility Rate",
+    Dimension ="Plausibility",
+    Short_Description = "This indicator assesses the plausibility of selected data values regarding outliers. The publication DOI:10.1055/a-2006-1018 provides more details and examples."
+  )
+  if (is.null(env$semantics)) env$semantics <- ind
+  else env$semantics <-rbind(env$semantics,ind)
+  if (is.numeric(v_slc) & is.numeric(v_ip)) {
+    if (v_slc>0) ind$value <-round (((v_slc-v_ip)/v_slc )*100,2)
+    else ind$value <- NA
+  } else {
+    ind$value <- NA
+    if (!is.numeric(v_slc)) v_slc <-NA
+    if (!is.numeric(v_ip)) v_ip <-NA
+  }
+  df <- data.frame(vs_od= c(v_slc), vo= c(v_ip), dqi_pl_rpr = c(ind$value))
+  if (is.null(env$report)) env$report <-df
+  else env$report <-cbind(env$report,df)
+  ind
+}
 
 #' @title addOutlier
 #' @description Function to add detected outliers for each data item.
 #' @export
 #'
-addOutlier<- function (item, bdata, m,n) {
-  index = which(bdata$basicItem==item)[1]
-  if (is.null(index)) bdata$basicItem[1]=item
-  if(!"outlier_no" %in% colnames(bdata)) bdata$outlier_no <-0
-  if(!"outlier_rate" %in% colnames(bdata)) bdata$outlier_rate <-0
-  if(!"N_Item" %in% colnames(bdata)) bdata$N_Item <-0
-  if(!"missing_value_no" %in% colnames(bdata)) bdata$missing_value_no <-0
-  if(!"outlier_check_no" %in% colnames(bdata)) bdata$outlier_check_no <-0
-  if(n>0){
-    bdata$N_Item[index] <-n
-    bdata$outlier_check_no[index] <- bdata$N_Item[index]-bdata$missing_value_no[index]
-    if (!is.na(bdata$outlier_no[index]) && is.numeric(bdata$outlier_no[index]) ) bdata$outlier_no[index] <- bdata$outlier_no[index]+m
-    else bdata$outlier_no[index] <- m
-    if (bdata$outlier_no[index]>0) {
-      or <- (bdata$outlier_no[index]/ bdata$outlier_check_no[index]) * 100
-      bdata$outlier_rate[index] <- round (or,1)
-    }else bdata$outlier_rate[index] <-0
+addOutlier<- function (item, bdata, m, n, ...) {
+  vars <- list(...)
+  df <-data.frame(vm_case =0, vm_case_misg= 0)
+  bItemCl = "basicItem"
+  if(!(is.empty(vars))){
+    bItemCl <- vars[[1]]
   }
-  else if (item!="Total"){
-    bdata$N_Item[index]<- 0
-    bdata$outlier_no[index] <- NA
-    bdata$outlier_rate[index] <- NA
-  }
-  bdata
+  index = which(bdata[, bItemCl]==item)
+  if (length(index)>0)
+  {
+    if(!"vo" %in% colnames(bdata)) bdata$vo <-0
+    if(!"vm" %in% colnames(bdata)) bdata$vm <-0
+    if(!"vm_misg" %in% colnames(bdata)) bdata$vm_misg <-0
+    if(!"vs_od" %in% colnames(bdata)) bdata$vs_od <-0
+    if(n>0){
+      bdata$vm[index] <-n
+      bdata$vs_od[index] <- bdata$vm[index]-bdata$vm_misg[index]
+      if (!is.na(bdata$vo[index]) && is.numeric(bdata$vo[index]) ) bdata$vo[index] <- bdata$vo[index]+m
+      else bdata$vo[index] <- m
+    }
+    else {
+      bdata$vm[index]<- 0
+      bdata$vo[index] <- NA
+    }
+    bdata
+  }else bdata
 }
 
 #' @title addOutlierCount
-#' @description Funtion to count detected outliers and checked data.
+#' @description Funtion to count detected outliers and performed checks.
 #'
 addOutlierCount<- function (bdata, col, row) {
   index = which( bdata[,col]==row)
-  bdata$N_Item[index]<-sum(bdata$N_Item[-index],na.rm=TRUE)
-  bdata$outlier_no[index] <- sum (as.integer(as.character( bdata$outlier_no[-index] )), na.rm=TRUE)
-  bdata$outlier_check_no[index] <- sum (as.integer(as.character( bdata$outlier_check_no[-index] )), na.rm=TRUE)
-  if (bdata$outlier_no[index]>0) {
-    or <- (bdata$outlier_no[index] / as.integer(bdata$outlier_check_no[index]))* 100
-    bdata$outlier_rate[index] <- round (or,2)}
-  else  bdata$outlier_rate[index] <- 0
+  bdata$vo[index] <- sum (as.integer(as.character( bdata$vo[-index] )), na.rm=TRUE)
+  bdata$vs_od[index] <- sum (as.integer(as.character( bdata$vs_od[-index] )), na.rm=TRUE)
   bdata
 }
 
-# This Function checks the data item "birthdate" fo implausible values and returns the detected outliers.
-getAgeMaxOutlier<- function ( dItem1.vec, dItem2.vec, n){
-  diff <-  ifelse ((isDate(dItem1.vec) & isDate(dItem2.vec)), as.numeric(difftime(dItem1.vec, dItem2.vec),units="weeks")/52.25 , 0 )
-  out <- which(abs(diff)>n)
+#------------------------------------------------------------------------------------------------------
+# functions to detect plausibility issues
+#------------------------------------------------------------------------------------------------------
+
+#' @title checkAgePlausibility
+#' @description This Function checks the data values related to the data item "birthdate" for implausible values and returns the detected plausibility issues.
+#' @export
+#'
+checkAgePlausibility<- function (birthDate, currentData, ageMax){
+  diff <-  ifelse ((isDate(birthDate) & isDate(currentData)), as.numeric(difftime(birthDate, currentData),units="weeks")/52.25 , 0 )
+  out <- which(abs(diff)>ageMax)
   out
 }
 
-# This function checks the loaded temporal data for implausible values and return the values dated to the future.
-getDateOutlier<- function (dItem.vec){
+#' @title checkFutureDate
+#' @description This function checks the loaded temporal data for implausible values and return the values dated to the future.
+#' @export
+#' 
+checkFutureDate<- function (dateValues){
   now<- as.Date(Sys.Date())
   out <-  vector()
-  out <- which(isDate(dItem.vec) & (as.Date(dItem.vec)>now))
+  out <- which(isDate(dateValues) & (as.Date(dateValues)>now))
   out
 }
 
@@ -486,7 +518,7 @@ getDateOutlier<- function (dItem.vec){
 #------------------------------------------------------------------------------------------------------
 
 #' @title addStatistic
-#' @description Funtion to calculate the overall DQ metrics for the completeness and plausibility dimensions.
+#' @description Function to count all detected DQ issues in the completeness and plausibility dimensions.
 #'
 addStatistic<- function (bdata, col, row) {
   index = which(bdata[,col]==row)
@@ -500,7 +532,7 @@ addStatistic<- function (bdata, col, row) {
 }
 
 #' @title getTotalStatistic
-#' @description Function to calculate the overall DQ metrics.
+#' @description Function to aggregate the different types of analyzed data and calculate the overall DQ metrics.
 #' @export
 #'
 getTotalStatistic <- function(col, row){
@@ -701,10 +733,12 @@ deprecatedMetrics<- function (df) {
     if ("vm_misg" %in% names(df))  df$missing_value_no_py <- df$vm_misg
     if ("im_misg" %in% names(df))  df$missing_item_no_py <- df$im_misg
     if ("s_inc" %in% names (df))   df$incomplete_subject_no_py <- df$s_inc
+    if ("vo" %in% names(df))       df$outlier_no_py <- df$vo
     if ("dqi_co_icr" %in% names(df))  df$item_completeness_rate <- df$dqi_co_icr
     if ("dqi_co_vcr" %in% names(df))  df$value_completeness_rate <- df$dqi_co_vcr
     if ("dqi_co_scr" %in% names(df))  df$subject_completeness_rate <-df$dqi_co_scr
     if ("dqi_co_ccr" %in% names(df))  df$case_completeness_rate <-df$dqi_co_ccr
+    if ("dqi_pl_rpr" %in% names(df))  df$range_plausibility_rate<-df$dqi_pl_rpr
     if ("dqi_co_ocr" %in% names(df))  df$orphaCoding_completeness_rate <-df$dqi_co_ocr
     if ("dqi_pl_opr" %in% names(df))  df$orphaCoding_plausibility_rate <-df$dqi_pl_opr
     if ("dqi_un_cur" %in% names(df))  df$rdCase_unambiguity_rate <-df$dqi_un_cur
