@@ -6,19 +6,13 @@
 # Kais Tahar, University Medical Center Göttingen
 # ######################################################################################################
 
+
 dqChecker <- function (data, domain, itemMandatoryCol, ...)
 {
   vars <- list(...)
   env$medData <-data
   env$metrics <- data.frame(indicators =NA, parameters =NA)
   indInstance <- data.frame(dqi_co_icr =NA)
-  if (domain=="CD") {
-    if (! is.empty (vars)) {
-      # Semantic Rules for detecting missing data values and recognizing the intentionally hidden data values
-      rulePath <- vars[[1]]
-      paramInstance <- cdDqChecker(itemMandatoryCol, rulePath)
-    }
-  }
   if (domain =="RD") {
     if(length(vars)==3){
       # tracer diagnoses list
@@ -30,13 +24,35 @@ dqChecker <- function (data, domain, itemMandatoryCol, ...)
       paramInstance  <-rdDqChecker(itemMandatoryCol, tracerRef, rdStandard, caseModule)
     }
   }
-  # DQ metrics (parameters and indicators) implemented based on the DQ concept published under doi DOI:10.1055/a-2006-1018.
+  # DQ metrics (parameters and indicators)
   env$metrics$parameters <- paramInstance
   indInstance$dqi_co_icr <- itemCompletenessIndicator(paramInstance$im, paramInstance$im_misg)$value
   indInstance$dqi_co_vcr <- valueCompletenessIndicator(paramInstance$vm, paramInstance$vm_misg)$value
   indInstance$dqi_pl_rpr <- rangePlausibilityIndicator(paramInstance$vs_od, paramInstance$vo)$value
+  indInstance$dqi_pl_spr <- semanticPlausibilityIndicator(paramInstance$vs_cd, paramInstance$vc)$value
   env$metrics$indicators <- indInstance 
   env$metrics
+}
+
+rdDqChecker <- function (itemCol,  tracerRef, rdStandard, caseItems) {
+  #D1 completeness
+  missingCode =c("", NULL, NA)
+  setMissingCodes(missingCode)
+  if (!is.empty(env$sumRow)) opt <-env$sumRow
+  if (!is.empty(env$optItems)) opt <- c(env$optItems, opt)
+  env$imList <- getMandatoryItems(itemCol, opt, env$cdata, env$ddata)
+  env$mItem <- getMissingItem(env$imList)
+  env$medData<- env$medData[!sapply(env$medData, function(x) all( is.empty(x) | is.na(x)))]
+  if (!is.null(env$cdata)) env$cdata <- getMissingValue(env$cdata, itemCol, env$misgValueCol, env$misgItemCol)
+  if (!is.null(env$ddata)) env$ddata <- getMissingValue(env$ddata, itemCol, env$misgValueCol, env$misgItemCol)
+  if (is.null (env$cdata) & is.null(env$ddata)) stop(" The global Environment (env) does not contain any categorical or temporal data items. 
+  Please ensure the data type of the loaded data items is set correctly and then rerun the execution (see global variables env$cdata and env$ddata).")
+  if (!is.null(env$medData$Orpha_Kode)) param <- checkOrphaCodingCompleteness(tracerRef, env$dqCol)
+  #D2 plausibility
+  param <- cbind (checkOrphaCodingPlausibility(rdStandard, env$dqCol), param)
+  env$ddata <- checkDatePlausibility(env$ddata, itemCol, env$dqCol)
+  param<-cbind(getTotalStatistic(itemCol, env$sumRow), param)
+  param
 }
 
 #' @title checkCordDQ
@@ -45,7 +61,7 @@ dqChecker <- function (data, domain, itemMandatoryCol, ...)
 #' @import stringi
 #' @export
 #'
-checkCordDQ <- function (instID, reportYear, inpatientCases, refData1, refData2, dqInd, repCol, cl, bItemCl, totalRow, oItem,...) {
+checkCordDQ <- function (instID, reportYear, inpatientCases, refData1, refData2, dqInd, repCol, cl, itemCol, totalRow, oItem,...) {
   vars <- list(...)
   if (is.null (cl)) stop("No report design available")
   if (is.null (env$medData)) stop("No data available")
@@ -54,18 +70,18 @@ checkCordDQ <- function (instID, reportYear, inpatientCases, refData1, refData2,
   else env$dq <- { subset(env$medData, select = repCol)
     env$dq[cl]<-""
   }
-  env$tdata$report_year <-reportYear
-  if(is.null(oItem)) mv <-totalRow
-  env$oItem <-oItem
-  mv <-c (totalRow, oItem)
-  if (is.null(env$ddata)) basicItem <- setdiff(env$cdata[, bItemCl],mv)
-  else basicItem <- setdiff (union(env$cdata[, bItemCl], env$ddata[, bItemCl]),mv)
+  env$sumRow <- totalRow
+  env$optItems <- oItem
+  env$dqCol <- cl
+  env$misgItemCol <- "missing_item"
+  env$misgValueCol <- "missing_value"
+  env$subjIdentifier<- "PatientIdentifikator"
   if ( !is.null(instID)){
-    env$tdata$inst_id <- instID
+    env$report$inst_id <- instID
     instData<- env$medData[which(env$medData$Institut_ID==instID),]
     if (nrow(instData)>0) env$medData <- instData
   }else {
-    env$tdata$inst_id <- "ID fehlt"
+    env$report$inst_id <- "ID fehlt"
   }
   rdDup_no =0
   inputData <-env$medData
@@ -96,9 +112,7 @@ checkCordDQ <- function (instID, reportYear, inpatientCases, refData1, refData2,
       dupRd <-dup[which(dup$dupRdCase=="yes"),]
       rdDup_no <- length (unique(dupRd$Aufnahmenummer))
       env$dup <-dup
-      
-    } else   rdDup_no =0
-    
+    } else rdDup_no =0
   }
   else if(!is.empty(env$medData$PatientIdentifikator) & !is.empty(env$medData$Aufnahmenummer) & !is.empty(env$medData$ICD_Primaerkode))
   {
@@ -122,55 +136,45 @@ checkCordDQ <- function (instID, reportYear, inpatientCases, refData1, refData2,
       env$dup <-base::rbind(env$dup, dup)
     }else   rdDup_no =0
   }
-  if(!is.empty(env$medData$PatientIdentifikator)) env$tdata$patient_no = length (unique(env$medData$PatientIdentifikator))
-  if(!is.empty(env$medData$Aufnahmenummer)) env$tdata$case_no = length (env$medData$Aufnahmenummer[which(!duplicated(env$medData$Aufnahmenummer)& ! is.na(env$medData$Aufnahmenummer))])
-  
-  #D1 completeness
-  keyD1 <- checkD1( refData1, cl, basicItem, bItemCl)
-  env$mItem <- keyD1$mItem
-  env$tdata <- addD1(env$tdata, keyD1$k2_orpha_no, keyD1$k2_orphaCheck_no)
-  itemVec <- names (env$medData)
-  inter <- intersect (basicItem, itemVec)
-  env$tdata$s_inc <- checkSubjCompleteness("PatientIdentifikator", inter)$s_inc
+  if(!is.empty(env$medData$PatientIdentifikator)) env$report$patient_no = length (unique(env$medData$PatientIdentifikator))
+  if(!is.empty(env$medData$Aufnahmenummer)) env$report$case_no = length (env$medData$Aufnahmenummer[which(!duplicated(env$medData$Aufnahmenummer)& ! is.na(env$medData$Aufnahmenummer))])
   if(!is.empty(vars)) caseItems <- vars[[1]]
   else caseItems <- NULL
-  if(!is.null(caseItems))  env$tdata$vm_case_misg<-checkCaseCompleteness(caseItems, bItemCl)$vm_case_misg
-  #D2 plausibility
-  keyD2 <- checkD2(refData2, bItemCl, cl)
-  env$tdata <- addD2(env$tdata, keyD2$k1_rd_counter, keyD2$k1_check_counter)
+  #D1 completeness and D2 plausibility
+  metrics <- dqChecker(env$medData, "RD", itemCol, refData1, refData2, caseItems)
+  oc <-checkOrphaCodingCompleteness(refData1, cl)
+  dqReport<-cbind(oc, env$metrics, metrics$parameters, metrics$indicators, env$report)
+  itemVec <- names (env$medData)
+  inter <- intersect (env$imList, itemVec)
+  dqReport <- cbind(checkSubjCompleteness(env$subjIdentifier, inter), dqReport)
+  if(!is.null(caseItems)) dqReport <- cbind(checkCaseCompleteness(caseItems, itemCol), dqReport)
+  dqReport$dqi_co_scr <- subjectCompletenessIndicator(dqReport$s, dqReport$s_inc)$value
+  dqReport$dqi_co_ccr <- caseCompletenessIndicator(dqReport$vm_case, dqReport$vm_case_misg)$value
+  dqReport$dqi_co_ocr <- orphaCompletenessIndicator(dqReport$icd_tracer, dqReport$oc_misg)$value
+  dqReport$dqi_pl_opr <- orphaPlausibilityIndicator(dqReport$link, dqReport$link_ip)$value
   #D3 uniqueness
-  env$tdata$case_dup = row_no - nrow(env$medData)
-  env$tdata$rdCase_dup =rdDup_no
-  keyD3 <- checkD3( refData1, refData2, cl)
-  env$tdata <- addD3(env$tdata, keyD3$k3_unambiguous_rdDiag_no,  keyD3$k3_unambiguous_rdCase_no, keyD3$k3_checkedRdCase_no)
+  dqReport$case_dup = row_no - nrow(env$medData)
+  dqReport$rdCase_dup = rdDup_no
+  dqReport <- cbind (checkSemanticUniqueness(refData1, refData2, cl), dqReport)
+  dqReport$dqi_un_cur <- rdCaseUnambiguityIndicator(dqReport$rdCase, dqReport$rdCase_amb)$value
+  dqReport$dqi_un_cdr <- rdCaseDissimilarityIndicator(dqReport$rdCase, dqReport$rdCase_dup)$value
   #D4 concordance
-  keyD4 <- checkD4(cl)
-  env$tdata <- setAnnualVars(env$tdata)
-  env$tdata <- addD4(env$tdata,  keyD4$k4_counter_orpha, keyD4$k4_counter_orphaCase, keyD3$k3_unambiguous_rdCase_no, inpatientCases)
+  dqReport <- setAnnualVars(reportYear, dqReport)
+  dqReport <- cbind (rdConcordanceMetrics(reportYear, inpatientCases, dqReport$tracerCase_no_py, dqReport$rdCase_no_py, env$medData$Orpha_Kode, cl), dqReport)
   if(!is.empty(vars) & length(vars)>=2) concRef <- vars[[2]]
   else concRef <- NULL
-  if(!is.null(concRef)) env$tdata$conc_with_refValues<-getConcWithRefValues(env$tdata$tracerCase_rel_py_ipat, concRef)
+  if(!is.null(concRef)) dqReport$conc_with_refValues<-getConcWithRefValues(dqReport$tracerCase_rel, concRef)
   orphaCases <- env$dq[which(env$dq$orphaCase=="yes"),]
   rdCases <- env$dq[which (env$dq$CheckedRdCase=="yes"),]
-  env$tdata$orphaPatient_no_py = length(unique(orphaCases$PatientIdentifikator))
-  env$tdata$rdPatient_no_py = length(unique(rdCases$PatientIdentifikator))
-  # get the total number of detected DQ issues for all data items
-  metrics<-getTotalStatistic(bItemCl, totalRow)
-  metrics<-cbind(metrics, env$tdata)
-  # adds generic DQ metrics and generate DQ report about user-selected metrics
-  metrics$dqi_co_icr <- itemCompletenessIndicator(metrics$im, metrics$im_misg)$value
-  metrics$dqi_co_vcr <- valueCompletenessIndicator(metrics$vm, metrics$vm_misg)$value
-  metrics$dqi_co_scr <- subjectCompletenessIndicator(metrics$s, metrics$s_inc)$value
-  metrics$dqi_co_ccr <- caseCompletenessIndicator(metrics$vm_case, metrics$vm_case_misg)$value
-  metrics$dqi_pl_rpr <- rangePlausibilityIndicator(metrics$vs_od, metrics$vo)$value
-  env$report <- deprecatedMetrics(metrics)
+  dqReport$orphaPatient_no_py = length(unique(orphaCases$PatientIdentifikator))
+  dqReport$rdPatient_no_py = length(unique(rdCases$PatientIdentifikator))
+  env$report <- deprecatedMetrics(dqReport)
   userMetrics<- getUserSelectedMetrics(dqInd, env$report)
   out <- list()
   out[["metric"]] <- userMetrics
   out[["mItem"]] <-env$mItem
   out
 }
-
 
 #------------------------------------------------------------------------------------------------------
 # functions for the completeness dimension (D1)
@@ -201,21 +205,6 @@ orphaCompletenessIndicator <- function(icd_tracer, oc_misg) {
   if (is.null(env$report)) env$report <-df
   else env$report <-cbind(env$report,df)
   ind
-}
-
-#' @title checkD1
-#' @description This function checks the quality of loaded data regarding the completeness dimension (D1).
-#'
-checkD1 <- function ( refData, cl, basicItems,bItemCl){
-  env$medData<- env$medData[!sapply(env$medData, function(x) all( is.empty(x) | is.na(x)))]
-  mItem <- getMissingItem(basicItems)
-  if (!is.null(env$cdata)) env$cdata <- getMissingValue(env$cdata, bItemCl, "missing_value", "missing_item")
-  if (!is.null(env$ddata))env$ddata <- getMissingValue(env$ddata, bItemCl, "missing_value", "missing_item")
-  if (!is.null(env$medData$Orpha_Kode)) dqList <- append(checkOrphaCodingCompleteness(refData, cl), list (mItem=mItem))
-  else {
-    dqList <-list(k2_orphaCheck_no =0,k2_orpha_no=0,mItem=mItem)
-  }
-  dqList
 }
 
 #' @title checkOrphaCodingCompleteness
@@ -279,34 +268,12 @@ checkOrphaCodingCompleteness <- function (refData, cl){
     k2_checkAlpha_no = length(env$medData$AlphaID_Kode)
     missing_counter2 = k2_checkAlpha_no -k2_alpha_no
   }
-  
   tracer <-env$dq[ which (env$dq$tracer=="yes"),]
-  env$tdata$tracerCase_no <- length (unique(tracer$Aufnahmenummer))
+  env$metrics$tracerCase_no <- length (unique(tracer$Aufnahmenummer))
   env$cdata <- addMissingValue("Orpha_Kode", env$cdata, missing_counter1,k2_orphaCheck_no )
   env$cdata <- addMissingValue("AlphaID_Kode", env$cdata, missing_counter2 ,k2_orphaCheck_no )
-  
-  out <- list()
-  out[["k2_orphaCheck_no"]] <-k2_orphaCheck_no
-  out[["k2_orpha_no"]] <-k2_orpha_no
+  out <- data.frame(icd_tracer=k2_orphaCheck_no, oc_misg =k2_orphaCheck_no-k2_orpha_no)
   out
-}
-
-
-#' @title addD1
-#' @description This function adds DQ metrics for the completeness dimension (D1).
-#'
-addD1<- function (tdata,  orpha, icd_tracer) {
-  if(icd_tracer>0){
-    tdata$oc <- orpha
-    tdata$oc_misg <-icd_tracer-orpha
-    tdata$dqi_co_ocr <-orphaCompletenessIndicator(icd_tracer, tdata$oc_misg)$value
-  }
-  else {
-    tdata$oc <- 0
-    tdata$dqi_co_ocr <-0
-    tdata$oc_misg <-NA
-  }
-  tdata
 }
 
 #------------------------------------------------------------------------------------------------------
@@ -340,34 +307,13 @@ orphaPlausibilityIndicator <- function(link, link_ip) {
   ind
 }
 
-
-#' @title checkD2
-#' @description This function checks the quality of loaded data regarding the plausibility dimension (D2).
-#'
-checkD2 <- function (refData2, bItemCl, cl){
-  # get outliers
-  if (!is.null(env$ddata))
-  {
-    dItem <- env$ddata[, bItemCl]
-    if (!is.empty(dItem)) {
-      for (item in unique(dItem)) {
-        env$ddata  <-checkDatePlausibility(env$ddata, item, cl)
-      }
-    }
-    
-  }
-  # check ICD10-Orpha
-  if (!is.null(env$medData$Orpha_Kode)) out <-checkOrphaCoding(refData2, cl)
-  else out <- list (k1_rd_counter=0,k1_check_counter=0 )
-  out
-}
-
-#' @title checkOrphaCoding
+#' @title checkOrphaCodingPlausibility
 #' @description This function checks the plausibility of ICD-Orpha links.
 #' @import stringi
 #'
-checkOrphaCoding<- function (refData2, cl) {
-  k1_check_counter =0
+checkOrphaCodingPlausibility<- function (refData2, cl) {
+  link_counter =0
+  link_ip_counter =0
   k1_rd_counter=0
   if(!is.empty(env$medData$ICD_Primaerkode)){
     iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode) & !is.empty(env$medData$ICD_Primaerkode))
@@ -376,7 +322,8 @@ checkOrphaCoding<- function (refData2, cl) {
       oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
       code <-as.character(env$medData$Orpha_Kode[i])
       if (is.na(oCode) & !is.na(code) ) {
-        k1_check_counter =k1_check_counter+1
+        link_counter =link_counter+1
+        link_ip_counter =  link_ip_counter+1
         msg<- paste("ICD10-Orpha combination:" , iCode,"-", code ,  "is implausible according to Alpha-ID-SE.",  env$dq[,cl][i])
         env$dq[,cl][i] <- msg
         
@@ -385,13 +332,14 @@ checkOrphaCoding<- function (refData2, cl) {
         iRefList<- which(stri_trim(as.character(refData2$ICD_Primaerkode1))==iCode)
         if (!is.empty (iRefList)){
           oRefList <- ""
-          k1_check_counter =k1_check_counter+1
+          link_counter =link_counter+1
           for (j in iRefList){
             oRefCode <-as.integer(refData2$Orpha_Kode[j])
             oRefList <- append( oRefList,oRefCode)
           }
           if ( !is.element(oCode, oRefList))
           {
+            link_ip_counter =  link_ip_counter+1
             msg<- paste("ICD10-Orpha combination:" , iCode,"-", oCode ,  "is implausible according to Alpha-ID-SE.",  env$dq[,cl][i])
             env$dq[,cl][i] <- msg
           }
@@ -399,9 +347,10 @@ checkOrphaCoding<- function (refData2, cl) {
         }
         else{
           if (!(is.null(iCode) |is.na(iCode) | is.empty(iCode))){
-            k1_check_counter =k1_check_counter+1
+            link_counter =link_counter+1
             oRef<- which(as.character (refData2$Orpha_Kode)==oCode)
             if (!is.empty ( oRef)){
+              link_ip_counter =  link_ip_counter+1
               msg<- paste("ICD10-Orpha combination:" , iCode,"-", oCode ,  "is implausible according to Alpha-ID-SE.",  env$dq[,cl][i])
               env$dq[,cl][i] <- msg
             }
@@ -410,45 +359,43 @@ checkOrphaCoding<- function (refData2, cl) {
       }
     }
   }
-  out <- list()
-  out[["k1_rd_counter"]] <- k1_rd_counter
-  out[["k1_check_counter"]] <- k1_check_counter
+  out <- data.frame(link =link_counter, link_ip =link_ip_counter, vs_cd =link_counter*2, vc =link_ip_counter *2)
   out
 }
 
-#' @title checkDateOutlier
-#' @description This function checks the loaded data for outliers
+#' @title checkDatePlausibility
+#' @description This function checks the plausibility of date values in a given data set.
 #'
-checkOutlier<-function (data, itemCol, cl) {
-  if (!is.null(data))
+checkDatePlausibility<-function (dataset, itemCol, cl) {
+  if (!is.null(dataset))
   {
-    dItem <- data[, itemCol]
+    dItem <- dataset[, itemCol]
     if (!is.empty(dItem)) {
       for (item in unique(dItem)) {
-        data  <-checkDatePlausibility(data, item, cl)
+        dataset  <-getImplausibleDateValues(dataset, item, cl)
       }
     }
   }
-  data
+  dataset
 }
 
 #' @title checkDatePlausibility
-#' @description This function checks the plausibility of loaded date values.
+#' @description This function identifies and returns the implausible date values detected in a given data vector.
 #'
-checkDatePlausibility<-function (ddata, item, cl) {
+getImplausibleDateValues<-function (dataset, item, cl) {
   item.vec <- env$medData[[item]]
-  index = which(ddata$basicItem==item)[1]
-  if (!is.empty (env$ddata$engLabel)) name <- env$ddata$engLabel[index]
+  index = which(dataset$basicItem==item)[1]
+  if (!is.empty (env$dataset$engLabel)) name <- env$dataset$engLabel[index]
   else name<- item
   if(!is.empty(item.vec)){
     item.vec <-  as.Date(ISOdate(env$medData[[item]], 1, 1))
     out <- checkFutureDate(item.vec)
     if (!is.empty(out)) {
-      ddata<- addOutlier (item, ddata, length(out), length(item.vec))
+      dataset<- addOutlier (item, dataset, length(out), length(item.vec))
       for(i in out) {
         env$dq[,cl][i] <- paste( "Implausible", name , item.vec[i], "date in the future.")
       }
-    }   else ddata <- addOutlier(item, ddata, 0,length(item.vec))
+    }   else dataset <- addOutlier(item, dataset, 0,length(item.vec))
     
     if(item == "Geburtsdatum")
     {
@@ -457,34 +404,16 @@ checkDatePlausibility<-function (ddata, item, cl) {
       if (!exists("ageMax")) ageMax=105
       out<-checkAgePlausibility(item1.vec,  now, ageMax)
       if (!is.empty(out)) {
-        ddata<- addOutlier (item, ddata, length(out), length(item1.vec) )
+        dataset<- addOutlier (item, dataset, length(out), length(item1.vec) )
         maxAge <-paste( "maximal age ", ageMax, ".", sep = "")
         for(i in out) env$dq[,cl][i] <- paste( "Implausible birthdate", item1.vec[i] , maxAge,  env$dq[,cl][i])
       }
     }
   }
   else if (item!="Total"){
-    ddata <- addOutlier(item, ddata, 0,0)
+    dataset <- addOutlier(item, dataset, 0,0)
   }
-  ddata
-}
-
-
-#' @title addD2
-#' @description This function adds DQ indicators and parameters for the plausibility dimension (D2).
-#'
-addD2<- function (tdata, link_pl, link) {
-  if(link_pl>0 & link >0){
-    tdata$link <- link
-    tdata$link_ip<- link-link_pl
-    tdata$dqi_pl_opr <- orphaPlausibilityIndicator(tdata$link, tdata$link_ip)$value
-  }
-  else {
-    tdata$link <- 0
-    tdata$link_ip<- 0
-    tdata$dqi_pl_opr<-NA
-  }
-  tdata
+  dataset
 }
 
 #------------------------------------------------------------------------------------------------------
@@ -494,7 +423,7 @@ addD2<- function (tdata, link_pl, link) {
 #' @title rdCaseUnambiguityIndicator
 #' @description This function calculates the RD Case unambiguity Rate (dqi_un_cur), a specific indicator for assessing the semantic uniqueness of RD diagnoses, and adds related metadata and DQ parameters.
 #' @export
-
+#' 
 rdCaseUnambiguityIndicator <- function(rdCase, rdCase_amb) {
   ind <-data.frame(
     Abbreviation= "dqi_un_cur",
@@ -545,14 +474,15 @@ rdCaseDissimilarityIndicator <- function(rdCase, rdCase_dup) {
   ind
 }
 
-#' @title checkD3
-#' @description This function checks the quality of loaded data regarding the uniqueness dimension (D3).
+#' @title checkSemanticUniqueness
+#' @description This function checks the quality of loaded data regarding the semantic uniqueness.
 #'
-checkD3 <- function (refData1, refData2, cl){
-  if (is.null(env$medData$ICD_Primaerkode)) out <-checkUniqueOrphaCoding(cl)
-  else if (!is.null(env$medData$Orpha_Kode)) out <-checkUniqueIcdOrphaCoding(refData1, refData2, cl)
-  else out <- checkUniqueIcd(refData1, cl)
-  out
+checkSemanticUniqueness <- function (refData1, refData2, cl){
+  if (is.null(env$medData$ICD_Primaerkode)) param <-checkUniqueOrphaCoding(cl)
+  else if (!is.null(env$medData$Orpha_Kode)) param <-checkUniqueIcdOrphaCoding(refData1, refData2, cl)
+  else param <- checkUniqueIcd(refData1, cl)
+  df <- data.frame(rdCase=param$k3_checkedRdCase_no, rdCase_amb=param$k3_checkedRdCase_no-param$k3_unambiguous_rdCase_no)
+  df
 }
 
 #' @title checkUniqueIcd
@@ -598,14 +528,13 @@ checkUniqueIcd <- function (refData1, cl){
       }
     }
   }
-  
   rd <-env$dq[ which (env$dq$rdCase=="yes"),]
   aRd <-env$dq[ which(env$dq$unambiguous_rdCase=="yes"),]
   checkedRd <-env$dq[ which (env$dq$CheckedRdCase=="yes"),]
   tracer <-env$dq[ which (env$dq$tracer=="yes"),]
-  env$tdata$tracerCase_no <- length (unique(tracer$Aufnahmenummer))
+  env$metrics$tracerCase_no <- length (unique(tracer$Aufnahmenummer))
   ambigTracer <-env$dq[ which (env$dq$ambiguous_tracer=="yes"),]
-  env$tdata$ambiguous_tracerCase_no <- length (unique(ambigTracer$Aufnahmenummer))
+  env$metrics$ambiguous_tracerCase_no <- length (unique(ambigTracer$Aufnahmenummer))
   out <- list()
   out[["k3_unambiguous_rdDiag_no"]] <- length(aRd$Aufnahmenummer)
   out[["k3_unambiguous_rdCase_no"]] <- length (unique(aRd$Aufnahmenummer))
@@ -630,7 +559,6 @@ checkUniqueOrphaCoding <- function (cl){
     else env$dq[,cl][i] <- paste("Ambiguous Case.",env$dq[,cl][i] )
     
   }
-  
   out <- list()
   rd <-env$dq[ which (env$dq$rdCase=="yes"),]
   aRd <-env$dq[ which (env$dq$unambiguous_rdCase=="yes"),]
@@ -639,7 +567,6 @@ checkUniqueOrphaCoding <- function (cl){
   out[["k3_unambiguous_rdDiag_no"]] <- length(aRd$Aufnahmenummer)
   out[["k3_unambiguous_rdCase_no"]] <- length (unique(aRd$Aufnahmenummer))
   out[["k3_checkedRdCase_no"]] <-  length (unique(checkedRd$Aufnahmenummer))
-  
   out
 }
 
@@ -654,7 +581,6 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
   env$dq$ambiguous_tracer <-NA
   k3_check_counter =0
   k3_rd_counter=0
-  
   if(!is.empty(env$medData$ICD_Primaerkode)){
     cq <- which(env$medData$ICD_Primaerkode=="" | is.na(env$medData$ICD_Primaerkode) | is.empty(env$medData$ICD_Primaerkode))
     if (!is.empty (cq)) for(i in cq) {
@@ -760,77 +686,34 @@ checkUniqueIcdOrphaCoding <- function (refData1, refData2, cl){
       
     }
   }
-  
   rd <-env$dq[ which (env$dq$rdCase=="yes"),]
   aRd <-env$dq[ which (env$dq$unambiguous_rdCase=="yes"),]
   checkedRd <-env$dq[ which (env$dq$CheckedRdCase=="yes"),]
   ambigTracer <-env$dq[ which (env$dq$ambiguous_tracer=="yes"),]
-  env$tdata$ambiguous_tracerCase_no <- length (unique(ambigTracer$Aufnahmenummer))
+  env$metrics$ambiguous_tracerCase_no <- length (unique(ambigTracer$Aufnahmenummer))
   out <- list()
   out[["k3_unambiguous_rdDiag_no"]] <- length(aRd$Aufnahmenummer)
   out[["k3_unambiguous_rdCase_no"]] <- length(unique(aRd$Aufnahmenummer))
   out[["k3_checkedRdCase_no"]] <-  length(unique(checkedRd$Aufnahmenummer))
   out
-  
 }
 
-
-#' @title addD3
-#' @description This function adds DQ indicators and parameters for uniqueness dimension (D3).
-#'
-addD3<- function (tdata, rdDiag_unamb, rdCase_unamb, rdCase) {
-  if(rdCase >0){
-    tdata$rdCase <- rdCase
-    tdata$rdCase_amb <-rdCase-rdCase_unamb
-    tdata$rdDiagnosis_unamb<-rdDiag_unamb
-    tdata$dqi_un_cur <- rdCaseUnambiguityIndicator(tdata$rdCase, tdata$rdCase_amb)$value
-    tdata$dqi_un_cdr <- rdCaseDissimilarityIndicator(tdata$rdCase, tdata$rdCase_dup)$value
-  }
-  else {
-    tdata$rdCase <- 0
-    tdata$dqi_un_cur<- 0
-    tdata$dqi_un_cdr <- NA
-    tdata$rdCase_amb <- NA
-    tdata$rdDiagnosis_unamb<- 0
-  }
-  tdata
-}
 
 #------------------------------------------------------------------------------------------------------
 # functions for concordance dimension (D4)
 #------------------------------------------------------------------------------------------------------
 
-#' @title checkD4
-#' @description This function checks the quality of loaded data regarding the concordance dimension (D4).
-#'
-checkD4 <- function (cl) {
-  iList <-which(env$medData$ICD_Primaerkode !="" & !is.na(env$medData$ICD_Primaerkode)  & !is.empty(env$medData$ICD_Primaerkode))
-  k4_counter_icd= length(iList)
-  if (!is.null(env$medData$Orpha_Kode)){
-    k4_counter_orpha = getOrphaCodeNo (cl)
-    k4_counter_orphaCase =getOrphaCaseNo(cl)
-  }
-  else { k4_counter_orpha=0
-  k4_counter_orphaCase =0
-  }
-  out <- list()
-  out[["k4_counter_icd"]] <- k4_counter_icd
-  out[["k4_counter_orpha"]] <- k4_counter_orpha
-  out[["k4_counter_orphaCase"]] <- k4_counter_orphaCase
-  out
-}
-
 #' @title getOrphaCaseNo
 #' @description This function calculates the number of Orpha cases.
 #'
-getOrphaCaseNo<- function (cl){
+getOrphaCaseNo<- function (orphaVec, cl){
   env$dq$orphaCase <- NA
   orphaCaseNo =0
-  oList <-which(env$medData$Orpha_Kode !="" & !is.na(env$medData$Orpha_Kode)  & !is.empty(env$medData$Orpha_Kode)& !is.null(env$medData$Orpha_Kode))
+  oList <-which(orphaVec !="" & !is.na(orphaVec)  & !is.empty(orphaVec)& !is.null(orphaVec))
   for (i in oList)
   {
-    code <-env$medData$Orpha_Kode[i]
-    oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
+    code <-orphaVec[i]
+    oCode <-as.numeric(as.character(orphaVec[i]))
     if (!is.na(oCode)) env$dq$orphaCase[i] = "yes"
     
   }
@@ -842,63 +725,45 @@ getOrphaCaseNo<- function (cl){
 #' @title getOrphaCodeNo
 #' @description This function calculates the number of Orphacodes.
 #'
-getOrphaCodeNo <- function (cl) {
+getOrphaCodeNo <- function (orphaVec, cl) {
   k4_counter_orpha =0
-  oList <-which(env$medData$Orpha_Kode !="" & !is.na(env$medData$Orpha_Kode)  & !is.empty(env$medData$Orpha_Kode) & !is.null(env$medData$Orpha_Kode))
+  oList <-which(orphaVec !="" & !is.na(orphaVec)& !is.empty(orphaVec) & !is.null(orphaVec))
   if (!is.empty (oList)) for(i in oList) {
-    code <-env$medData$Orpha_Kode[i]
-    oCode <-as.numeric(as.character(env$medData$Orpha_Kode[i]))
+    code <-orphaVec[i]
+    oCode <-as.numeric(as.character(orphaVec[i]))
     if (!is.na(oCode)) k4_counter_orpha = k4_counter_orpha +1
     else env$dq[,cl][i] <- paste("Invalid Orpha code.",code, env$dq[,cl][i] )
   }
   k4_counter_orpha
 }
 
-#' @title addD4
+#' @title rdConcordanceMetrics
 #' @description This function adds DQ metrics for the concordance dimension (D4).
 #'
-addD4<- function (tdata,orpha,orphaCase, uRd, inPtCase) {
-  if (! (is.empty(tdata$report_year) | is.na(tdata$report_year)))
+rdConcordanceMetrics<- function (year, ipat, tracerCase, rdCase, orphaVec, cl) {
+  metrics <-data.frame(report_year = c(year), tracerCase_no_py = c(tracerCase), rdCase_no_py = c(rdCase), case_no_py_ipat = c(ipat))
+  if (!(is.empty(metrics$report_year) | is.na(metrics$report_year)))
   {
-    tdata$case_no_py_ipat <-inPtCase
-    tdata$orphaCoding_no_py <- orpha
-    rd <- (tdata$rdCase_no_py/inPtCase) * 100000
-    tdata$rdCase_rel_py_ipat  <-  round (rd,0)
-    tracer <- (tdata$tracerCase_no_py/inPtCase) * 100000
-    tdata$tracerCase_rel_py_ipat  <-  round (tracer,0)
-    
-    if(orphaCase>0){
-      tdata$orphaCase_no_py <-orphaCase
-      or <- ( orphaCase/inPtCase) * 100000
-      tdata$orphaCase_rel_py_ipat   <- round (or,0)
-      
-    }
-    else {
-      tdata$orphaCase_rel_py_ipat  <- 0
-      tdata$orphaCase_no_py <- 0
-    }
-    if(uRd>0){
-      tdata$unambiguous_rdCase_no_py <-uRd
-      rf <- ( uRd/inPtCase) * 100
-      tdata$unambiguous_rdCase_rel_py_ipat <- round (rf,2)
-    }
-    else {
-      tdata$unambiguous_rdCase_no_py <- 0
-      tdata$unambiguous_rdCase_rel_py_ipat <- 0
-    }
+    if(rdCase>0 & ipat >0) metrics$rdCase_rel <- round (((rdCase  * 100000)/ipat), 0)
+    else metrics$rdCase_rel=0
+    if (tracerCase >0 & ipat >0) metrics$tracerCase_rel  <-  round (((tracerCase * 100000)/ipat),0)
+    else metrics$tracerCase_rel=0
+    metrics$orphaCoding_no_py <- getOrphaCodeNo(orphaVec, cl)
+    metrics$orphaCase_no_py <- getOrphaCaseNo(orphaVec, cl)
+    if( metrics$orphaCase_no_py>0 & ipat >0) metrics$orphaCase_rel <- round (((metrics$orphaCase_no_py* 100000)/ipat),0)
+    else metrics$orphaCase_rel=0
   }
-  
-  tdata
+  metrics
 }
 
 #' @title getConcWithRefValues
 #' @description This function evaluates the concordance of tracer cases with reference values from the literature of national references.
 #'
-getConcWithRefValues <- function(tracerCase_rel_py_ipat, concRef){
+getConcWithRefValues <- function(tracerCase_rel, concRef){
   conc =NA
-  if (is.integer(tracerCase_rel_py_ipat) | is.double(tracerCase_rel_py_ipat))
+  if (is.integer(tracerCase_rel) | is.double(tracerCase_rel))
   {
-    if (concRef[["min"]] <= tracerCase_rel_py_ipat && tracerCase_rel_py_ipat<=concRef[["max"]] ) conc=1
+    if (concRef[["min"]] <= tracerCase_rel && tracerCase_rel<=concRef[["max"]] ) conc=1
     else conc =0
   }
   
@@ -917,9 +782,10 @@ getConcIndicator <- function(dist, index){
 #' @title setAnnualVars
 #' @description Function to set annual parameters.
 #'
-setAnnualVars<- function (tdata) {
-  if (! (is.empty(tdata$report_year) | is.na(tdata$report_year)))
+setAnnualVars<- function (year, tdata) {
+  if (! (is.empty(year) | is.na(year)))
   {
+    tdata$report_year <- year
     tdata$rdCase_no_py <- tdata$rdCase
     tdata$orphaMissing_no_py <- tdata$oc_misg
     tdata$implausible_codeLink_no_py <- tdata$link_ip

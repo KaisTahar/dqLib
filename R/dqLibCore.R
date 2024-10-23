@@ -25,7 +25,7 @@ setGlobals <- function(medData, repCol, cdata, ddata, tdata) {
   env$medData <- medData
   env$cdata <- cdata
   env$ddata <- ddata
-  env$tdata <- tdata
+  env$metrics <- tdata
   env$repMeta <-repCol
 }
 
@@ -36,7 +36,6 @@ setGlobals <- function(medData, repCol, cdata, ddata, tdata) {
 setMissingCodes <- function(codeList) {
   env$missingCode <-codeList
 }
-
 
 #------------------------------------------------------------------------------------------------------
 # functions to specify and calculate data quality (DQ) metrics for the completeness dimension (D1)
@@ -165,6 +164,7 @@ addMissingValue<- function (item, bdata, m, n, ...) {
     if(!"vm_misg" %in% colnames(bdata)) bdata$vm_misg <-0
     if(!"vm" %in% colnames(bdata)) bdata$vm <-0
     if(n>0){
+      bdata$im_misg[index] <- 0
       bdata$vm[index] <-n
       if (!is.na(bdata$vm_misg[index]) && is.numeric(bdata$vm_misg[index]) ) bdata$vm_misg[index] <- bdata$vm_misg[index]+m
       else bdata$vm_misg[index] <- m
@@ -292,44 +292,44 @@ missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
       env$dq[,cl2]<- paste( item," was not collected ", env$dq[,cl2])
     }
   } else {
-      if (!all(is.na(env$dq))) {
-        if(!cl1 %in% colnames(env$dq)) env$dq[,cl1]<-""
-        if(!cl2 %in% colnames(env$dq)) env$dq[,cl2] <-""
-      } else {
-        env$dq[nrow(env$dq)+1,] <- NA
-        if(!cl1 %in% colnames(env$dq)) env$dq[,cl1]<-""
-        if(!cl2 %in% colnames(env$dq)) env$dq[,cl2] <-""
-      }
-      index <- which (df[, itemCol]==item)
-      m <- NULL
-      item.vec <- env$medData[[item]]
-      if(!is.empty(item.vec)){
-        if (!is.empty(env$missingCode)) {
-          for (code in env$missingCode) {
-            if (is.na(code)) v <-which(is.na(item.vec)) else if(is.null(code)) v <-which(is.null(item.vec))
-            else  v <-which(as.character(item.vec) == code)
-            m <-c(m, v)
-          }
+    if (!all(is.na(env$dq))) {
+      if(!cl1 %in% colnames(env$dq)) env$dq[,cl1]<-""
+      if(!cl2 %in% colnames(env$dq)) env$dq[,cl2] <-""
+    } else {
+      env$dq[nrow(env$dq)+1,] <- NA
+      if(!cl1 %in% colnames(env$dq)) env$dq[,cl1]<-""
+      if(!cl2 %in% colnames(env$dq)) env$dq[,cl2] <-""
+    }
+    index <- which (df[, itemCol]==item)
+    m <- NULL
+    item.vec <- env$medData[[item]]
+    if(!is.empty(item.vec)){
+      if (!is.empty(env$missingCode)) {
+        for (code in env$missingCode) {
+          if (is.na(code)) v <-which(is.na(item.vec)) else if(is.null(code)) v <-which(is.null(item.vec))
+          else  v <-which(as.character(item.vec) == code)
+          m <-c(m, v)
         }
-        else m <- which(as.character(item.vec) =="" | is.na(item.vec))
-        if (!is.empty (m)) {
-          for(i in m)
-          {
-            msg <- paste("Missing ", item, sep="")
-            if (index >=1) {
-              if (!is.na(env$dq[,cl1][i])) env$dq[,cl1][i] <- paste(msg, ". ", env$dq[,cl1][i], sep="")
-              else env$dq[,cl1][i] <- msg
-            }
-            else env$dq [,cl1][i] <- paste(msg, ".", sep="")
+      }
+      else m <- which(as.character(item.vec) =="" | is.na(item.vec))
+      if (!is.empty (m)) {
+        for(i in m)
+        {
+          msg <- paste("Missing ", item, sep="")
+          if (index >=1) {
+            if (!is.na(env$dq[,cl1][i])) env$dq[,cl1][i] <- paste(msg, ". ", env$dq[,cl1][i], sep="")
+            else env$dq[,cl1][i] <- msg
           }
-          df <- addMissingValue(item, df,length(m), length(item.vec), itemCol)
+          else env$dq [,cl1][i] <- paste(msg, ".", sep="")
         }
-        else df <- addMissingValue(item, df,0, length(item.vec), itemCol)
+        df <- addMissingValue(item, df,length(m), length(item.vec), itemCol)
       }
-      else if (item!="Total"){
-        df <- addMissingValue(item, df, 0,0, itemCol)
-        env$dq[,cl2]<- paste( item, " was not collected ", env$dq[,cl2])
-      }
+      else df <- addMissingValue(item, df,0, length(item.vec), itemCol)
+    }
+    else if (item!="Total"){
+      df <- addMissingValue(item, df, 0,0, itemCol)
+      env$dq[,cl2]<- paste( item, " was not collected ", env$dq[,cl2])
+    }
   }
   
   df
@@ -395,6 +395,7 @@ checkCaseCompleteness<-function (caseItems, bItemCol){
 #'
 getMissingItem<- function (basicItem) {
   df <-data.frame( im = 0, im_misg = 0, im_misg_msg =0)
+  env$medData<- env$medData[!sapply(env$medData, function(x) all( is.empty(x) | is.na(x)))]
   diff <- setdiff(basicItem, names(env$medData))
   mItem <-""
   if (!is.empty (diff)){
@@ -510,6 +511,7 @@ addOutlierCount<- function (bdata, col, row) {
   bdata$vs_od[index] <- sum (as.integer(as.character( bdata$vs_od[-index] )), na.rm=TRUE)
   bdata
 }
+
 
 #------------------------------------------------------------------------------------------------------
 # functions to detect plausibility issues
@@ -682,19 +684,19 @@ addSemantics <- function (dqRep, semData, ...) {
 
 getMandatoryItems <- function (imCol, opt, df, ...){
   vars <- list(...)
-  df <- setdiff(df[, imCol], opt)
-  im <- df
+  diff <- setdiff(df[, imCol], opt)
+  im <- diff
   if(length(vars)==1){
     df1 <- vars[[1]]
-    df1 <- setdiff(df1[, imCol], opt)
-    im<- union(im, df1)
+    diff1 <- setdiff(df1[, imCol], opt)
+    im<- union(im, diff1)
   }
   if(length(vars)==2){
     df1 <- vars[[1]]
     df2 <- vars[[2]]
-    df1 <- setdiff(df1[, imCol], opt)
-    df2 <- setdiff(df2[, imCol], opt)
-    im<- Reduce(union, list(im, df1, df2))
+    diff1 <- setdiff(df1[, imCol], opt)
+    diff2 <- setdiff(df2[, imCol], opt)
+    im<- Reduce(union, list(im, diff1, diff2))
   }
   im
 }
@@ -785,8 +787,10 @@ deprecatedMetrics<- function (df) {
     if ("dqi_pl_opr" %in% names(df))  df$orphaCoding_plausibility_rate <-df$dqi_pl_opr
     if ("dqi_un_cur" %in% names(df))  df$rdCase_unambiguity_rate <-df$dqi_un_cur
     if ("dqi_un_cdr" %in% names(df))  df$rdCase_dissimilarity_rate <-df$dqi_un_cdr
+    if ("rdCase_rel" %in% names(df))  df$rdCase_rel_py_ipat <-df$rdCase_rel
+    if ("tracerCase_rel" %in% names(df))  df$tracerCase_rel_py_ipat <-df$tracerCase_rel
+    if ("orphaCase_rel" %in% names(df))  df$orphaCase_rel_py_ipat <-df$orphaCase_rel
   }
   
   df
 }
-
