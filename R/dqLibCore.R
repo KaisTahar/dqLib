@@ -447,6 +447,9 @@ rangePlausibilityIndicator<- function(v_slc, v_ip) {
   ind
 }
 
+#' @title semanticPlausibilityIndicator
+#' @description  This function calculates the Semantic Plausibility Rate (dqi_pl_spr), a generic indicator to assess the semantic plausibility of selected data values, and adds related metadata and DQ parameters.
+#' 
 semanticPlausibilityIndicator<- function(vs_cd, vc) {
   ind <-data.frame(
     Abbreviation= "dqi_pl_spr",
@@ -682,6 +685,10 @@ addSemantics <- function (dqRep, semData, ...) {
 # Utility: helper functions
 #------------------------------------------------------------------------------------------------------
 
+#' @title getMandatoryItems
+#' @description This function returns the mandatory data items (im).
+#' @export
+#
 getMandatoryItems <- function (imCol, opt, df, ...){
   vars <- list(...)
   diff <- setdiff(df[, imCol], opt)

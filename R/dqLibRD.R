@@ -6,7 +6,11 @@
 # Kais Tahar, University Medical Center Göttingen
 # ######################################################################################################
 
-
+#' @title dqChecker
+#' @description This function assesses the quality of loaded data using generic indicators and domain-specific DQ checks.
+#' The DQ indicators were implemented based on the DQ concept published under the DOI:10.1055/a-2006-1018.
+#' @export
+#'
 dqChecker <- function (data, domain, itemMandatoryCol, ...)
 {
   vars <- list(...)
@@ -34,6 +38,10 @@ dqChecker <- function (data, domain, itemMandatoryCol, ...)
   env$metrics
 }
 
+#' @title rdDqChecker
+#' @description This function checks the quality of loaded data regarding DQ issues that may arise in context of rare diseases (RDs).
+#' The default DQ dimensions are completeness and plausibility.
+#' @export
 rdDqChecker <- function (itemCol,  tracerRef, rdStandard, caseItems) {
   #D1 completeness
   missingCode =c("", NULL, NA)
@@ -56,7 +64,7 @@ rdDqChecker <- function (itemCol,  tracerRef, rdStandard, caseItems) {
 }
 
 #' @title checkCordDQ
-#' @description This function checks the quality of loaded data regarding selected DQ metrics.
+#' @description This function checks the quality of loaded data regarding selected DQ metrics for the CORD use case.
 #' The default DQ dimensions are completeness, plausibility, uniqueness and concordance.
 #' @import stringi
 #' @export
@@ -448,7 +456,7 @@ rdCaseUnambiguityIndicator <- function(rdCase, rdCase_amb) {
 }
 
 #' @title rdCaseDissimilarityIndicator
-#' @description This function calculates the RD Case Dissimilarity Rate(dqi_un_cdr), a specific indicator for assessing the syntactic uniqueness of RD diagnoses, and adds related metadata and DQ parameters.
+#' @description This function calculates the RD Case Dissimilarity Rate(dqi_un_cdr), a specific indicator for assessing the syntactic uniqueness of RD diagnoses, and provides related metadata and DQ parameters.
 #'@export
 #'
 rdCaseDissimilarityIndicator <- function(rdCase, rdCase_dup) {
@@ -738,7 +746,7 @@ getOrphaCodeNo <- function (orphaVec, cl) {
 }
 
 #' @title rdConcordanceMetrics
-#' @description This function adds DQ metrics for the concordance dimension (D4).
+#' @description This function provides normalized RD-specific metrics for the concordance dimension (D4).
 #'
 rdConcordanceMetrics<- function (year, ipat, tracerCase, rdCase, orphaVec, cl) {
   metrics <-data.frame(report_year = c(year), tracerCase_no_py = c(tracerCase), rdCase_no_py = c(rdCase), case_no_py_ipat = c(ipat))
