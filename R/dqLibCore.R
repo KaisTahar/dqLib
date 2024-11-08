@@ -17,6 +17,51 @@
 #'
 env <- new.env()
 
+setEnvironment <- function(a,...) {
+  if (!exists("env")) env <- new.env()
+  env$medData <- a
+  env$dq <- a
+  # set default variables
+  env$metrics <-NULL
+  env$report <-NULL
+  env$contra <-NULL
+  env$optItems <-NULL
+  # set default DQ issues
+  env$misgItemCol <- "missing_item"
+  env$misgValueCol <- "missing_value"
+  env$outlierCol <-"outlier"
+  env$contraCol <- "contradictions"
+  env$sumtRow <-"Total"
+  vars <- list(...)
+  # set the type of mandatory data items
+  if(!(is.null(vars$b)|is.null(vars$c)|is.null(vars$d))){
+    # Mandatory categorical data items
+    env$cdata <- vars$b
+    # Mandatory temporal data items
+    env$ddata <-vars$c
+    # Mandatory numerical data items
+    env$ndata <-vars$d
+  }
+  else if(!(is.null(vars$b)|is.null(vars$c))){
+    env$cdata <- vars$b
+    env$ddata <-vars$c
+  }
+  else if(!(is.null(vars$c)|is.null(vars$d))){
+    env$ddata <-vars$c
+    env$ndata <-vars$d
+  }
+  else if(!(is.null(vars$b)|is.null(vars$d))){
+    env$cdata <- vars$b
+    env$ndata <-vars$d
+  }
+  if (is.null (env$medData)) stop("No data available")
+  if (is.null (env$cdata)) warning("No categorical data items available")
+  if (is.null (env$ddata)) warning("No temporal data items available")
+  if (is.null (env$ndata)) message("No numerical data items available")
+  if (is.null (env$cdata) & is.null(env$ndata)) stop(" The global Environment (env) does not contain any numerical or categorical data items. 
+  Please ensure the data type of mandatory data items is set correctly and then rerun the execution (For more details see global variables env$ndata and env$cdata).")
+}
+
 #' @title  setGlobals
 #' @description Function to define global variables.
 #' @export
@@ -708,6 +753,16 @@ getMandatoryItems <- function (imCol, opt, df, ...){
   im
 }
 
+getNumValue<- function (data) {
+  if (is.character(data))
+    return <-  as.double(as.character (data))
+  else if (is.numeric(data))
+    return <- data
+  else if (is.factor(data))
+    return <- as.double(as.character(data))
+  else retun <- NULL
+}
+
 #' @title isDate
 #' @description This function checks whether a given data value has date format.
 #' @export
@@ -772,6 +827,19 @@ addMissingCount<- function (bdata, col, row) {
   mr <- (bdata$missing_value_no[index]/ bdata$N[index])* 100
   bdata$missing_value_rate[index] <- round (mr,2)
   bdata
+}
+
+#' @title  setGlobals
+#' @description Function to define global variables.
+#' @deprecated replaced by setEnvironment
+#' @export
+#'
+setGlobals <- function(medData, repCol, cdata, ddata, tdata) {
+  env$medData <- medData
+  env$cdata <- cdata
+  env$ddata <- ddata
+  env$metrics <- tdata
+  env$repMeta <-repCol
 }
 
 #' @title deprecatedMetrics
