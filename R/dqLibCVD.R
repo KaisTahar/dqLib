@@ -1,4 +1,8 @@
 
+#------------------------------------------------------------------------------------------------------
+# Functions to detect value completeness issues using missing data rules
+#------------------------------------------------------------------------------------------------------
+
 getMissingRules<-function (path, sheetName) {
   rules <- read.xlsx(xlsxFile = path, sheet = sheetName, skipEmptyRows = FALSE)
   sapply(rules, class)
@@ -36,4 +40,44 @@ checkMissingRules<-function (df, mRules, itemCol, vmCol, imCol) {
     }
   }
   df
+}
+
+#------------------------------------------------------------------------------------------------------
+# functions to support range rules
+#------------------------------------------------------------------------------------------------------
+
+getRangeRules<-function (path, sheetName) {
+  rules <- read.xlsx(xlsxFile = path, sheet = sheetName, skipEmptyRows = FALSE)
+  sapply(rules, class)
+  itemIDs<-rules$RuleID
+  if (!is.empty(itemIDs)){
+    rdata <- data.frame(ruleID =character(), type=character(), item1=character(),  minValue1=double(), maxValue1=double(), item2=character(), value2=character(), item3=character(), value3=character())
+    for (i in itemIDs) {
+      index = which(rules$RuleID==i)
+      ruleType =  as.character(rules$Type[index])
+      if (ruleType =="Simple Range Rule") {
+        type ="simpleRangeRule"
+        item1 <- as.character(rules$Item1[index])
+        minValue1 <-  as.double(rules$`min(Item1)`[index])
+        maxValue1 <-  as.double( rules$`max(Item1)`[index])
+        rule = list(ruleID = i, type=type, item1=item1,  minValue1=minValue1, maxValue1=maxValue1, item2 =NA, value2=NA, item3="", value3=NA)
+      } else if (ruleType == "Complex Range Rule") {
+        type ="complexRangeRule"
+        item1 <- as.character( rules$Item1[index])
+        minValue1 <-  as.double(rules$`min(Item1)`[index])
+        maxValue1 <-  as.double( rules$`max(Item1)`[index])
+        item2 <- as.character( rules$Item2[index])
+        item3 <- as.character( rules$Item3[index])
+        split1 =  unlist (strsplit( item2, split ="="))
+        item2 = split1[1]
+        value2 = split1[2]
+        split2 =  unlist (strsplit( item3, split ="="))
+        item3 = split2[1]
+        value3 = split2[2]
+        rule = list(ruleID = i, type=type, item1=item1,  minValue1=minValue1, maxValue1=maxValue1, item2 =item2, value2=value2, item3=item3, value3=value3)
+      }
+      rdata <- rbind(rdata,rule, stringsAsFactors=FALSE)
+    }
+  }
+  rdata
 }
