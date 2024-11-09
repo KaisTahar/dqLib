@@ -246,33 +246,33 @@ addMissingItemCount<- function (bdata, col, row) {
 #------------------------------------------------------------------------------------------------------
 
 #' @title getMissingValue
-#' @description This function checks the loaded data for missing data values.
+#' @description This function checks the loaded data for missing data values. It also supports missing rules.
 #'
-getMissingValue<-function (df, bItemCol, outCol1,outCol2){
+getMissingValue<-function (df, bItemCol, outCol1,outCol2, ...){
+  vars <- list(...)
+  exp =NULL
   if (!all(is.na(env$dq)))
   {
     if(!outCol1 %in% colnames(env$dq)) env$dq[,outCol1]<-""
     if(!outCol2 %in% colnames(env$dq)) env$dq[,outCol2] <-""
   }
-  else
-  {
+  else {
     env$dq[nrow(env$dq)+1,] <- NA
     if(!outCol1 %in% colnames(env$dq)) env$dq[,outCol1]<-""
     if(!outCol2 %in% colnames(env$dq)) env$dq[,outCol2] <-""
   }
   bItems<-df[,bItemCol]
   bItems<-bItems[bItems!="Total"]
-  if (!is.empty(bItems))
-  {
-    for (item in unique(bItems)) {
-      df <-missingCheck(df, item, bItemCol, outCol1, outCol2)
+  if (!is.empty(bItems)) {
+    if (!is.empty(vars)) {
+      mRules <- vars[[1]] 
+      exp <- mRules$item1
+      df <- checkMissingRules(df, mRules, bItemCol, outCol1, outCol2)
     }
-    if (!is.empty(env$cdata) && bItemCol %in% colnames(env$cdata))
-    {
-      x <- bItems %in%  env$cdata [,bItemCol]
-      if ( all(x)) {
-        env$cdata <-df
-      }
+    for (item in unique(bItems)) {
+      if (!is.null(exp)){
+        if (!item %in% exp) df <- missingCheck(df, item, bItemCol, outCol1, outCol2)
+      } else df <-missingCheck(df, item, bItemCol, outCol1, outCol2)
     }
   }
   df
@@ -306,7 +306,7 @@ missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
           env$medData[,item][j] <- paste("hidden")
         }
       }
-      df$vm_misg[index] <-0
+      #df$vm_misg[index] <-0
       m <- NULL
       if(!is.empty(env$medData[[itemCond]])) cond.vec <- env$medData[which(env$medData[[itemCond]]==cond), item]
       if(!is.empty(cond.vec)){
