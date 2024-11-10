@@ -621,7 +621,7 @@ checkFutureDate<- function (dateValues){
 }
 
 #------------------------------------------------------------------------------------------------------
-# functions to calculate overall metrics and generate DQ reports
+# functions to calculate overall DQ metrics
 #------------------------------------------------------------------------------------------------------
 
 #' @title addStatistic
@@ -676,6 +676,33 @@ getTotalStatistic <- function(col, row){
     env$metrics<-cbind(total, df)
   } else env$metrics<-cbind(total, env$metrics)
   env$metrics
+}
+
+#------------------------------------------------------------------------------------------------------
+# Functions to generate data quality reports and visualizations
+#------------------------------------------------------------------------------------------------------
+
+visualizeOutliers <- function (itemCol, valueCol, totalRow, voPath, ...){
+  index = which(env$ndata[, itemCol]==totalRow)
+  df <-subset(env$ndata[-index,], valueCol >=0, select = c(itemCol, valueCol))
+  dataItems <- df[, itemCol]
+  outlierNumbers <- df[, valueCol]
+  vars <- list(...)
+  legend = TRUE
+  labelSize = 10
+  counterSize = 3
+  if(!is.empty(vars)){
+    if (!is.null(vars$a)) legend=vars[[1]]
+    if (!is.null(vars$b)) labelSize=vars[[2]]
+    if (!is.null(vars$c)) counterSize=vars[[3]]
+  }
+  ggplot(df, aes(x= reorder(dataItems, outlierNumbers), y=outlierNumbers, fill=dataItems)) +
+    geom_bar(stat="identity", show.legend = legend) +
+    geom_text(aes(label = round(outlierNumbers, digits = 0)), vjust = 0, size=counterSize)+
+    labs(x="Data Items", y="Outliers", fill= "Data Items") +
+    theme(axis.text.x=element_text(angle=45, size=labelSize, hjust=1), legend.text =element_text(size=labelSize))
+  path<-paste (voPath, ".png")
+  ggsave(path)
 }
 
 #' @title geReport
