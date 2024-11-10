@@ -565,6 +565,40 @@ addOutlierCount<- function (bdata, col, row) {
 # functions to detect plausibility issues
 #------------------------------------------------------------------------------------------------------
 
+checkRangeRule<- function (ndata, itemCol, outlierCol, item, min, max, ...) {
+  vars <- list(...)
+  item.vec <- getNumValue(env$dq[[item]])
+  if (!is.empty(item.vec)){
+    if (is.empty(vars)){
+      out <- which(item.vec<min | item.vec>max)
+      ndata <- addOutlier(item, ndata, length(out), length(item.vec), itemCol)
+      for(i in out) {
+        msg<- paste("Implausible", item , ":", item.vec[i])
+        if (grepl("Implausible", env$dq[,outlierCol][i] , fixed = TRUE)) env$dq[,outlierCol][i] <- paste (msg,"; ", env$dq[,outlierCol][i])
+        else env$dq [,outlierCol] [i] <- msg
+      }
+    } else if(length(vars)==4){
+      item2 <- vars[[1]]
+      value2 <- vars[[2]]
+      item3 <- vars[[3]]
+      value3 <- vars[[4]]
+      item2.vec <- as.character(env$dq[[item2]])
+      item3.vec <- as.character(env$dq[[item3]])
+      out <- which(!is.na(item.vec) & (item.vec< min | item.vec > max) & item2.vec ==value2 & item3.vec==value3)
+      if (!is.empty (out)) {
+        for(i in out) {
+          msg<- paste("Implausible", item , ":", item.vec[i])
+          if (grepl("Implausible", env$dq[,outlierCol][i] , fixed = TRUE)) env$dq[,outlierCol][i] <- paste (msg, "; ", env$dq[,outlierCol][i])
+          else env$dq [,outlierCol] [i] <- msg
+        }
+      }
+      ndata <- addOutlier(item, ndata, length(out), length(item.vec), itemCol)
+    } else ndata
+  } else ndata
+  
+  ndata
+}
+
 #' @title checkAgePlausibility
 #' @description This Function checks the data values related to the data item "birthdate" for implausible values and returns the detected plausibility issues.
 #' @export

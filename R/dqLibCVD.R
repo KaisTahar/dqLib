@@ -43,7 +43,7 @@ checkMissingRules<-function (df, mRules, itemCol, vmCol, imCol) {
 }
 
 #------------------------------------------------------------------------------------------------------
-# functions to support range rules
+# functions to support the detection of outliers using range rules
 #------------------------------------------------------------------------------------------------------
 
 getRangeRules<-function (path, sheetName) {
@@ -80,4 +80,21 @@ getRangeRules<-function (path, sheetName) {
     }
   }
   rdata
+}
+
+checkRangeRules<-function (ndata, rRules, itemCol, outlierCol) {
+  if(!outlierCol %in% colnames(env$dq)) env$dq[,outlierCol]<-NA
+  rRuleIDs<-rRules$ruleID
+  if (!is.empty(rRuleIDs)) {
+    for (i in  rRuleIDs) {
+      index = which(rRules$ruleID==i)
+      if (rRules$type [index]=="simpleRangeRule") ndata <-checkRangeRule(ndata, itemCol, outlierCol, rRules$item1[index], rRules$minValue1[index], rRules$maxValue1[index])
+      else if (rRules$type [index]=="complexRangeRule") ndata <-checkRangeRule(ndata, itemCol, outlierCol, rRules$item1[index], rRules$minValue1[index], rRules$maxValue1[index], rRules$item2[index], rRules$value2[index], rRules$item3[index], rRules$value3[index])
+    }
+  }
+  env$ndata <-ndata
+  out <- list()
+  out[["dq"]] <- env$dq
+  out[["ndata"]] <- ndata
+  out
 }
