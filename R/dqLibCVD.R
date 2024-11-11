@@ -1,4 +1,27 @@
 
+#This function checks the quality of loaded data regarding common DQ issues that may arise in the context of cardiovascular diseases (CVDs).
+
+cvdDqChecker <- function (bItemCl, rPath)
+{
+  # D1-Completeness
+  missingCode =c("", NULL, NA)
+  setMissingCodes(missingCode)
+  mRules <- getMissingRules(rPath, "MissingRules")
+  if (!is.empty(env$cdata) & !is.empty (env$ddata) & !is.empty (env$ndata)) {
+    imList <- getMandatoryItems("basicItem","Total", env$cdata, env$ddata, env$ndata)
+    env$mItem <- getMissingItem(imList)
+    env$cdata <- getMissingValue(env$cdata, bItemCl, "missing_value",  "missing_item", mRules)
+    env$ddata <- getMissingValue(env$ddata, bItemCl, "missing_value",  "missing_item", mRules)
+    env$ndata <- getMissingValue(env$ndata, bItemCl,  "missing_value",  "missing_item", mRules)
+  } else if (is.null (env$cdata) & is.null(env$ndata)) stop(" The global Environment (env) does not contain any numerical or categorical data items. 
+  Please ensure the data type of mandatory data items is set correctly and then rerun the execution (For more details see global variables env$ndata and env$cdata).")
+  # D2-Plausibility
+  rRules <- getRangeRules(rPath, "RangeRules")
+  outliers <- checkRangeRules(env$ndata, rRules, bItemCl, "outlier")$ndata
+  param <- getTotalStatistic(bItemCl,  env$sumRow)
+  param
+}
+
 #------------------------------------------------------------------------------------------------------
 # Functions to detect value completeness issues using missing data rules
 #------------------------------------------------------------------------------------------------------

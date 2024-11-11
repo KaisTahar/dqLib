@@ -6,38 +6,6 @@
 # Kais Tahar, University Medical Center Göttingen
 # ######################################################################################################
 
-#' @title dqChecker
-#' @description This function assesses the quality of loaded data using generic indicators and domain-specific DQ checks.
-#' The DQ indicators were implemented based on the DQ concept published under the DOI:10.1055/a-2006-1018.
-#' @export
-#'
-dqChecker <- function (data, domain, itemMandatoryCol, ...)
-{
-  vars <- list(...)
-  env$medData <-data
-  env$metrics <- data.frame(indicators =NA, parameters =NA)
-  indInstance <- data.frame(dqi_co_icr =NA)
-  if (domain =="RD") {
-    if(length(vars)==3){
-      # tracer diagnoses list
-      tracerRef <- vars[[1]] 
-      # standard terminology for semantic annotation of RDs
-      rdStandard <- vars[[2]]
-      # mandatory data items for the case module
-      caseModule <- vars[[3]]
-      paramInstance  <-rdDqChecker(itemMandatoryCol, tracerRef, rdStandard, caseModule)
-    }
-  }
-  # DQ metrics (parameters and indicators)
-  env$metrics$parameters <- paramInstance
-  indInstance$dqi_co_icr <- itemCompletenessIndicator(paramInstance$im, paramInstance$im_misg)$value
-  indInstance$dqi_co_vcr <- valueCompletenessIndicator(paramInstance$vm, paramInstance$vm_misg)$value
-  indInstance$dqi_pl_rpr <- rangePlausibilityIndicator(paramInstance$vs_od, paramInstance$vo)$value
-  indInstance$dqi_pl_spr <- semanticPlausibilityIndicator(paramInstance$vs_cd, paramInstance$vc)$value
-  env$metrics$indicators <- indInstance 
-  env$metrics
-}
-
 #' @title rdDqChecker
 #' @description This function checks the quality of loaded data regarding DQ issues that may arise in context of rare diseases (RDs).
 #' The default DQ dimensions are completeness and plausibility.

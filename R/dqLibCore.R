@@ -31,7 +31,7 @@ setEnvironment <- function(a,...) {
   env$misgValueCol <- "missing_value"
   env$outlierCol <-"outlier"
   env$contraCol <- "contradictions"
-  env$sumtRow <-"Total"
+  env$sumRow <-"Total"
   vars <- list(...)
   # set the type of mandatory data items
   if(!(is.null(vars$b)|is.null(vars$c)|is.null(vars$d))){
@@ -60,6 +60,45 @@ setEnvironment <- function(a,...) {
   if (is.null (env$ndata)) message("No numerical data items available")
   if (is.null (env$cdata) & is.null(env$ndata)) stop(" The global Environment (env) does not contain any numerical or categorical data items. 
   Please ensure the data type of mandatory data items is set correctly and then rerun the execution (For more details see global variables env$ndata and env$cdata).")
+}
+
+#' @title dqChecker
+#' @description This function assesses the quality of loaded data using generic indicators and domain-specific DQ checks.
+#' The DQ indicators were implemented based on the DQ concept published under the DOI:10.1055/a-2006-1018.
+#' @export
+#'
+dqChecker <- function (data, domain, itemMandatoryCol, ...)
+{
+  vars <- list(...)
+  env$medData <-data
+  env$metrics <- data.frame(indicators =NA, parameters =NA)
+  indInstance <- data.frame(dqi_co_icr =NA)
+  if (domain=="CVD") {
+    if (! is.empty (vars)) {
+      # Semantic Rules for detecting missing data values and recognizing the intentionally hidden data values
+      rulePath <- vars[[1]]
+      paramInstance <- cvdDqChecker(itemMandatoryCol, rulePath)
+    }
+  }
+  if (domain =="RD") {
+    if(length(vars)==3){
+      # tracer diagnoses list
+      tracerRef <- vars[[1]] 
+      # standard terminology for semantic annotation of RDs
+      rdStandard <- vars[[2]]
+      # mandatory data items for the case module
+      caseModule <- vars[[3]]
+      paramInstance  <-rdDqChecker(itemMandatoryCol, tracerRef, rdStandard, caseModule)
+    }
+  }
+  # DQ metrics (parameters and indicators)
+  env$metrics$parameters <- paramInstance
+  indInstance$dqi_co_icr <- itemCompletenessIndicator(paramInstance$im, paramInstance$im_misg)$value
+  indInstance$dqi_co_vcr <- valueCompletenessIndicator(paramInstance$vm, paramInstance$vm_misg)$value
+  indInstance$dqi_pl_rpr <- rangePlausibilityIndicator(paramInstance$vs_od, paramInstance$vo)$value
+  indInstance$dqi_pl_spr <- semanticPlausibilityIndicator(paramInstance$vs_cd, paramInstance$vc)$value
+  env$metrics$indicators <- indInstance 
+  env$metrics
 }
 
 #' @title  setGlobals
@@ -376,7 +415,6 @@ missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
       env$dq[,cl2]<- paste( item, " was not collected ", env$dq[,cl2])
     }
   }
-  
   df
 }
 
