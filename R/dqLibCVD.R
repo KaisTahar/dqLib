@@ -1,123 +1,162 @@
+#######################################################################################################
+# Description: The data quality library (dqLib) is an R package for data quality (DQ) assessment and reporting.
+# As part of the "dqLib" package this script includes functions to detect DQ issues that may arise in the context of common diseases like cardiovascular diseases (CVDs).
+# Kais Tahar, University Medical Center Göttingen
+# ######################################################################################################
 
-#This function checks the quality of loaded data regarding common DQ issues that may arise in the context of cardiovascular diseases (CVDs).
-
-cvdDqChecker <- function (bItemCl, rPath)
+#' @title cvdDqChecker
+#' @description This function checks the quality of loaded data set regarding common DQ issues that may arise in the context of common diseases like cardiovascular diseases (CVDs).
+#' @export
+#'
+cvdDqChecker <- function (rPath, spstMeta)
 {
+  # call constant values: Labels for potential DQ issues
+  im_misg_lbl=base::get("im_misg_lbl", envir=env)
+  vm_misg_lbl=base::get("vm_misg_lbl", envir=env)
+  vo_lbl=base::get("vo_lbl", envir=env)
+  vc_lbl=base::get("vc_lbl", envir=env)
+  # call relevant meta data for CVDs
+  numMeta=base::get("numMeta", envir=env)
+  catMeta=base::get("catMeta", envir=env)
+  tempMeta=base::get("tempMeta", envir=env)
+  optMeta=base::get("optMeta", envir=env)
+  metaCol=base::get("metaCol", envir=env)
+  ovrQuality=base::get("ovrQuality", envir=env)
+  # set specific ruleMeta for CVDs
+  base::assign(x = "ruleMeta", value =spstMeta, envir = env)
   # D1-Completeness
-  missingCode =c("", NULL, NA)
-  setMissingCodes(missingCode)
-  mRules <- getMissingRules(rPath, "MissingRules")
-  if (!is.empty(env$cdata) & !is.empty (env$ddata) & !is.empty (env$ndata)) {
-    imList <- getMandatoryItems("basicItem","Total", env$cdata, env$ddata, env$ndata)
-    env$mItem <- getMissingItem(imList)
-    env$cdata <- getMissingValue(env$cdata, bItemCl, "missing_value",  "missing_item", mRules)
-    env$ddata <- getMissingValue(env$ddata, bItemCl, "missing_value",  "missing_item", mRules)
-    env$ndata <- getMissingValue(env$ndata, bItemCl,  "missing_value",  "missing_item", mRules)
-  } else if (is.null (env$cdata) & is.null(env$ndata)) stop(" The global Environment (env) does not contain any numerical or categorical data items. 
-  Please ensure the data type of mandatory data items is set correctly and then rerun the execution (For more details see global variables env$ndata and env$cdata).")
+  if (!(is.empty(numMeta) | is.empty(catMeta) | is.empty(tempMeta))) {
+      im=getMandatoryItems(metaCol, optMeta, numMeta, catMeta, tempMeta)
+      # add results of the completeness analysis for all data items in the meta data for CVDs
+      base::assign(x ="mItem" , value=getMissingItem(im),envir=env)
+      mRules <- getMissingRules(rPath)
+      base::assign(x="numMeta", value= getMissingValue(numMeta, metaCol, vm_misg_lbl, im_misg_lbl, mRules), envir=env)
+      base::assign(x="catMeta", value = getMissingValue(catMeta, metaCol, vm_misg_lbl, im_misg_lbl, mRules), envir=env)
+      base::assign(x="tempMeta", value = getMissingValue(tempMeta, metaCol, vm_misg_lbl, im_misg_lbl, mRules), envir=env)
+  } else stop(" The global Environment (env) does not contain any numerical or categorical or temporal data items.
+  Please ensure the data type of mandatory data items is set correctly and then rerun the execution (For more details see global variables catMeta and numMeta).")
   # D2-Plausibility
-  rRules <- getRangeRules(rPath, "RangeRules")
-  outliers <- checkRangeRules(env$ndata, rRules, bItemCl, "outlier")$ndata
-  param <- getTotalStatistic(bItemCl,  env$sumRow)
+  # get user-defined DQ rules form spreadsheets
+  rRules <- getRangeRules(rPath)
+  # add results of the plausibility analysis for all data items in the meta data for CVDs
+  base::assign(x="numMeta", value = checkRangeRules(env$numMeta, rRules, metaCol, vo_lbl), envir=env)
+  param <- getTotalStatistic(metaCol, ovrQuality)
   param
 }
 
-#------------------------------------------------------------------------------------------------------
-# Functions to detect value completeness issues using missing data rules
-#------------------------------------------------------------------------------------------------------
-
-getMissingRules<-function (path, sheetName) {
-  rules <- read.xlsx(xlsxFile = path, sheet = sheetName, skipEmptyRows = FALSE)
+#' @title getMissingRules
+#' @description Functions to import missing data rules from spreadsheets.
+#' @export
+#'
+getMissingRules<-function (path) {
+  ruleMeta <-base::get("ruleMeta", envir=env)
+  misgRule=ruleMeta[["misgRule"]]
+  rules <- read.xlsx(xlsxFile = path, sheet = misgRule, skipEmptyRows = FALSE)
   sapply(rules, class)
-  ruleIDs<-na.omit(rules$RuleID)
-  if (!is.empty(ruleIDs))
-  {
-    if (sheetName=="MissingRules") rdata <- data.frame(ruleID =character(), type =character(), item1=character(),  item2=character(), valueItem2=character())
-    else Stop("No missing rules available. Please define the spreadsheet name MissingRules and set the required rules")
+  rID=ruleMeta[["ruleID"]]
+  vItem1=ruleMeta[["valueItem1"]]
+  vItem2=ruleMeta[["valueItem2"]]
+  ruleIDs<-na.omit(rules[[rID]])
+  rdata <- data.frame(ruleID =character(), item1=character(), valueItem1=character(), item2=character(), valueItem2=character())
+  if (!is.empty(ruleIDs)) {
     for (ID in ruleIDs) {
-        index = which(rules$RuleID==ID)
-        type = "MissingRule"
-        item1 <- as.character( rules$Item1[index])
-        item2 <- as.character( rules$Item2[index])
-        value2 <- as.character( rules$`value(Item2)`[index])
-        rule = list(ruleID =ID, type=type, item1=item1, item2=item2, valueItem2=value2)
-        rdata <- rbind(rdata, rule, stringsAsFactors=FALSE)
-      }
-  }
+      index = which(ruleIDs==ID)
+      #type = misgRule
+      equation1 <- as.character(rules[[vItem1]][index])
+      equation2 <- as.character(rules[[vItem2]][index])
+      split1 =  unlist (strsplit(equation1, split ="="))
+      item1 = split1[1]
+      value1 = split1[2]
+      split2 =  unlist(strsplit(equation2, split ="="))
+      item2 = split2[1]
+      value2 = split2[2]
+      rule = list(ruleID =ID, item1=item1, valueItem1=value1, item2=item2, valueItem2=value2)
+      rdata <- rbind(rdata, rule, stringsAsFactors=FALSE)
+    }
+  } else stop("No missing rules available. Please define the spreadsheet missingRules and set the required rules")
   rdata
 }
 
-checkMissingRules<-function (df, mRules, itemCol, vmCol, imCol) {
-  if(!vmCol %in% colnames(env$dq)) env$dq[,vmCol]<-""
-  if(!imCol %in% colnames(env$dq)) env$dq[,imCol]<-""
+#' @title checkMissingRules
+#' @description Functions to detect missing data values using DQ rules
+#' @export
+#'
+checkMissingRules<-function (df, mRules, metaCol, vm_misg_lbl, im_misg_lbl) {
   mRuleIDs<-mRules$ruleID
   if (!is.empty(mRuleIDs)) {
     for (i in  mRuleIDs) {
       index = which(mRules$ruleID==i)
-      if (mRules$type [index]=="MissingRule") {
-        x <- mRules$item1[index] %in% df [,itemCol]
-        if ( all(x)) {
-          df <- missingCheck(df, mRules$item1[index], itemCol, vmCol, imCol, mRules$item2[index], mRules$valueItem2[index])
-        }
+      x <- mRules$item1[index] %in% df [,metaCol]
+      if ( all(x)) {
+        df <- missingCheck(df, mRules$item1[index], metaCol, vm_misg_lbl, im_misg_lbl, mRules$valueItem1[index], mRules$item2[index], mRules$valueItem2[index])
       }
     }
   }
   df
 }
 
-#------------------------------------------------------------------------------------------------------
-# functions to support the detection of outliers using range rules
-#------------------------------------------------------------------------------------------------------
-
-getRangeRules<-function (path, sheetName) {
-  rules <- read.xlsx(xlsxFile = path, sheet = sheetName, skipEmptyRows = FALSE)
+#' @title getRangRules
+#' @description Functions to extract range rules from spreadsheets.
+#' @export
+#'
+getRangeRules<-function (path) {
+  ruleMeta <-base::get("ruleMeta", envir=env)
+  rangeRule=ruleMeta[["rangeRule"]]
+  rules <- read.xlsx(xlsxFile = path, sheet = rangeRule, skipEmptyRows = FALSE)
   sapply(rules, class)
-  itemIDs<-rules$RuleID
-  if (!is.empty(itemIDs)){
-    rdata <- data.frame(ruleID =character(), type=character(), item1=character(),  minValue1=double(), maxValue1=double(), item2=character(), value2=character(), item3=character(), value3=character())
-    for (i in itemIDs) {
-      index = which(rules$RuleID==i)
-      ruleType =  as.character(rules$Type[index])
-      if (ruleType =="Simple Range Rule") {
-        type ="simpleRangeRule"
-        item1 <- as.character(rules$Item1[index])
-        minValue1 <-  as.double(rules$`min(Item1)`[index])
-        maxValue1 <-  as.double( rules$`max(Item1)`[index])
-        rule = list(ruleID = i, type=type, item1=item1,  minValue1=minValue1, maxValue1=maxValue1, item2 =NA, value2=NA, item3="", value3=NA)
-      } else if (ruleType == "Complex Range Rule") {
-        type ="complexRangeRule"
-        item1 <- as.character( rules$Item1[index])
-        minValue1 <-  as.double(rules$`min(Item1)`[index])
-        maxValue1 <-  as.double( rules$`max(Item1)`[index])
-        item2 <- as.character( rules$Item2[index])
-        item3 <- as.character( rules$Item3[index])
-        split1 =  unlist (strsplit( item2, split ="="))
+  rID=ruleMeta[["ruleID"]]
+  item1 =ruleMeta[["item1"]]
+  maxItem1 =ruleMeta[["maxItem1"]]
+  minItem1 =ruleMeta[["minItem1"]]
+  vItem2=ruleMeta[["valueItem2"]]
+  vItem3=ruleMeta[["valueItem3"]]
+  ruleIDs<-na.omit(rules[[rID]])
+  rdata <- data.frame(ruleID =character(), item1=character(),  minValue1=double(), maxValue1=double(), item2=character(), value2=character(), item3=character(), value3=character())
+  if (!is.empty(ruleIDs)){
+    for (ID in ruleIDs) {
+      index = which(ruleIDs==ID)
+      nItem1 <- as.character(rules[[item1]][index])
+      minValue1 <- as.double(rules[[minItem1]][index])
+      maxValue1 <- as.double(rules[[maxItem1]][index])
+      equation1 <- as.character(rules[[vItem2]][index])
+      equation2 <- as.character(rules[[vItem3]][index])
+      if (!is.empty(equation1)){
+        split1 =  unlist(strsplit( equation1 , split ="="))
         item2 = split1[1]
         value2 = split1[2]
-        split2 =  unlist (strsplit( item3, split ="="))
+      } else {
+        item2 <-NA
+        value2 <-NA
+      }
+      if (!is.empty(equation2)){
+        split2 =  unlist(strsplit( equation2 , split ="="))
         item3 = split2[1]
         value3 = split2[2]
-        rule = list(ruleID = i, type=type, item1=item1,  minValue1=minValue1, maxValue1=maxValue1, item2 =item2, value2=value2, item3=item3, value3=value3)
+      } else {
+        item3 <-NA
+        value3 <-NA
       }
+      rule = list(ruleID = ID, item1=nItem1,  minValue1=minValue1, maxValue1=maxValue1, item2 =item2, value2=value2, item3=item3, value3=value3)
       rdata <- rbind(rdata,rule, stringsAsFactors=FALSE)
     }
-  }
+  } else stop("No range rules available. Please define the spreadsheet rangeRules and set the required rules")
   rdata
 }
 
-checkRangeRules<-function (ndata, rRules, itemCol, outlierCol) {
+#' @title checkMissingRules
+#' @description This function checks the range plausibly using predefined DQ rules.
+#' @export
+#'
+checkRangeRules<-function (ndata, rRules, imCol, outlierCol) {
   if(!outlierCol %in% colnames(env$dq)) env$dq[,outlierCol]<-NA
   rRuleIDs<-rRules$ruleID
   if (!is.empty(rRuleIDs)) {
-    for (i in  rRuleIDs) {
-      index = which(rRules$ruleID==i)
-      if (rRules$type [index]=="simpleRangeRule") ndata <-checkRangeRule(ndata, itemCol, outlierCol, rRules$item1[index], rRules$minValue1[index], rRules$maxValue1[index])
-      else if (rRules$type [index]=="complexRangeRule") ndata <-checkRangeRule(ndata, itemCol, outlierCol, rRules$item1[index], rRules$minValue1[index], rRules$maxValue1[index], rRules$item2[index], rRules$value2[index], rRules$item3[index], rRules$value3[index])
+    for (ID in  rRuleIDs) {
+      index = which(rRules$ruleID==ID)
+      if ( is.na(rRules$value2[index])) ndata  <-checkRangeRule(ndata,rRules$ruleID[index], imCol, outlierCol, rRules$item1[index], rRules$minValue1[index], rRules$maxValue1[index])
+      else ndata<-checkRangeRule(ndata, rRules$ruleID[index], imCol, outlierCol, rRules$item1[index], rRules$minValue1[index], rRules$maxValue1[index], rRules$item2[index], rRules$value2[index], rRules$item3[index], rRules$value3[index])
     }
   }
-  env$ndata <-ndata
-  out <- list()
-  out[["dq"]] <- env$dq
-  out[["ndata"]] <- ndata
-  out
+  ndata
 }
+

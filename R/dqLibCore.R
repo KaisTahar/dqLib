@@ -1,6 +1,7 @@
 #######################################################################################################
 # Description: The data quality library (dqLib) is an R package for data quality (DQ) assessment and reporting.
-# This script is part of the "dqLib" package and provides core functions for data quality assessment.
+# This package provides multiple metrics to analyze different aspects of DQ. The developed functions enable users to select desired dimensions, indicators, and parameters as well as to generate specific DQ reports and visualizations.
+# This script is part of the "dqLib" package and provides generic functions for data quality assessment.
 # Date Created: 2021-02-26
 # Author: Kais Tahar, University Medical Center Göttingen
 #' @keywords internal
@@ -17,49 +18,44 @@
 #'
 env <- new.env()
 
-setEnvironment <- function(a,...) {
-  if (!exists("env")) env <- new.env()
-  env$medData <- a
-  env$dq <- a
+#' @title setEnvironment
+#' @description Function to set global variables.
+#' @export
+#'
+setEnvironment <- function(data, numItems, catItems, tempItems, itemCol, optItems, ...) {
+  vars <- list(...)
+ if (!exists("env")) env <<- new.env()
+ # if (!exists("env")) env <- new.env()
+  # set study data
+  env$studyData <- data
+  if (is.null (env$studyData)) stop("No data available")
+  env$dq <- data
+  # set metadata
+  env$metaCol<- itemCol
+  env$numMeta <-numItems
+  env$catMeta <-catItems
+  env$tempMeta<-tempItems
+  env$optMeta <- optItems
+  env$im <- getMandatoryItems(itemCol, optItems, numItems, catItems, tempItems)
+  if (is.null (env$numMeta)) warning("No numerical data items available")
+  if (is.null (env$catMeta)) warning("No categorical data items available")
+  if (is.null (env$tempMeta)) warning("No temporal data items available")
+  if (is.null (env$numMeta) & is.null(env$catMeta) & is.null(env$tempMeta)) stop("The global Environment (env) does not contain any numerical or categorical or temporal data items.
+  Please ensure the data type of mandatory data items is set correctly and then rerun the execution (For more details see global variables env$numMeta and env$catMeta).")
+  # set code for missing data values
+  if (!is.empty(vars)) env$vm_misg_code <-vars[[1]] else env$vm_misg_code <- c("", "NULL", NA)
+  # set reporting labels for potential DQ issues
+  env$im_misg_lbl <- "missing_items"
+  env$vm_misg_lbl <- "missing_values"
+  env$vo_lbl <-"outliers"
+  env$vc_lbl <- "contradictions"
   # set default variables
+  #env$ovrQuality <- "Overall DQ"
+  env$ovrQuality <- "Total"
+  env$ruleMeta <- NULL
   env$metrics <-NULL
   env$report <-NULL
   env$contra <-NULL
-  env$optItems <-NULL
-  # set default DQ issues
-  env$misgItemCol <- "missing_item"
-  env$misgValueCol <- "missing_value"
-  env$outlierCol <-"outlier"
-  env$contraCol <- "contradictions"
-  env$sumRow <-"Total"
-  vars <- list(...)
-  # set the type of mandatory data items
-  if(!(is.null(vars$b)|is.null(vars$c)|is.null(vars$d))){
-    # Mandatory categorical data items
-    env$cdata <- vars$b
-    # Mandatory temporal data items
-    env$ddata <-vars$c
-    # Mandatory numerical data items
-    env$ndata <-vars$d
-  }
-  else if(!(is.null(vars$b)|is.null(vars$c))){
-    env$cdata <- vars$b
-    env$ddata <-vars$c
-  }
-  else if(!(is.null(vars$c)|is.null(vars$d))){
-    env$ddata <-vars$c
-    env$ndata <-vars$d
-  }
-  else if(!(is.null(vars$b)|is.null(vars$d))){
-    env$cdata <- vars$b
-    env$ndata <-vars$d
-  }
-  if (is.null (env$medData)) stop("No data available")
-  if (is.null (env$cdata)) warning("No categorical data items available")
-  if (is.null (env$ddata)) warning("No temporal data items available")
-  if (is.null (env$ndata)) message("No numerical data items available")
-  if (is.null (env$cdata) & is.null(env$ndata)) stop(" The global Environment (env) does not contain any numerical or categorical data items. 
-  Please ensure the data type of mandatory data items is set correctly and then rerun the execution (For more details see global variables env$ndata and env$cdata).")
 }
 
 #' @title dqChecker
@@ -67,58 +63,42 @@ setEnvironment <- function(a,...) {
 #' The DQ indicators were implemented based on the DQ concept published under the DOI:10.1055/a-2006-1018.
 #' @export
 #'
-dqChecker <- function (data, domain, itemMandatoryCol, ...)
+dqChecker <- function (studyData, coreDomain, numItems, catItems, tempItems, itemMandatory, itemOptional, missingCode, ...)
 {
   vars <- list(...)
-  env$medData <-data
-  env$metrics <- data.frame(indicators =NA, parameters =NA)
-  indInstance <- data.frame(dqi_co_icr =NA)
-  if (domain=="CVD") {
+  # set global variables
+  setEnvironment(studyData, numItems, catItems, tempItems, itemMandatory, itemOptional, missingCode)
+  # initialize metrics
+  metrics <- data.frame(indicators =NA, parameters =NA)
+  indInstance <- data.frame(dqi_co_icr =NA, dqi_co_vcr =NA )
+  #Domain-driven design of DQ checks
+  if (coreDomain=="CVD") { # cardiovascular diseases (CVD)
     if (! is.empty (vars)) {
       # Semantic Rules for detecting missing data values and recognizing the intentionally hidden data values
       rulePath <- vars[[1]]
-      paramInstance <- cvdDqChecker(itemMandatoryCol, rulePath)
+      ruleMeta  <- vars[[2]]
+      paramInstance <- cvdDqChecker(rulePath, ruleMeta)
     }
   }
-  if (domain =="RD") {
-    if(length(vars)==3){
+  if (coreDomain =="RD") { # rare diseases (RD)
+    if(length(vars)==2){
       # tracer diagnoses list
-      tracerRef <- vars[[1]] 
+      tracerRef <- vars[[1]]
       # standard terminology for semantic annotation of RDs
       rdStandard <- vars[[2]]
-      # mandatory data items for the case module
-      caseModule <- vars[[3]]
-      paramInstance  <-rdDqChecker(itemMandatoryCol, tracerRef, rdStandard, caseModule)
+      paramInstance  <-rdDqChecker(tracerRef, rdStandard)
     }
   }
-  # DQ metrics (parameters and indicators)
-  env$metrics$parameters <- paramInstance
+  # DQ indicators
   indInstance$dqi_co_icr <- itemCompletenessIndicator(paramInstance$im, paramInstance$im_misg)$value
   indInstance$dqi_co_vcr <- valueCompletenessIndicator(paramInstance$vm, paramInstance$vm_misg)$value
   indInstance$dqi_pl_rpr <- rangePlausibilityIndicator(paramInstance$vs_od, paramInstance$vo)$value
   indInstance$dqi_pl_spr <- semanticPlausibilityIndicator(paramInstance$vs_cd, paramInstance$vc)$value
-  env$metrics$indicators <- indInstance 
-  env$metrics
-}
-
-#' @title  setGlobals
-#' @description Function to define global variables.
-#' @export
-#'
-setGlobals <- function(medData, repCol, cdata, ddata, tdata) {
-  env$medData <- medData
-  env$cdata <- cdata
-  env$ddata <- ddata
-  env$metrics <- tdata
-  env$repMeta <-repCol
-}
-
-#' @title  setMissingCodes
-#' @description Function to define missing values.
-#' @export
-#'
-setMissingCodes <- function(codeList) {
-  env$missingCode <-codeList
+  # results of DQ analysis (parameters and indicators)
+  metrics$parameters <- paramInstance
+  metrics$indicators <- indInstance
+  assign(x="metrics", value=metrics, envir = env)
+  metrics
 }
 
 #------------------------------------------------------------------------------------------------------
@@ -181,7 +161,7 @@ valueCompletenessIndicator<- function(vm, vm_misg) {
 #' @title subjectCompletenessIndicator
 #' @description  Function to calculate the indicator for Subject Completeness (dqi_cc_scr), and adds related metadata and parameters in the DQ report.
 #' @export
-#' 
+#'
 subjectCompletenessIndicator <- function(s, s_inc) {
   ind <-data.frame(
     Abbreviation= "dqi_co_scr",
@@ -208,7 +188,7 @@ subjectCompletenessIndicator <- function(s, s_inc) {
 #' @title caseCompletenessIndicator
 #' @description This function calculate the indicator for Case Completeness (dqi_cc_ccr), and adds related metadata and parameters.
 #' @export
-#' 
+#'
 caseCompletenessIndicator <- function(vm_case, vm_case_misg) {
   ind <-data.frame(
     Abbreviation= "dqi_co_ccr",
@@ -286,8 +266,9 @@ addMissingItemCount<- function (bdata, col, row) {
 
 #' @title getMissingValue
 #' @description This function checks the loaded data for missing data values. It also supports missing rules.
+#' @export
 #'
-getMissingValue<-function (df, bItemCol, outCol1,outCol2, ...){
+getMissingValue<-function (df, bItemCol, outCol1, outCol2, ...){
   vars <- list(...)
   exp =NULL
   if (!all(is.na(env$dq)))
@@ -301,10 +282,10 @@ getMissingValue<-function (df, bItemCol, outCol1,outCol2, ...){
     if(!outCol2 %in% colnames(env$dq)) env$dq[,outCol2] <-""
   }
   bItems<-df[,bItemCol]
-  bItems<-bItems[bItems!="Total"]
+  bItems<-bItems[bItems!=env$ovrQuality]
   if (!is.empty(bItems)) {
     if (!is.empty(vars)) {
-      mRules <- vars[[1]] 
+      mRules <- vars[[1]]
       exp <- mRules$item1
       df <- checkMissingRules(df, mRules, bItemCol, outCol1, outCol2)
     }
@@ -323,9 +304,11 @@ getMissingValue<-function (df, bItemCol, outCol1,outCol2, ...){
 #'
 missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
   vars <- list(...)
-  if(length(vars)==2) {
-    itemCond <- vars[[1]]
-    cond <- vars[[2]]
+  if(length(vars)==3) {
+    if (vars[[1]]=="NA") missingCode = NA
+    else if (vars[[1]]=="missingCode") missingCode <-env$vm_misg_code
+    itemCond <- vars[[2]]
+    cond <- vars[[3]]
     if (!all(is.na(env$dq))){
       if(!cl1 %in% colnames(env$dq)) env$dq[,cl1]<-""
       if(!cl2 %in% colnames(env$dq)) env$dq[,cl2] <-""
@@ -336,32 +319,32 @@ missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
     }
     dqItem.vec<- df[, itemCol]
     index <- which (df[, itemCol]==item)
-    item.vec <- env$medData[[item]] 
+    item.vec <- env$studyData[[item]]
     if(!is.empty(item.vec)){
-      if(!is.empty(env$medData[[itemCond]])) {
-        a <- which(env$medData[[itemCond]]!=cond)
-        for (j in a) { 
+      if(!is.empty(env$studyData[[itemCond]])) {
+        a <- which(env$studyData[[itemCond]]!=cond)
+        for (j in a) {
           env$dq[,item][j] <- paste("hidden")
-          env$medData[,item][j] <- paste("hidden")
+          env$studyData[,item][j] <- paste("hidden")
         }
       }
       #df$vm_misg[index] <-0
       m <- NULL
-      if(!is.empty(env$medData[[itemCond]])) cond.vec <- env$medData[which(env$medData[[itemCond]]==cond), item]
+      if(!is.empty(env$studyData[[itemCond]])) cond.vec <- env$studyData[which(env$studyData[[itemCond]]==cond), item]
       if(!is.empty(cond.vec)){
-        if (!is.empty(env$missingCode)) {   
-          for (code in env$missingCode) {
-            if (is.na(code)) v <-  which(env$medData[[itemCond]]==cond & is.na(env$medData[[item]]))
-            else if(is.null(code)) v <-  which(env$medData[[itemCond]]==cond & is.null(env$medData[[item]]))
-            else  v <-  which(env$medData[[itemCond]]==cond & as.character(env$medData[[item]])==code)
+        if (!is.empty(missingCode)) {
+          for (code in missingCode) {
+            if (is.na(code)) v <-  which(env$studyData[[itemCond]]==cond & is.na(env$studyData[[item]]))
+            else if(code=="NULL") v <-  which(env$studyData[[itemCond]]==cond & is.null(env$studyData[[item]]))
+            else  v <-  which(env$studyData[[itemCond]]==cond & as.character(env$studyData[[item]])==code)
             m <-c(m, v)
           }
         }
-        else m <- which((env$medData[[itemCond]]==cond & as.character(env$medData[[item]])=="") |(env$medData[[itemCond]]==cond & is.na(env$medData[[item]])))
+        else m <- which((env$studyData[[itemCond]]==cond & as.character(env$studyData[[item]])=="") |(env$studyData[[itemCond]]==cond & is.na(env$studyData[[item]])))
         if (!is.empty (m)) {
           for(i in m) {
             msg <- paste("Missing ", item, sep="")
-            if (index >=1) { 
+            if (index >=1) {
               if (!is.na(env$dq[,cl1][i])) env$dq[,cl1][i] <- paste(msg, ". ", env$dq[,cl1][i], sep="")
               else env$dq[,cl1][i] <- msg
             }
@@ -371,11 +354,12 @@ missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
         }else df <- addMissingValue(item, df,0,length(cond.vec), itemCol)
       }else df <-addMissingValue(item, df,0, length(item.vec), itemCol)
     }
-    else if (item!="Total"){
+    else if (item!=env$ovrQuality){
       df <- addMissingValue(item, df, 0,0, itemCol)
       env$dq[,cl2]<- paste( item," was not collected ", env$dq[,cl2])
     }
   } else {
+    missingCode <-env$vm_misg_code
     if (!all(is.na(env$dq))) {
       if(!cl1 %in% colnames(env$dq)) env$dq[,cl1]<-""
       if(!cl2 %in% colnames(env$dq)) env$dq[,cl2] <-""
@@ -386,11 +370,12 @@ missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
     }
     index <- which (df[, itemCol]==item)
     m <- NULL
-    item.vec <- env$medData[[item]]
+    item.vec <- env$studyData[[item]]
     if(!is.empty(item.vec)){
-      if (!is.empty(env$missingCode)) {
-        for (code in env$missingCode) {
-          if (is.na(code)) v <-which(is.na(item.vec)) else if(is.null(code)) v <-which(is.null(item.vec))
+      if (!is.empty(missingCode)) {
+        for (code in missingCode) {
+          if (is.na(code)) v <-which(is.na(item.vec))
+          else if(code=="NULL") v <-which(is.null(item.vec))
           else  v <-which(as.character(item.vec) == code)
           m <-c(m, v)
         }
@@ -410,7 +395,7 @@ missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
       }
       else df <- addMissingValue(item, df,0, length(item.vec), itemCol)
     }
-    else if (item!="Total"){
+    else if (item!=env$ovrQuality){
       df <- addMissingValue(item, df, 0,0, itemCol)
       env$dq[,cl2]<- paste( item, " was not collected ", env$dq[,cl2])
     }
@@ -424,9 +409,9 @@ missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
 #'
 checkSubjCompleteness <-function(subj, itemVec){
   df <-data.frame(s = 0, s_inc= 0)
-  if (all(itemVec %in%  colnames(env$medData)==TRUE))
+  if (all(itemVec %in%  colnames(env$studyData)==TRUE))
   {
-    basicData <-subset(env$medData, select= itemVec)
+    basicData <-subset(env$studyData, select= itemVec)
     df$s <-length(unique(basicData[[subj]]))
     completeData <- na.omit(basicData)
     complete_subj_no_py <-length(unique(completeData[[subj]]))
@@ -442,28 +427,29 @@ checkSubjCompleteness <-function(subj, itemVec){
 
 #' @title checkCaseCompleteness
 #' @description Function to check the completeness of case module.
+#' @export
 #'
 checkCaseCompleteness<-function (caseItems, bItemCol){
   df <-data.frame(vm_case =0, vm_case_misg= 0)
   for (item in caseItems) {
-    index1 = which(cdata[, bItemCol]==item)
+    index1 = which(env$catMeta[, bItemCol]==item)
     if (length(index1) >0) {
-      if (env$cdata$vm[index1]==0) {
-        df$vm_case_misg <- df$vm_case_misg+nrow(env$medData)
-        df$vm_case <- df$vm_case+nrow(env$medData)
+      if (env$catMeta$vm[index1]==0) {
+        df$vm_case_misg <- df$vm_case_misg+nrow(env$studyData)
+        df$vm_case <- df$vm_case+nrow(env$studyData)
       }
-      df$vm_case <- df$vm_case+env$cdata$vm[index1]
-      df$vm_case_misg <- df$vm_case_misg+env$cdata$vm_misg[index1]
+      df$vm_case <- df$vm_case+env$catMeta$vm[index1]
+      df$vm_case_misg <- df$vm_case_misg+env$catMeta$vm_misg[index1]
     }
     else{
-      index2 = which(ddata[, bItemCol]==item)
+      index2 = which(env$tempMeta[, bItemCol]==item)
       if (!is.null(index2) & !is.na(index2)){
-        if (env$ddata$vm[index2]==0) {
-          df$vm_case_misg <- df$vm_case_misg+nrow(env$medData)
-          df$vm_case <- df$vm_case+nrow(env$medData)
+        if (env$tempMeta$vm[index2]==0) {
+          df$vm_case_misg <- df$vm_case_misg+nrow(env$studyData)
+          df$vm_case <- df$vm_case+nrow(env$studyData)
         }
-        df$vm_case <- df$vm_case+env$ddata$vm[index2]
-        df$vm_case_misg <- df$vm_case_misg+env$ddata$vm_misg[index2]
+        df$vm_case <- df$vm_case+env$tempMeta$vm[index2]
+        df$vm_case_misg <- df$vm_case_misg+env$tempMeta$vm_misg[index2]
       }
     }
   }
@@ -476,21 +462,21 @@ checkCaseCompleteness<-function (caseItems, bItemCol){
 #' @description This function checks the loaded data items for completeness issues and returns the detected missing data items.
 #' @export
 #'
-getMissingItem<- function (basicItem) {
+getMissingItem<- function (mandatoryItems) {
   df <-data.frame( im = 0, im_misg = 0, im_misg_msg =0)
-  env$medData<- env$medData[!sapply(env$medData, function(x) all( is.empty(x) | is.na(x)))]
-  diff <- setdiff(basicItem, names(env$medData))
+  base::assign(x="im", value=mandatoryItems, envir=env)
+  env$studyData<- env$studyData[!sapply(env$studyData, function(x) all( is.empty(x) | is.na(x)))]
+  diff <- setdiff(mandatoryItems, names(env$studyData))
   mItem <-""
   if (!is.empty (diff)){
     str<- paste (diff,collapse=" , " )
     mItem <- paste ("Following data items are missing: ", str)
   }
-  df$im <- length(basicItem)
+  df$im <- length(mandatoryItems)
   df$im_misg<- length(diff)
   df$im_misg_msg<- mItem
   if (is.null(env$metrics)) env$metrics <-df
   else env$metrics <-cbind(env$metrics,df)
-  
   mItem
 }
 
@@ -506,6 +492,7 @@ is.empty <- function(x) return(length(x) ==0 )
 
 #' @title rangePlausibilityIndicator
 #' @description  This function calculates the Range Plausibility Indicator (dqi_pl_rpr), a generic metric to assess the range plausibility of selected data values. It also adds related metadata and parameters in the DQ report.
+#' @export
 #'
 rangePlausibilityIndicator<- function(v_slc, v_ip) {
   ind <-data.frame(
@@ -532,7 +519,8 @@ rangePlausibilityIndicator<- function(v_slc, v_ip) {
 
 #' @title semanticPlausibilityIndicator
 #' @description  This function calculates the Semantic Plausibility Rate (dqi_pl_spr), a generic indicator to assess the semantic plausibility of selected data values, and adds related metadata and DQ parameters.
-#' 
+#' @export
+#'
 semanticPlausibilityIndicator<- function(vs_cd, vc) {
   ind <-data.frame(
     Abbreviation= "dqi_pl_spr",
@@ -589,7 +577,7 @@ addOutlier<- function (item, bdata, m, n, ...) {
 }
 
 #' @title addOutlierCount
-#' @description Funtion to count detected outliers and performed checks.
+#' @description Function to count and add detected outliers as well as performed checks.
 #'
 addOutlierCount<- function (bdata, col, row) {
   index = which( bdata[,col]==row)
@@ -598,12 +586,15 @@ addOutlierCount<- function (bdata, col, row) {
   bdata
 }
 
-
 #------------------------------------------------------------------------------------------------------
 # functions to detect plausibility issues
 #------------------------------------------------------------------------------------------------------
 
-checkRangeRule<- function (ndata, itemCol, outlierCol, item, min, max, ...) {
+#' @title checkRangeRule
+#' @description Function to detect outliers using a predefined range rule
+#' @export
+#'
+checkRangeRule<- function (ndata, rID, itemCol, outlierCol, item, min, max, ...) {
   vars <- list(...)
   item.vec <- getNumValue(env$dq[[item]])
   if (!is.empty(item.vec)){
@@ -611,7 +602,7 @@ checkRangeRule<- function (ndata, itemCol, outlierCol, item, min, max, ...) {
       out <- which(item.vec<min | item.vec>max)
       ndata <- addOutlier(item, ndata, length(out), length(item.vec), itemCol)
       for(i in out) {
-        msg<- paste("Implausible", item , ":", item.vec[i])
+        msg<- paste("Implausible", item , ":", item.vec[i], "according to the range rule:", rID)
         if (grepl("Implausible", env$dq[,outlierCol][i] , fixed = TRUE)) env$dq[,outlierCol][i] <- paste (msg,"; ", env$dq[,outlierCol][i])
         else env$dq [,outlierCol] [i] <- msg
       }
@@ -625,15 +616,14 @@ checkRangeRule<- function (ndata, itemCol, outlierCol, item, min, max, ...) {
       out <- which(!is.na(item.vec) & (item.vec< min | item.vec > max) & item2.vec ==value2 & item3.vec==value3)
       if (!is.empty (out)) {
         for(i in out) {
-          msg<- paste("Implausible", item , ":", item.vec[i])
+          msg<- paste("Implausible", item , ":", item.vec[i], "according to the range rule:", rID)
           if (grepl("Implausible", env$dq[,outlierCol][i] , fixed = TRUE)) env$dq[,outlierCol][i] <- paste (msg, "; ", env$dq[,outlierCol][i])
           else env$dq [,outlierCol] [i] <- msg
         }
       }
       ndata <- addOutlier(item, ndata, length(out), length(item.vec), itemCol)
-    } else ndata
-  } else ndata
-  
+    }
+  }
   ndata
 }
 
@@ -650,7 +640,7 @@ checkAgePlausibility<- function (birthDate, currentData, ageMax){
 #' @title checkFutureDate
 #' @description This function checks the loaded temporal data for implausible values and return the values dated to the future.
 #' @export
-#' 
+#'
 checkFutureDate<- function (dateValues){
   now<- as.Date(Sys.Date())
   out <-  vector()
@@ -661,6 +651,47 @@ checkFutureDate<- function (dateValues){
 #------------------------------------------------------------------------------------------------------
 # functions to calculate overall DQ metrics
 #------------------------------------------------------------------------------------------------------
+
+#' @title getTotalStatistic
+#' @description Function to aggregate the different types of analyzed data and calculate the overall DQ metrics.
+#' @export
+#'
+getTotalStatistic <- function(col, row){
+  if (!is.empty(env$catMeta) & !is.empty (env$tempMeta)) {
+    allMeta <- base::merge(env$catMeta, env$tempMeta, by=intersect(names(env$catMeta), names(env$tempMeta)), all = TRUE)
+    env$catMeta<- addStatistic(env$catMeta, col, row)
+    env$tempMeta<- addStatistic(env$tempMeta, col, row)
+  }
+  else if (!is.empty(env$catMeta)) {
+    allMeta <- env$catMeta
+    env$catMeta<- addStatistic(env$catMeta, col, row)
+  }
+  else if (!is.empty(env$tempMeta)) {
+    allMeta <- env$tempMeta
+    env$tempMeta<- addStatistic(env$tempMeta, col, row)
+  }
+  if (!is.empty (env$numMeta)) {
+    allMeta<- base::merge(allMeta, env$numMeta, by=intersect(names(allMeta), names(env$numMeta)), all = TRUE)
+    env$numMeta<- addStatistic(env$numMeta, col, row)
+  }
+  if (!is.empty(allMeta$engLabel)) allMeta$engLabel <-NULL
+  if (!is.empty(env$oItem)) {
+    for (i in env$oItem){
+      index = which(allMeta[,col]==i)
+      allMeta$im_misg[index] <- 0
+    }
+  }
+  allMeta<- addStatistic(allMeta, col, row)
+  total <- subset(allMeta, allMeta[,col]==row)
+  total[,col] <- NULL
+  inter <-intersect(colnames(total), colnames(env$metrics))
+  if (!is.null(inter)){
+    df <-env$metrics[!colnames(env$metrics) %in% inter]
+    env$metrics<-cbind(total, df)
+  } else if (!is.empty(env$metrics)) env$metrics<-cbind(total, env$metrics) else env$metrics<-total
+  env$allMeta <-allMeta
+  env$metrics
+}
 
 #' @title addStatistic
 #' @description Function to count all detected DQ issues in the completeness and plausibility dimensions.
@@ -676,53 +707,18 @@ addStatistic<- function (bdata, col, row) {
   bdata
 }
 
-#' @title getTotalStatistic
-#' @description Function to aggregate the different types of analyzed data and calculate the overall DQ metrics.
-#' @export
-#'
-getTotalStatistic <- function(col, row){
-  if (!is.empty(env$cdata) & !is.empty (env$ddata)) {
-    bdata <- base::merge(env$cdata, env$ddata, by=intersect(names(env$cdata), names(env$ddata)), all = TRUE)
-    env$cdata<- addStatistic(env$cdata, col, row)
-    env$ddata<- addStatistic(env$ddata, col, row)
-  }
-  else if (!is.empty(env$cdata)) {
-    bdata <- env$cdata
-    env$cdata<- addStatistic(env$cdata, col, row)
-  }
-  else if (!is.empty(env$ddata)) {
-    bdata <- env$ddata
-    env$ddata<- addStatistic(env$ddata, col, row)
-  }
-  if (!is.empty (env$ndata)) {
-    bdata<- base::merge(bdata, env$ndata, by=intersect(names(bdata), names(env$ndata)), all = TRUE)
-    env$ndata<- addStatistic(env$ndata, col, row)
-  }
-  if (!is.empty(bdata$engLabel)) bdata$engLabel <-NULL
-  if (!is.empty(env$oItem)) {
-    for (i in env$oItem){
-      index = which(bdata[,col]==i)
-      bdata$im_misg[index] <- 0
-    }
-  }
-  bdata<- addStatistic(bdata, col, row)
-  env$adata <-bdata
-  total <- subset(bdata, bdata[,col]==row)
-  inter <-intersect(colnames(total), colnames(env$metrics))
-  if (!is.null(inter)){
-    df <-env$metrics[!colnames(env$metrics) %in% inter]
-    env$metrics<-cbind(total, df)
-  } else env$metrics<-cbind(total, env$metrics)
-  env$metrics
-}
-
 #------------------------------------------------------------------------------------------------------
 # Functions to generate data quality reports and visualizations
 #------------------------------------------------------------------------------------------------------
 
-visualizeOutliers <- function (itemCol, valueCol, totalRow, voPath, ...){
-  index = which(env$ndata[, itemCol]==totalRow)
-  df <-subset(env$ndata[-index,], valueCol >=0, select = c(itemCol, valueCol))
+#' @title visualizeOutliers
+#' @description Function to visualize detected outliers using a bar chart.
+#' @import ggplot2
+#' @export
+#'
+visualizeOutliers <- function (itemCol, valueCol, sumRow, voPath, ...){
+  index = which(env$numMeta[, itemCol]==sumRow)
+  df <-subset(env$numMeta[-index,], valueCol >=0, select = c(itemCol, valueCol))
   dataItems <- df[, itemCol]
   outlierNumbers <- df[, valueCol]
   vars <- list(...)
@@ -744,7 +740,7 @@ visualizeOutliers <- function (itemCol, valueCol, totalRow, voPath, ...){
 }
 
 #' @title geReport
-#' @description This function generates data quality reports about detected quality issues, user-selected indicators and parameters.
+#' @description This function generates DQ reports on detected quality issues and user-selected metrics.
 #' @import openxlsx utils
 #' @export
 #'
@@ -757,17 +753,14 @@ getReport <- function(repMeta, sheetName, df, path){
   else {
     if (!is.null(repMeta)) {
       if (is.data.frame(repMeta)) {
-        repCol <-repMeta$repCol
-        englCol <-repMeta$engLabel
-        repCol = append(repCol, sheetName)
-        englCol = append(englCol, sheetName)
-      }
-      else  repCol = append (repCol, sheetName)
+        repCol <- append(repMeta$repCol, sheetName)
+        englCol <- append(repMeta$engLabel, sheetName)
+      } else  repCol = append (repMeta, sheetName)
       repData <-subset(env$dq, select= repCol)
       dfq <-repData[ which(env$dq[,sheetName]!="")  ,]
       if (exists("englCol")) names(dfq)=englCol
       dfq[nrow(dfq)+1,5] <- env$mItem
-      dfList <- list("DQ_Metrics" = df, "DQ_Violations"=dfq)
+      dfList <- list("DQ_Metrics" = df, "DQ_Issues"=dfq)
       write.csv(df, paste (path,".csv", sep =""), row.names = FALSE)
       path <-  paste (path,".xlsx", sep ="")
     }
@@ -831,27 +824,29 @@ addSemantics <- function (dqRep, semData, ...) {
 
 #' @title getMandatoryItems
 #' @description This function returns the mandatory data items (im).
-#' @export
 #
-getMandatoryItems <- function (imCol, opt, df, ...){
+getMandatoryItems <- function (metaCol, opt, df, ...){
   vars <- list(...)
-  diff <- setdiff(df[, imCol], opt)
+  diff <- setdiff(df[, metaCol], opt)
   im <- diff
   if(length(vars)==1){
     df1 <- vars[[1]]
-    diff1 <- setdiff(df1[, imCol], opt)
+    diff1 <- setdiff(df1[, metaCol], opt)
     im<- union(im, diff1)
   }
   if(length(vars)==2){
     df1 <- vars[[1]]
     df2 <- vars[[2]]
-    diff1 <- setdiff(df1[, imCol], opt)
-    diff2 <- setdiff(df2[, imCol], opt)
+    diff1 <- setdiff(df1[, metaCol], opt)
+    diff2 <- setdiff(df2[, metaCol], opt)
     im<- Reduce(union, list(im, diff1, diff2))
   }
   im
 }
 
+#' @title getNumValue
+#' @description Function to transform data into numeric type.
+#
 getNumValue<- function (data) {
   if (is.character(data))
     return <-  as.double(as.character (data))
@@ -895,14 +890,14 @@ getFileExtension <- function(filePath){
 }
 
 #' @title getPercentFormat
-#' @description This function formats values as a percentage
+#' @description This function formats given values as a percentage
 #'
 getPercentFormat <- function(x, digits = 2, format = "f", ...) {
   paste0(formatC(x * 100, format = format, digits = digits, ...), "%")
 }
 
 #------------------------------------------------------------------------------------------------------
-# Deprecated code 
+# Deprecated code
 #------------------------------------------------------------------------------------------------------
 
 #' @title addCompleteness
@@ -934,9 +929,9 @@ addMissingCount<- function (bdata, col, row) {
 #' @export
 #'
 setGlobals <- function(medData, repCol, cdata, ddata, tdata) {
-  env$medData <- medData
-  env$cdata <- cdata
-  env$ddata <- ddata
+  env$studyData <- medData
+  env$catMeta <- cdata
+  env$tempMeta <- ddata
   env$metrics <- tdata
   env$repMeta <-repCol
 }
@@ -965,6 +960,6 @@ deprecatedMetrics<- function (df) {
     if ("tracerCase_rel" %in% names(df))  df$tracerCase_rel_py_ipat <-df$tracerCase_rel
     if ("orphaCase_rel" %in% names(df))  df$orphaCase_rel_py_ipat <-df$orphaCase_rel
   }
-  
+
   df
 }
