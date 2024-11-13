@@ -1,8 +1,28 @@
+# dqLib 1.20.0
+
+**New changes and tests**
+
+- This version was tested and validated using electronic clinical trial (ECT) data on cardiovascular diseases (CVDs)
+- New generic function for DQ assessments across multiple domains using generic indicators
+- New generic indicator for assessing the Semantic Plausibility
+- New function to detect common data quality issues that may arise in the context of CVDs
+- New functions to enable the specification of range rules using spreadsheets and the detection of outliers based on the predefined rules
+- New functions that enable users to define missing data rules using spreadsheets and apply the predefined rules
+- New functions to handle metadata and visualize detected outliers
+- Improved function to check missing data values. The new version supports missing rules and coded missing values. This functionality is particularly crucial in the context of clinical trials
+- Improved functions for semantic enrichment and reporting
+- Improved function to set global variables
+- Replacement of deprecated code
+- Update the package documentation
+
+**Full set of changes:** [v1.5.0...v1.20.0](https://github.com/KaisTahar/dqLib/compare/v1.5.0...v1.20.0)
+
+
 # dqLib 1.5.0
 
 **New changes and tests**
 
-- This version was validated using EHR-based real-world data on rare diseases
+- This version was validated using EHR-based real-world data on rare diseases (RDs)
 - Added function for semantic enrichment to improve the quality and clarity of generated reports
 - Improvement of the functionality for generating DQ reports and the layout of the created reports
 - Updated package documentation

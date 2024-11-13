@@ -7,5 +7,5 @@
 setGlobals(medData, repCol, cdata, ddata, tdata)
 }
 \description{
-Function to define global variables
+Function to define global variables.
 }

@@ -4,8 +4,8 @@
 \alias{missingCheck}
 \title{missingCheck}
 \usage{
-missingCheck(df, item, bItems, cl1, cl2)
+missingCheck(df, item, itemCol, cl1, cl2, ...)
 }
 \description{
-Function to check individual data items for missing values
+Function to check individual data items for missing values. The new version also supports coded missing values and data blanking rules. Data values hidden due to data blanking rules are not considered missing values.
 }

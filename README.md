@@ -1,49 +1,117 @@
 # `dqLib`
 
-The data quality library (`dqLib`) is an R package for data quality (DQ) assessment and reporting. The library provides methods for calculating DQ metrics and generating reports on detected DQ issues, especially in the field of Rare Diseases(RDs)
+The data quality library (`dqLib`) is an R package for data quality (DQ) assessment and reporting. The library provides methods for calculating DQ metrics and generating reports on detected DQ issues, especially in clinical research.
 
-Acknowledgment: This work was done within the “Collaboration on Rare Diseases” of the Medical Informatics Initiative (CORD-MI) funded by the German Federal Ministry of Education and Research (BMBF), under grant number: 01ZZ1911R, FKZ-01ZZ1911R
+
+Acknowledgment: This work was funded by the German Centre for Cardiovascular Research (DZHK), grant number 81X1300117, and the "Collaboration on Rare Diseases" of the Medical Informatics Initiative (CORD-MI) under grant number: 01ZZ1911R, FKZ-01ZZ1911R.
 
 ## DQ Metrics and Reports
-`dqLib` provides functions that enable users to select desired dimensions, indicators, and parameters as well as to define specific DQ reports. The DQ reports include the resulting DQ metrics and adequate information to identify potential DQ violations.`dqLib` also enables annual assessments of selected DQ metrics. The following DQ metrics are already implemented:
+`dqLib` provides functions that enable users to select desired dimensions and indicators as well as to define and generate specific DQ reports. The following generic DQ Indicators are already implemented:
 
-  | Dimension  | DQ Indicator | 
-  | ------------- | ------------- |
-  | completeness  | item completeness rate, value completeness rate, subject completeness rate, case completeness rate, orphaCoding completeness rate  | 
-  | plausibility  | orphaCoding plausibility rate, range plausibility rate | 
-  | uniqueness |RD case unambiguity rate, RD case dissimilarity rate|
-  | concordance |concordance with reference values| 
+<table>
+    <thead>
+        <tr>
+            <th colspan="2">DQ Indicator </th>
+            <th rowspan=2>DQ Dimension</th>
+        </tr>
+       <tr>
+            <th>Abbreviation </th>
+            <th>Name </th>
+       </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>dqi_co_icr</td>
+            <td >Item Completeness Rate</td>
+            <td rowspan=3>completeness</td>
+        </tr>
+        <tr>
+            <td>dqi_co_vcr</td>
+            <td>Value Completeness Rate</td>
+        </tr>
+	 <tr>
+            <td>dqi_co_scr</td>
+            <td>Subject Completeness Rate</td>
+        </tr>
+        <tr>
+            <td>dqi_pl_rpr</td>
+           <td > Range Plausibility Rate </td>
+           <td rowspan=2>Plausibility</td>
+        </tr>
+            <td>dqi_pl_spr</td>
+           <td > Semantic Plausibility Rate </td>
+        </tr>
+    </tbody>
+</table>
   
-    
-  | No. | DQ Parameter | Description |
+<br />  In addition to indicators, the DQ reports include the resulting parameters and adequate information to identify potential DQ issues. The `dqLib` package enables users to specify DQ rules using spreadsheets and to detect DQ issues based on the predefined rule set, as described in the [news](https://github.com/KaisTahar/dqLib/blob/bmc_dqLib/NEWS.md). `dqLib` provides functions to detect the following common DQ issues:
+  
+  | Abbreviation | DQ Parameter | Description |
   |-----|--------------------------- | ------------|
-  |  P1 | mandatory data items | number of mandatory items |
-  |  P2 | missing mandatory data items |  number of missing data mandatory data items|
-  |  P3 | mandatory data values | number of available mandatory data values |
-  |  P4 | missing mandatory data values| number of missing mandatory data values|
-  |  P5 | inpatient cases |  number of inpatient cases |
-  |  P6 | inpatients |  number of inpatients  |
-  |  P7 | incomplete subjects |  number of incomplete subject records|
-  |  P8 | mandatory data values in case module  |  number of data values required for recording the case module |
-  |  P9 | missing data values in case module |  number of missing mandatory data values in the case module |
-  |  P10 | data values selected for outlier detection |  number of data values checked for outlier |
-  |  P11 | outliers | number of detected outliers  |
-  |  P12 | tracer diagnoses |  number of diagnoses that exclusively code rare diseases (RD)|
-  |  P13 | missing Orphacodes |  number of missing Orphacodes by tracer diagnoses |
-  |  P14 | checked links | number of ICD-10-GM/OC links|
-  |  P15 | implausible links | number of implausible ICD-10-GM/OC links |
-  |  P16 | RD cases | number of RD cases |
-  |  P17 | ambiguous RD cases | number of ambiguous RD cases |
-  |  P18 | duplicated RD cases |  number of duplicated RD cases |
-  |  P19 | tracer cases |  number of tracer cases |
-  |  P20 | Orpha cases | number of available orpha-coded cases|
-  |  P21 | RD cases rel. frequency| relative frequency of RD cases |
-  |  P22 | tracer cases rel. frequency| relative frequency of tracer cases normalized to 100.000 inpatient cases  |
-  |  P23 | Orpha cases rel. frequency| relative frequency of Orpha cases normalized to 100.000 inpatient cases |
-  |  P24 | minimal tracer cases in reference values| min. rel. frequency of tracer cases normalized to 100.000 inpatient cases found in the literature |
-  |  P25 | maximale tracer cases in reference values| max. rel. frequency of tracer cases normalized to 100.000 inpatient cases found  found in the literature   |
+  |  im_misg | missing mandatory data items |  number of missing mandatory data items|
+  |  vm_misg | missing mandatory data values| number of missing mandatory data values|
+  |  s_inc | incomplete subjects |  number of incomplete subject records|
+  |  vo | outlier values | number of detected outlier values  |
+  |  vc | contradictory values | number of detected contradictory data values  |
+  
+<br /> `dqLib` also provides functions to assess the following specific indicators for RD data: 
+<table>
+    <thead>
+        <tr>
+            <th colspan="2"> DQ Indicator </th>
+            <th rowspan=2> DQ Dimension</th>
+        </tr>
+       <tr>
+            <th>Abbreviation </th>
+            <th>Name </th>
+       </tr>
+    </thead>
+    <tbody>
+       <tr>
+            <td> dqi_un_cur </td>
+            <td > RD Case unambiguity Rate </td>
+             <td rowspan=2 > Uniqueness</td>
+        </tr>
+         <tr>
+            <td> dqi_un_cdr </td>
+            <td > RD Case Dissimilarity Rate </td>
+        </tr>
+        <tr>
+            <td>dqi_co_icr</td>
+           <td >Orphacoding Completeness Rate </td>
+            <td >Completeness</td>
+        </tr>
+        <tr>
+            <td> dqi_pl_opr </td>
+           <td > Orphacoding Plausibility Rate </td>
+          <td >Plausibility</td>
+        </tr>
+        <tr>
+            <td> dqi_cc_rvl </td>
+            <td> Concordance with Reference Values from Literature </td>
+            <td >Concordance</td>
+        </tr>
+    </tbody>
+</table>
 
-The following references are required to assess the quality of RD documentation: (1) Current Version of Alpha-ID-SE Terminology [1] and (2) a reference for tracer diagnoses such as the list provided in [2].
+<br /> Moreover, `dqLib` enables annual assessments of selected DQ parameters. The following RD-specific metrics are already implemented: 
+  | Abbreviation | DQ Parameter | Description |
+  |-----|--------------------------- | ------------|
+  |  rdCase | RD cases | number of RD cases |
+  |  orphaCase | Orpha cases | number of available orpha-coded cases|
+  |  tracerCase | tracer cases |  number of tracer cases |
+  |  rdCase_rel | RD cases rel. frequency| relative frequency of RD cases |
+  |  orphaCase_rel | Orpha cases rel. frequency| relative frequency of Orpha cases normalized to 100.000 inpatient cases |
+  |  tracerCase_rel | tracer cases rel. frequency| relative frequency of tracer cases normalized to 100.000 inpatient cases  |
+  |  tracerCase_rel_min | minimal tracer cases in reference values| min. rel. frequency of tracer cases normalized to 100.000 inpatient cases found in the literature |
+  |  tracerCase_rel_max  | maximal tracer cases in reference values| max. rel. frequency of tracer cases normalized to 100.000 inpatient cases found in the literature   |
+  |  vm_case_misg | missing mandatory data values in case module |  number of missing mandatory data values in the case module |
+  |  rdCase_amb | ambiguous RD cases | number of ambiguous RD cases |
+  |  rdCase_dup | duplicated RD cases |  number of duplicated RD cases |
+  |  oc_misg | missing Orphacodes |  number of missing Orphacodes by tracer diagnoses |
+  |  link_ip | implausible links | number of implausible ICD-10-GM/OC links |
+
+<br /> The following references are required to assess the quality of RD documentation: (1) Current Version of Alpha-ID-SE Terminology [1] and (2) a reference for tracer diagnoses such as the list provided in [2].
 
   [1] BfArM - Alpha-ID-SE [Internet]. [cited 2022 May 23]. Available from: [BfArM](https://www.bfarm.de/EN/Code-systems/Terminologies/Alpha-ID-SE/_node.html)
  
@@ -53,7 +121,7 @@ The following references are required to assess the quality of RD documentation:
 
 ## Installation
 
-You can install `dqLib` from local folder with:
+You can install `dqLib` from the local folder with:
 
 ``` r
 devtools::install_local("./dqLib")
@@ -69,6 +137,6 @@ devtools::install_github("https://github.com/KaisTahar/dqLib")
 - Here are some [examples](https://github.com/KaisTahar/cordDqChecker/tree/bmc_dqTools/Local/Data/Export) of DQ reports generated using `dqLib`
 
 ## Note
-- The default data quality dimensions are completeness, plausibility, uniqueness and concordance. However, this framework allows the user to select desired DQ dimensions and metrics as well as to generate user defined annual reports.
+- `dqLib` enables users to assess the DQ dimensions of completeness, plausibility, uniqueness, and concordance. However, this framework allows the user to select desired DQ dimensions and metrics as well as to generate customized annual reports.
 
 - To cite `dqLib`, please use the CITATION file located in the folder `./inst`.

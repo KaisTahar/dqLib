@@ -4,8 +4,8 @@
 \alias{getMissingValue}
 \title{getMissingValue}
 \usage{
-getMissingValue(df, bItemCol, outCol1, outCol2)
+getMissingValue(df, bItemCol, outCol1, outCol2, ...)
 }
 \description{
-This function checks the loaded data for missing values
+This function checks the loaded data for missing data values. It also supports missing rules.
 }

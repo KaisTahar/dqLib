@@ -1,19 +1,19 @@
 Package: dqLib
 Type: Package
-Title: Tools for data quality assessment and reporting 
-Version: 1.5.0
-Date/Publication: 2024-10-11
+Title: Tools for data quality assessment and reporting
+Version: 1.20.0
+Date/Publication: 2024-11-13
 Authors@R: c(
     person( given = "Kais", 
             family = "Tahar",
             email = "kais.tahar@med.uni-goettingen.de",
              role = c("aut","cre"),
             comment=c(ORCID = "0000-0001-9683-0575")))
-Description: Contains methods for data quality analysis and reporting, especially in the field of Rare Diseases(RDs).
+Description: This package contains methods for data quality analysis and reporting, especially in clinical research.
 License: GPL-3
 URL: https://github.com/KaisTahar/dqLib
 Encoding: UTF-8
 LazyData: true
-Imports: openxlsx, stringi
+Imports: openxlsx, stringi, ggplot2
 RoxygenNote: 7.1.2
 Language: en-US

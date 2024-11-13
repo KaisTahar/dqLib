@@ -4,8 +4,8 @@
 \alias{addOutlier}
 \title{addOutlier}
 \usage{
-addOutlier(item, bdata, m, n)
+addOutlier(item, bdata, m, n, ...)
 }
 \description{
-Function to add detected outliers for each data item
+Function to add detected outliers for each data item.
 }

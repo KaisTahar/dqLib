@@ -7,5 +7,5 @@
 is.empty(x)
 }
 \description{
-This function checks whether a vector (data item) is empty
+This function checks whether a vector (data item) is empty.
 }

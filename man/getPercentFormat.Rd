@@ -7,5 +7,5 @@
 getPercentFormat(x, digits = 2, format = "f", ...)
 }
 \description{
-This function formats values as a percentage
+This function formats given values as a percentage
 }

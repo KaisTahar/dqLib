@@ -7,5 +7,5 @@
 addMissingCount(bdata, col, row)
 }
 \description{
-This function adds the overall metrics for missing values
+This function adds the overall metrics for missing values.
 }

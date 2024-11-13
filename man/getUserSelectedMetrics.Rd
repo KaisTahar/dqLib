@@ -4,8 +4,8 @@
 \alias{getUserSelectedMetrics}
 \title{getUserSelectedMetrics}
 \usage{
-getUserSelectedMetrics(dqInd, tdata)
+getUserSelectedMetrics(dqInd, df)
 }
 \description{
-This function enable users to select desired DQ metrics
+This function enable users to select desired DQ metrics.
 }

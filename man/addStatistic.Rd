@@ -7,5 +7,5 @@
 addStatistic(bdata, col, row)
 }
 \description{
-Funtion to calculate the overall DQ metrics for the completeness and plausibility dimensions
+Function to count all detected DQ issues in the completeness and plausibility dimensions.
 }

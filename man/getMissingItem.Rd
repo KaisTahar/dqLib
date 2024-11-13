@@ -4,8 +4,8 @@
 \alias{getMissingItem}
 \title{getMissingItem}
 \usage{
-getMissingItem(basicItem)
+getMissingItem(mandatoryItems)
 }
 \description{
-Function to check the loaded data for missing of mandatory data items
+This function checks the loaded data items for completeness issues and returns the detected missing data items.
 }

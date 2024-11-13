@@ -7,5 +7,5 @@
 addCompleteness(tdata, col, row)
 }
 \description{
-This function to calculate the completeness rate
+This function to calculate the value completeness rate.
 }

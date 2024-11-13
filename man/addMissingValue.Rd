@@ -4,8 +4,8 @@
 \alias{addMissingValue}
 \title{addMissingValue}
 \usage{
-addMissingValue(item, bdata, m, n)
+addMissingValue(item, bdata, m, n, ...)
 }
 \description{
-Function to add missing value metrics for each data item
+Function to add missing value metrics for each data item.
 }

@@ -7,5 +7,5 @@
 getTotalStatistic(col, row)
 }
 \description{
-Function to calculate the overall DQ metrics
+Function to aggregate the different types of analyzed data and calculate the overall DQ metrics.
 }

@@ -7,5 +7,5 @@
 getFileExtension(filePath)
 }
 \description{
-Function to get the file extension of a given file
+Function to get the file extension of a given file.
 }

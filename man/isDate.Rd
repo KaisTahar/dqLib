@@ -7,5 +7,5 @@
 isDate(mydate)
 }
 \description{
-This function checks whether a given data value has date format
+This function checks whether a given data value has date format.
 }
