@@ -160,3 +160,66 @@ checkRangeRules<-function (ndata, rRules, imCol, outlierCol) {
   ndata
 }
 
+#' @title getContradictionRules
+#' @description Functions to extract contradiction rules from spreadsheets.
+#' @export
+#'
+getContradictionRules<-function (path, sheetName) {
+  ruleMeta <-base::get("ruleMeta", envir=env)
+  mathRule =ruleMeta[["mathRule"]]
+  logicRule =ruleMeta[["logicRule"]]
+  rID=ruleMeta[["ruleID"]]
+  item1 =ruleMeta[["item1"]]
+  item2 =ruleMeta[["item2"]]
+  operator =ruleMeta[["mathOpr"]]
+  unit =ruleMeta[["unit"]]
+  minRslt=ruleMeta[["minRslt"]]
+  maxRslt=ruleMeta[["maxRslt"]]
+  vItem1=ruleMeta[["valueItem1"]]
+  vItem2=ruleMeta[["valueItem2"]]
+  vItem3=ruleMeta[["valueItem3"]]
+  rules <- read.xlsx(xlsxFile = path, sheet = sheetName, skipEmptyRows = FALSE)
+  sapply(rules, class)
+  ruleIDs<-na.omit(rules[[rID]])
+  if (sheetName==mathRule) {
+    rdata <- data.frame(ruleID =character(), item1=character(), operator=character(), item1=character(), item2=character(), unit=character(),min=double(), max=double())
+    if (!is.empty(ruleIDs)) {
+      for (ID in ruleIDs) {
+        index = which(ruleIDs==ID)
+        type = "mathRule"
+        nItem1 <- as.character(rules[[item1]][index])
+        nItem2 <- as.character(rules[[item2]][index])
+        opr<- as.character(rules[[operator]][index])
+        vUnit <- as.character(rules[[unit]][index])
+        min <- as.double(rules[[minRslt]][index])
+        max <- as.double(rules[[maxRslt]][index])
+        rule = list(ruleID = ID, type=type, item1 =nItem1, operator = opr, item2 =nItem2, unit=vUnit, min=min, max=max)
+        rdata <- rbind(rdata,rule, stringsAsFactors=FALSE)
+      }
+    }
+  } else if (sheetName==logicRule) {
+    rdata <- data.frame(ruleID =character(), tpye=character(), item1=character(), value1=character(),item2=character(),value2=character(),item3=character(),value3=character() )
+    if (!is.empty(ruleIDs)) {
+      for (ID in ruleIDs) {
+        index = which(ruleIDs==ID)
+        type = "logicalRule"
+        itemDef1 <- as.character(rules[[vItem1]][index])
+        split1 =  unlist (strsplit( itemDef1, split ="="))
+        item1 = gsub(" ", "", split1[1])
+        value1 = gsub(" ", "", split1[2])
+        itemDef2 <- as.character(rules[[vItem2]][index])
+        split2 =  unlist (strsplit( itemDef2, split ="="))
+        item2 = gsub(" ", "", split2[1])
+        value2 = gsub(" ", "", split2[2])
+        itemDef3 <- as.character(rules[[vItem3]][index])
+        split3 =  unlist (strsplit( itemDef3, split ="="))
+        item3 = gsub(" ", "", split3[1])
+        value3 = gsub(" ", "", split3[2])
+        rule = list(ruleID = ID, type=type, item1=item1, value1=value1, item2=item2, value2=value2, item3=item3, value3=value3)
+        rdata <- rbind(rdata,rule, stringsAsFactors=FALSE)
+      }
+    }
+  } else stop("No contradiction rules available. Please define the spreadsheets for the required rules")
+  rdata
+}
+
