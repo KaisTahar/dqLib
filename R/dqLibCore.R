@@ -589,6 +589,21 @@ addOutlierCount<- function (bdata, col, row) {
 #------------------------------------------------------------------------------------------------------
 # functions to detect plausibility issues
 #------------------------------------------------------------------------------------------------------
+#' @title checkSymbolicConjunctions
+#' @description Function to detect contradictions using predefined symbolic conjunctions
+#' @import anytime
+#' @export
+#'
+checkSymbolicConjunctions<- function (item1, value1, item2, value2, ...) {
+  vars <- list(...)
+  if(length(vars)==2) {
+    item3 <- vars[[1]]
+    value3 <- vars[[2]]
+    contra <- which(as.character(env$studyData[,item1])==value1 & as.character(env$studyData[, item2])==value2 & as.character(env$studyData[, item3])==value3)
+  }
+  else contra <- which(as.character(env$studyData[,item1])==value1 & as.character(env$studyData[, item2])==value2)
+  contra
+}
 
 #' @title checkRangeRule
 #' @description Function to detect outliers using a predefined range rule
