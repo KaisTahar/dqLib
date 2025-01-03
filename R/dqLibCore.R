@@ -586,6 +586,26 @@ addOutlierCount<- function (bdata, col, row) {
   bdata
 }
 
+#' @title addContradictionCount
+#' @description Function to count and add detected contradictions as well as performed checks.
+#'
+addContradictionCount <- function(metrics){
+  contra <-base::get("contra", envir=env)
+  if (is.empty(contra$rules)) {
+    df <-data.frame(cont = 0, vc= 0, vs_cd =0)
+  } else df <- subset (contra$rules, select =c("cont", "vc", "vs_cd"))
+  vc = sum( as.integer(as.character(df$vc)), na.rm=TRUE)
+  vs_cd = sum( as.integer(as.character(df$vs_cd)), na.rm=TRUE)
+  cont <- sum(as.integer(as.character(df$cont)), na.rm=TRUE)
+  total <- c(env$ovrQuality, cont, vc, vs_cd)
+  if (is.empty(contra$rules)) contra$rules <-total
+  else contra$rules[nrow(contra$rules) + 1,] <- total
+  env$contra$rules <- contra$rules
+  param <-data.frame(cont = cont, vc= vc, vs_cd = vs_cd)
+  metrics <- cbind(metrics, param)
+  metrics
+}
+
 #------------------------------------------------------------------------------------------------------
 # functions to detect plausibility issues
 #------------------------------------------------------------------------------------------------------
@@ -787,6 +807,7 @@ getTotalStatistic <- function(col, row){
     env$metrics<-cbind(total, df)
   } else if (!is.empty(env$metrics)) env$metrics<-cbind(total, env$metrics) else env$metrics<-total
   env$allMeta <-allMeta
+  env$metrics <- addContradictionCount(env$metrics)
   env$metrics
 }
 
@@ -991,6 +1012,18 @@ getFileExtension <- function(filePath){
 #'
 getPercentFormat <- function(x, digits = 2, format = "f", ...) {
   paste0(formatC(x * 100, format = format, digits = digits, ...), "%")
+}
+
+#' @title getDateFormat
+#' @description This function converts a given data vector in a date format
+#' @import anytime
+#' @export
+#'
+getDateFormat <- function (dataVec)
+{
+  if(!isDate(dataVec)) dataVec <-anytime(as.character(dataVec))
+  #dataVec * 100) +1
+  dataVec
 }
 
 #------------------------------------------------------------------------------------------------------
