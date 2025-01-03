@@ -589,6 +589,88 @@ addOutlierCount<- function (bdata, col, row) {
 #------------------------------------------------------------------------------------------------------
 # functions to detect plausibility issues
 #------------------------------------------------------------------------------------------------------
+
+#' @title checkLogicalRule<
+#' @description Function to detect contradictions using a predefined logical rule
+#' @export
+#'
+checkLogicalRule<- function (rID, contra, contraCol, item1, value1, item2, value2, ...) {
+  simpleConj <- c(value1, value2)
+  vars <- list(...)
+  if(length(vars)==2){
+    item3 <- vars[[1]]
+    value3 <- vars[[2]]
+    complexConj <- c(value1, value2, value3)
+    if (!any(is.empty(complexConj)) & !any(is.na(complexConj))){
+      contraCols <- c(rID, item1, item2, item3,"cont", "vc")
+      df<- data.frame(matrix( ncol= 6, nrow = 0))
+      colnames(df) <- contraCols
+      checkedItems <- c(item1, item2, item3)
+      checkedValues <- na.omit (env$studyData[,checkedItems])
+      if (!is.empty(checkedValues )) nValue <- nrow (checkedValues) * ncol (checkedValues)
+      else  nValue = 0
+      if (is.empty(contra$rules)) {
+        rulesCols <- c("rID", "cont", "vc", "vs_cd")
+        contra$rules <- data.frame(matrix( ncol= 4, nrow = 0))
+        colnames(contra$rules) <- rulesCols
+      }
+      out <-checkSymbolicConjunctions(item1, value1, item2, value2, item3, value3)
+      if (!is.empty(out)) {
+        for(i in out){
+          df[nrow(df) + 1,] <- c(rID, env$dq[[item1]][i], env$dq[[item2]][i], env$dq[[item3]][i], 1, 3)
+          msg <- paste("Implausible combination according to the rule ", rID , ": ", item1, "=", env$dq[[item1]][i] ,  ", ",item2, "=", env$dq[[item2]][i]," ", item3, "=", env$dq[[item3]][i], ".", sep="")
+          #print(msg)
+          env$dq[,contraCol][i] <-paste (msg, env$dq[,contraCol][i])
+        }
+        df["cont"]  <-as.numeric(unlist(df["cont"]))
+        df["vc"]  <-as.numeric(unlist(df["vc"] ))
+        if (nrow(df)!=0) contra <- append(contra, list(df))
+        rule <- c(rID, length(out), sum(df["vc"]), nValue)
+        contra$rules[nrow(contra$rules) + 1,] <- rule
+      }else {
+        contra <- append(contra, list(df))
+        rule <- c(rID, 0, 0, nValue)
+        contra$rules[nrow(contra$rules) + 1,] <- rule
+      }
+    }
+  } else if (!any(is.empty(simpleConj)) & !any(is.na(simpleConj))){
+    contraCols <- c(rID, item1, item2, "cont", "vc")
+    df<- data.frame(matrix( ncol= 5, nrow = 0))
+    colnames(df) <- contraCols
+    checkedItems <- c(item1, item2)
+    checkedValues <- na.omit (env$studyData[,checkedItems])
+    nValue<- nrow (checkedValues) * ncol (checkedValues)
+    if (!is.empty(checkedValues )) nValue <- nrow (checkedValues) * ncol (checkedValues)
+    else  nValue = 0
+    if (is.empty( contra$rules)) {
+      rulesCols <- c("rID", "cont", "vc", "vs_cd")
+      contra$rules <- data.frame(matrix(ncol= 4, nrow = 0))
+      colnames(contra$rules) <- rulesCols
+    }
+    out <-checkSymbolicConjunctions(item1, value1, item2, value2)
+
+    if (!is.empty(out)) {
+      for(i in out) {
+        df[nrow(df) + 1,] <- c(rID, env$dq[[item1]][i], env$dq[[item2]][i], 1, 2)
+        msg <- paste( "Implausible combination according to the rule ", rID , ": ", item1, "=", env$dq[[item1]][i] , ", ", item2, "=", env$dq[[item2]][i], ".", sep="")
+        #print(msg)
+        env$dq[,contraCol][i] <-paste (msg, env$dq[,contraCol][i])
+      }
+      df["cont"] <-as.numeric(unlist(df["cont"]))
+      df["vc"]  <-as.numeric(unlist(df["vc"]))
+      if (nrow(df)!=0) contra <- append(contra, list(df))
+      rule <- c(rID, length(out), sum (df["vc"]), nValue)
+      contra$rules[nrow(contra$rules) + 1,] <- rule
+
+    }else {
+      contra <- append(contra, list (df))
+      rule <- c(rID, 0, 0, nValue)
+      contra$rules[nrow(contra$rules) + 1,] <- rule
+    }
+  }
+  contra
+}
+
 #' @title checkSymbolicConjunctions
 #' @description Function to detect contradictions using predefined symbolic conjunctions
 #' @import anytime
