@@ -8,7 +8,7 @@
 #' @description This function checks the quality of loaded data set regarding common DQ issues that may arise in the context of common diseases like cardiovascular diseases (CVDs).
 #' @export
 #'
-cvdDqChecker <- function (rPath, spstMeta)
+cvdDqChecker <- function (rPath, ruleMeta)
 {
   # call constant values: Labels for potential DQ issues
   im_misg_lbl=base::get("im_misg_lbl", envir=env)
@@ -23,7 +23,7 @@ cvdDqChecker <- function (rPath, spstMeta)
   metaCol=base::get("metaCol", envir=env)
   ovrQuality=base::get("ovrQuality", envir=env)
   # set specific ruleMeta for CVDs
-  base::assign(x = "ruleMeta", value =spstMeta, envir = env)
+  base::assign(x = "ruleMeta", value =ruleMeta, envir = env)
   # D1-Completeness
   if (!(is.empty(numMeta) | is.empty(catMeta) | is.empty(tempMeta))) {
       im=getMandatoryItems(metaCol, optMeta, numMeta, catMeta, tempMeta)
@@ -38,8 +38,11 @@ cvdDqChecker <- function (rPath, spstMeta)
   # D2-Plausibility
   # get user-defined DQ rules form spreadsheets
   rRules <- getRangeRules(rPath)
+  mRules <- getContradictionRules(rPath, ruleMeta[["mathRule"]])
+  lRules <- getContradictionRules(rPath, ruleMeta[["logicRule"]])
   # add results of the plausibility analysis for all data items in the meta data for CVDs
   base::assign(x="numMeta", value = checkRangeRules(env$numMeta, rRules, metaCol, vo_lbl), envir=env)
+  base::assign(x="contra", value = checkContradictionRules(env$contra, mRules, lRules, vc_lbl), envir=env)
   param <- getTotalStatistic(metaCol, ovrQuality)
   param
 }
