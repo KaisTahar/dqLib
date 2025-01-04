@@ -223,3 +223,31 @@ getContradictionRules<-function (path, sheetName) {
   rdata
 }
 
+#' @title checkContradictionRules
+#' @description This function checks the semantic plausibly of loaded data set using predefined DQ rules.
+#' @export
+#'
+checkContradictionRules<-function (df, mathRules, logicRules, contraCol) {
+  if(!contraCol %in% colnames(env$dq)) env$dq[,contraCol]<-""
+  if (!is.empty(mathRules)){
+    mRuleIDs<-mathRules$ruleID
+    if (!is.empty(mRuleIDs)) {
+      for (ID in mRuleIDs) {
+        index = which(mathRules$ruleID==ID)
+        df<-checkMathRule(mathRules$ruleID[index], df, contraCol, mathRules$item1[index], mathRules$operator[index], mathRules$item2[index], mathRules$min[index],mathRules$max[index], mathRules$unit[index])
+      }
+    }
+  }
+  if (!is.empty(logicRules)){
+    lRuleIDs<-logicRules$ruleID
+    if (!is.empty(lRuleIDs)) {
+      for (ID in  lRuleIDs) {
+        index = which(logicRules$ruleID==ID)
+        optParam <-c( logicRules$item3[index], logicRules$value3[index])
+        if (!any(is.empty(optParam)) & !any(is.na(optParam))) df<-checkLogicalRule(logicRules$ruleID[index], df, contraCol, logicRules$item1[index], logicRules$value1[index], logicRules$item2[index], logicRules$value2[index], logicRules$item3[index], logicRules$value3[index])
+        else df<-checkLogicalRule(logicRules$ruleID[index], df, contraCol, logicRules$item1[index], logicRules$value1[index], logicRules$item2[index], logicRules$value2[index])
+      }
+    }
+  } else if (is.empty(mathRules)& is.empty(logicRules)) stop("No contradiction rules available. Please define the spreadsheets for the required rules and rerun the script")
+  df
+}
