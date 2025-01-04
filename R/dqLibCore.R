@@ -707,6 +707,95 @@ checkSymbolicConjunctions<- function (item1, value1, item2, value2, ...) {
   contra
 }
 
+#' @title checkMathRule
+#' @description Function to detect contradictions using a predefined mathematical rule
+#' @import anytime
+#' @export
+#'
+checkMathRule<- function (rID, contra, contraCol, item1, operator, item2, min, max, ...) {
+  vars <- list(...)
+  if(!is.empty(vars)){
+    unit=vars[[1]]
+  } else unit =NA
+  if (is.empty(contra$rules)) {
+    rulesCols <- c("rID", "cont", "vc", "vs_cd")
+    contra$rules <- data.frame(matrix( ncol= 4, nrow = 0))
+    colnames(contra$rules) <- rulesCols
+  }
+  if (operator =="-") {
+    out<-checkDifferenceRule(env$studyData, item1, item2, min, max, unit)
+    df <- data.frame(matrix(ncol = 5, nrow = 0))
+    col <- c(rID, item1, item2, "cont", "vc")
+    colnames(df) <-col
+    checkedItems <- c(item1, item2)
+    checkedValues <- na.omit (env$studyData[,checkedItems])
+    if (!is.empty(checkedValues )) nValue <-nrow (checkedValues) * ncol (checkedValues)
+    else nValue =0
+    if (!is.empty(out)) {
+      for(i in out) {
+        if (unit %in% c("days", "years", "monthes")){
+          df[nrow(df) + 1,] <- c(rID, anydate(env$dq[[item1]][i]), anydate(env$dq[[item2]][i]), 1, 2)
+          msg <- paste( "Implausible time intervall according to the rule ", rID , ": ",  item1, "=", anydate(env$dq[[item1]][i]) , ", ", item2, "=", anydate(env$dq[[item2]][i]), ", min=", min, unit,", max=", max,unit, ".", sep="")
+          #print(msg)
+          env$dq[,contraCol][i] <-paste (msg, env$dq[,contraCol][i])
+        } else {
+          df[nrow(df) + 1,] <- c(rID, env$dq[[item1]][i], env$dq[[item2]][i], 1,2)
+          msg <- paste( "Implausible combination according to the rule ",rID , ": ", item1, "=", env$dq[[item1]][i] , ", ", item2, "=", env$dq[[item2]][i], ".", sep="")
+          #print(msg)
+          env$dq[,contraCol][i] <-paste (msg, env$dq[,contraCol][i])
+        }
+      }
+      df[ "cont"]  <- as.numeric(unlist(df[ "cont"]))
+      df[ "vc"]  <-  as.numeric(unlist(df[ "vc"]))
+      if (nrow(df)!=0) contra <- append(contra, list (df))
+      rule <- c(rID, length(out), sum (df[ "vc"]), nValue)
+      contra$rules[nrow(contra$rules) + 1,] <- rule
+    }
+    else{
+      contra <- append(contra, list (df))
+      rule <- c(rID, 0,0, nValue)
+      contra$rules[nrow(contra$rules) + 1,] <- rule
+    }
+  }
+  contra
+}
+
+#' @title checkDifferenceRule
+#' @description Function to detect contradictions using a predefined difference rule
+#' @import anytime
+#' @export
+#'
+checkDifferenceRule<- function (studyData, item1, item2, min, max, ...){
+  vc <- NULL
+  vars <- list(...)
+  if(!is.empty(vars)){
+    unit=vars[[1]]
+  } else unit =NA
+  if(!is.empty(item2)){
+    if (is.na(unit)) {
+      item1.vec <-as.numeric (as.character(env$dq[[item1]]))
+      item2.vec <- as.numeric (as.character(env$dq[[item2]]))
+      diff <- item1.vec-item2.vec
+      if (!is.na(min)) {
+        vc <- which(diff<min)
+      }
+      else if (!is.na(max)) {
+        vc <- which(diff>max)
+      }
+    } else if (unit %in% c("days", "years", "monthes")){
+      item1.vec <-as.character( studyData[[item1]])
+      item2.vec <- as.character(studyData[[item2]])
+      if (unit=="years")  diff <- as.numeric(difftime(anydate(item1.vec), anydate(item2.vec), units="weeks"))/52.25
+      else if (unit=="days") diff <- as.numeric(difftime(anydate(item1.vec), anydate(item2.vec),units="days"))
+      else diff <-NA
+      vc <-NULL
+      if (!is.na(min)) vc <- which(diff<min)
+      if (!is.na(max)) vc <-c(vc, which(diff>max))
+    }
+  }
+  vc
+}
+
 #' @title checkRangeRule
 #' @description Function to detect outliers using a predefined range rule
 #' @export
