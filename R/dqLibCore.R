@@ -990,6 +990,73 @@ getReport <- function(repMeta, sheetName, df, path){
   }
 }
 
+#' @title getLongReport
+#' @description This function generates detailed reports on user-selected metrics and DQ issues including outliers, contradictions, missing values, and missing items.
+#' @export
+#'
+getLongReport <- function (metrics, sheetList, design, path) {
+  if (length(design)>=3){
+    col1=base::get("vo_lbl", envir=env)
+    col2=base::get("vc_lbl", envir=env)
+    col3=base::get("vm_misg_lbl", envir=env)
+    col4=base::get("im_misg_lbl", envir=env)
+    tab1 <- c(design$Outliers, col1)
+    tab2 <- c(design$Contradictions, col2)
+    tab3 <- c(design$Missings, col3, col4)
+    repData1 <-subset(env$dq, select= tab1)
+    repData2 <-subset(env$dq, select= tab2)
+    repData3 <-subset(env$dq, select= tab3)
+  } else stop ("Please set the design of desired reports on DQ issues (outliers, contradictions, and missings)")
+  dfo <-repData1[which(env$dq[,col1]!="")  ,]
+  for (i in tail(tab1, n=9)) {
+    l<-!grepl(i,  dfo[,col1])
+    dfo[l,i]=NA
+    dfo[,i] <-gsub("\\.", ",",dfo[,i])
+  }
+  dfo[,col1] <-NULL
+  dfc <-repData2[ which(env$dq[,col2]!="") ,]
+  for (row in 1:nrow(dfc)) {
+    str <-as.character(dfc[row, col2])
+    str <- gsub('\\.','', str)
+    spl <- unlist(strsplit(str, " Implausible "))
+    if (length(spl)>1){
+      j=0
+      for (i in spl) {
+        if(j==0) {
+          dfc[row, col2] <-i
+        } else {
+          newRow <-dfc[row,]
+          newRow[col2] <- paste ("Implausible ", i, sep ="")
+          dfc <-rbind(dfc,newRow)
+        }
+        j=j+1
+      }
+    } else dfc[row, col2] <-str
+  }
+  dfm <-repData3[ which(env$dq[,col3]!="")  ,]
+  for (row in 1:nrow(dfm)) {
+    str <-as.character(dfm[row, col3])
+    str <- gsub('\\.','', str)
+    spl <- unlist(strsplit(str, " Missing "))
+    if (length(spl)>1){
+      j=0
+      for (i in spl) {
+        if(j==0) {
+          dfm[row, col3] <-i
+        } else {
+          newRow <-dfm[row,]
+          newRow[col3] <- paste ("Missing ", i, sep ="")
+          dfm <-rbind(dfm,newRow)
+        }
+        j=j+1
+      }
+    } else dfm[row, col3] <-str
+  }
+  dfList <- list (metrics, dfo, dfc, dfm)
+  if (is.empty(sheetList)) sheetList <-list("DQ Metrics", col1, col2, col3)
+  getReport( NULL,  sheetList, dfList, path)
+}
+
 #' @title addSemantics
 #' @description This function adds semantic enrichment to resulting DQ metrics in the DQ report.
 #' @export
