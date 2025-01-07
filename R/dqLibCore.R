@@ -946,6 +946,35 @@ visualizeOutliers <- function (itemCol, valueCol, sumRow, voPath, ...){
   ggsave(path)
 }
 
+#' @title visualizeContradictions
+#' @description Function to visualize detected contradictions using a bar chart.
+#' @import ggplot2
+#' @export
+#'
+visualizeContradictions <- function (ruleCol, valueCol, sumRow, vcPath, ...){
+  df <-env$contra$rules
+  index = which(df[, ruleCol]==sumRow)
+  df <-subset(df[-index,], valueCol >=0, select = c(ruleCol, valueCol))
+  rules <- df[, ruleCol]
+  contraNumbers <- as.numeric(df[, valueCol])
+  vars <- list(...)
+  legend = TRUE
+  labelSize = 12
+  counterSize = 3
+  if(!is.empty(vars)){
+    if (!is.null(vars$a)) legend=vars[[1]]
+    if (!is.null(vars$b)) labelSize=vars[[2]]
+    if (!is.null(vars$c)) counterSize=vars[[3]]
+  }
+  ggplot(df, aes(x= reorder(rules, contraNumbers), y=contraNumbers, fill=rules)) +
+    geom_bar(stat="identity", show.legend = legend) +
+    geom_text(aes(label = round(contraNumbers, digits = 0)), vjust = 0, size=counterSize)+
+    labs(x="Contradictions Rules", y="Contradictory Data Value", fill= "Contradictions Rules") +
+    theme(axis.text.x=element_text(angle=45, size=labelSize, hjust=1), legend.text =element_text(size=labelSize))
+  path<-paste (vcPath, ".png")
+  ggsave(path)
+}
+
 #' @title geReport
 #' @description This function generates DQ reports on detected quality issues and user-selected metrics.
 #' @import openxlsx utils
