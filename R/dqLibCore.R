@@ -24,8 +24,7 @@ env <- new.env()
 #'
 setEnvironment <- function(data, numItems, catItems, tempItems, itemCol, optItems, ...) {
   vars <- list(...)
- if (!exists("env")) env <<- new.env()
- # if (!exists("env")) env <- new.env()
+  if (!exists("env")) env <<- new.env()
   # set study data
   env$studyData <- data
   if (is.null (env$studyData)) stop("No data available")
@@ -50,12 +49,31 @@ setEnvironment <- function(data, numItems, catItems, tempItems, itemCol, optItem
   env$vo_lbl <-"outliers"
   env$vc_lbl <- "contradictions"
   # set default variables
-  #env$ovrQuality <- "Overall DQ"
   env$ovrQuality <- "Total"
-  env$ruleMeta <- NULL
+  #env$ovrQuality <- "Overall DQ"
+  env$ruleMeta <- list(
+                        misgRule="missingRule",
+                        rangeRule="rangeRule",
+                        mathRule="mathRule",
+                        logicRule="logicalRule",
+                        ruleID ="ruleID",
+                        item1 ="item1",
+                        item2 ="item2",
+                        item3 ="item3",
+                        valueItem1 ="value(item1)",
+                        valueItem2 ="value(item2)",
+                        valueItem3 ="value(item3)",
+                        maxItem1 ="max(item1)",
+                        minItem1 ="min(item1)",
+                        mathOpr ="mathOperator",
+                        unit ="unit",
+                        minRslt="min(result)",
+                        maxRslt="max(result)"
+                      )
   env$metrics <-NULL
   env$report <-NULL
   env$contra <-NULL
+  env$semantics <- NULL
 }
 
 #' @title dqChecker
