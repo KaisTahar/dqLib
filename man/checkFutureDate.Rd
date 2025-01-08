@@ -7,5 +7,5 @@
 checkFutureDate(dateValues)
 }
 \description{
-This function checks the loaded temporal data for implausible values and return the values dated to the future.
+This function checks the loaded temporal data for implausible values and returns the values dated to the future.
 }

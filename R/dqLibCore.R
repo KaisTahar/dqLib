@@ -150,7 +150,7 @@ itemCompletenessIndicator <- function(im, im_misg) {
 }
 
 #' @title valueCompletenessIndicator
-#' @description  This function determines the Value Completeness Rate (dqi_cc_vcr), a generic indicator for assessing the completeness of mandatory data values. It also adds related metadata and parameters in the DQ report.
+#' @description This function determines the Value Completeness Rate (dqi_cc_vcr), a generic indicator for assessing the completeness of mandatory data values. It also adds related metadata and parameters in the DQ report.
 #' @export
 #'
 valueCompletenessIndicator<- function(vm, vm_misg) {
@@ -177,7 +177,7 @@ valueCompletenessIndicator<- function(vm, vm_misg) {
 }
 
 #' @title subjectCompletenessIndicator
-#' @description  Function to calculate the indicator for Subject Completeness (dqi_cc_scr), and adds related metadata and parameters in the DQ report.
+#' @description  Function to calculate the indicator for Subject Completeness (dqi_cc_scr). It also adds related metadata and parameters in the DQ report.
 #' @export
 #'
 subjectCompletenessIndicator <- function(s, s_inc) {
@@ -204,7 +204,7 @@ subjectCompletenessIndicator <- function(s, s_inc) {
 }
 
 #' @title caseCompletenessIndicator
-#' @description This function calculate the indicator for Case Completeness (dqi_cc_ccr), and adds related metadata and parameters.
+#' @description This function calculates the indicator for Case Completeness (dqi_cc_ccr), and adds related metadata and parameters.
 #' @export
 #'
 caseCompletenessIndicator <- function(vm_case, vm_case_misg) {
@@ -595,7 +595,7 @@ addOutlier<- function (item, bdata, m, n, ...) {
 }
 
 #' @title addOutlierCount
-#' @description Function to count and add detected outliers as well as performed checks.
+#' @description Function to count and add detected outliers as well as performed DQ checks.
 #'
 addOutlierCount<- function (bdata, col, row) {
   index = which( bdata[,col]==row)
@@ -605,7 +605,7 @@ addOutlierCount<- function (bdata, col, row) {
 }
 
 #' @title addContradictionCount
-#' @description Function to count and add detected contradictions as well as performed checks.
+#' @description Function to count and add detected contradictions as well as performed DQ checks.
 #'
 addContradictionCount <- function(metrics){
   contra <-base::get("contra", envir=env)
@@ -628,8 +628,8 @@ addContradictionCount <- function(metrics){
 # functions to detect plausibility issues
 #------------------------------------------------------------------------------------------------------
 
-#' @title checkLogicalRule<
-#' @description Function to detect contradictions using a predefined logical rule
+#' @title checkLogicalRule
+#' @description Function to detect contradictions using a predefined logical rule.
 #' @export
 #'
 checkLogicalRule<- function (rID, contra, contraCol, item1, value1, item2, value2, ...) {
@@ -710,7 +710,7 @@ checkLogicalRule<- function (rID, contra, contraCol, item1, value1, item2, value
 }
 
 #' @title checkSymbolicConjunctions
-#' @description Function to detect contradictions using predefined symbolic conjunctions
+#' @description Function to detect contradictions using predefined symbolic conjunctions.
 #' @import anytime
 #' @export
 #'
@@ -726,7 +726,7 @@ checkSymbolicConjunctions<- function (item1, value1, item2, value2, ...) {
 }
 
 #' @title checkMathRule
-#' @description Function to detect contradictions using a predefined mathematical rule
+#' @description Function to detect contradictions using a predefined mathematical rule.
 #' @import anytime
 #' @export
 #'
@@ -779,7 +779,7 @@ checkMathRule<- function (rID, contra, contraCol, item1, operator, item2, min, m
 }
 
 #' @title checkDifferenceRule
-#' @description Function to detect contradictions using a predefined difference rule
+#' @description Function to detect contradictions using a predefined difference rule.
 #' @import anytime
 #' @export
 #'
@@ -815,7 +815,7 @@ checkDifferenceRule<- function (studyData, item1, item2, min, max, ...){
 }
 
 #' @title checkRangeRule
-#' @description Function to detect outliers using a predefined range rule
+#' @description Function to detect outliers using a predefined range rule.
 #' @export
 #'
 checkRangeRule<- function (ndata, rID, itemCol, outlierCol, item, min, max, ...) {
@@ -852,7 +852,7 @@ checkRangeRule<- function (ndata, rID, itemCol, outlierCol, item, min, max, ...)
 }
 
 #' @title checkAgePlausibility
-#' @description This Function checks the data values related to the data item "birthdate" for implausible values and returns the detected plausibility issues.
+#' @description This function checks the data values related to the data item "birthdate" for implausible values and returns the detected plausibility issues.
 #' @export
 #'
 checkAgePlausibility<- function (birthDate, currentData, ageMax){
@@ -862,7 +862,7 @@ checkAgePlausibility<- function (birthDate, currentData, ageMax){
 }
 
 #' @title checkFutureDate
-#' @description This function checks the loaded temporal data for implausible values and return the values dated to the future.
+#' @description This function checks the loaded temporal data for implausible values and returns the values dated to the future.
 #' @export
 #'
 checkFutureDate<- function (dateValues){
@@ -1208,7 +1208,8 @@ isDate <- function(mydate) {
 }
 
 #' @title getUserSelectedMetrics
-#' @description This function enable users to select desired DQ metrics.
+#' @description This function enables users to select desired DQ metrics.
+#' @export
 #'
 getUserSelectedMetrics <- function(dqInd, df){
   for (m in dqInd){
@@ -1254,8 +1255,8 @@ getDateFormat <- function (dataVec)
 #------------------------------------------------------------------------------------------------------
 
 #' @title addCompleteness
-#' @description This function to calculate the value completeness rate.
-#' @deprecated replaced by addValueCompleteness()
+#' @description Function to calculate the value completeness rate.
+#' @deprecated replaced by valueCompletenessIndicator()
 #'
 addCompleteness<- function (tdata, col, row) {
   index = which( tdata[,col]==row)

@@ -7,5 +7,5 @@
 checkRangeRule(ndata, rID, itemCol, outlierCol, item, min, max, ...)
 }
 \description{
-Function to detect outliers using a predefined range rule
+Function to detect outliers using a predefined range rule.
 }
