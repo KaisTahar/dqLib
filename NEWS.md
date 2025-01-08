@@ -1,11 +1,29 @@
+# dqLib 1.30.0
+
+**New changes and tests**
+
+- This version was tested and validated using both electronic health record (EHR) data on rare diseases (RDs) and electronic clinical trial (ECT) data on cardiovascular diseases (CVDs)
+- New generic function for assessing the semantic plausibility of the loaded data set. The implemented functions enable the detection of contradictions based on predefined mathematical and logical rules
+- New functions to enable the specification of logical rules and mathematical rules using spreadsheets
+- Generic metadata to define DQ rules. These rule metadata are not dependent on the specific spreadsheets and data items employed
+- New functions to count and visualize detected contradictions
+- New function to generate detailed reports on detected contradictions, outliers, missing data values, and missing data items
+- New function to handle and properly format date values
+- Improved function to detect common data quality (DQ) issues that may arise in the context of CVDs
+- Improved function to set environment variables
+- Updated package documentation
+
+**Full set of changes:** [v1.20.0...v1.30.0](https://github.com/KaisTahar/dqLib/compare/v1.20.0...v1.30.0)
+
+
 # dqLib 1.20.0
 
 **New changes and tests**
 
-- This version was tested and validated using electronic clinical trial (ECT) data on cardiovascular diseases (CVDs)
+- This version was tested and validated using ECT data on CVDs
 - New generic function for DQ assessments across multiple domains using generic indicators
 - New generic indicator for assessing the Semantic Plausibility
-- New function to detect common data quality issues that may arise in the context of CVDs
+- New function to detect common DQ issues that may arise in the context of CVDs
 - New functions to enable the specification of range rules using spreadsheets and the detection of outliers based on the predefined rules
 - New functions that enable users to define missing data rules using spreadsheets and apply the predefined rules
 - New functions to handle metadata and visualize detected outliers
@@ -22,7 +40,7 @@
 
 **New changes and tests**
 
-- This version was validated using EHR-based real-world data on rare diseases (RDs)
+- This version was validated using EHR-based real-world data on RDs
 - Added function for semantic enrichment to improve the quality and clarity of generated reports
 - Improvement of the functionality for generating DQ reports and the layout of the created reports
 - Updated package documentation
@@ -44,4 +62,4 @@
 # dqLib 1.0.0
 
 - First version of the data quality library (dqLib), which was tested independently using synthetic data
-- Test results indicated the correctness of the implemented data quality (DQ) indicators as reported in [DOI: 10.3205/22gmds116](https://www.egms.de/static/en/meetings/gmds2022/22gmds116.shtml)
+- Test results indicated the correctness of the implemented DQ indicators as reported in [DOI: 10.3205/22gmds116](https://www.egms.de/static/en/meetings/gmds2022/22gmds116.shtml)
