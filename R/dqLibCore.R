@@ -941,6 +941,28 @@ addStatistic<- function (bdata, col, row) {
   bdata
 }
 
+
+#'#' @title getPatRecordMetrics
+#' @description This function provides the number of analyzed patients and the overall number of patients with DQ issues.
+#' @export
+#'
+getPatRecordMetrics<-function (identifier) {
+  vm_misg_lbl=base::get("vm_misg_lbl", envir=env)
+  vo_lbl=base::get("vo_lbl", envir=env)
+  vc_lbl=base::get("vc_lbl", envir=env)
+  df <-data.frame( aPatient=0, pat_dq_iss=0)
+  df$aPatient <- length(unique(env$studyData[[identifier]]))
+  if (vm_misg_lbl %in% colnames(env$dq)) dfa_misg <-subset(env$dq, select= c(identifier, vm_misg_lbl))[grep("Missing", env$dq[[vm_misg_lbl]]),]
+  else dfa_misg <-NULL
+  if (vo_lbl %in% colnames(env$dq)) dfa_out <-subset(env$dq, select= c(identifier, vo_lbl))[grep("Implausible", env$dq[[vo_lbl]]),]
+  else dfa_out <-NULL
+  if (vc_lbl %in% colnames(env$dq)) dfa_cont <-subset(env$dq, select= c(identifier, vc_lbl))[grep("Implausible", env$dq[[vc_lbl]]),]
+  else dfa_cont <-NULL
+  patDQIss <- union(dfa_out[[identifier]], union(dfa_misg[[identifier]], dfa_cont[[identifier]]))
+  df$pat_dq_iss <-length(unique(patDQIss))
+  df
+}
+
 #------------------------------------------------------------------------------------------------------
 # Functions to generate data quality reports and visualizations
 #------------------------------------------------------------------------------------------------------
