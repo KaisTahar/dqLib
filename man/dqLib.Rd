@@ -4,9 +4,9 @@
 \name{dqLib}
 \alias{dqLib}
 \alias{dqLib-package}
-\title{dqLib: Tools for data quality assessment and reporting}
+\title{dqLib: Tools for data quality assessment and reporting on detected DQ issues}
 \description{
-This package contains methods for data quality analysis and reporting, especially in clinical research.
+This package contains methods for data quality analysis and reporting on identified quality issues, especially in clinical research.
 }
 \seealso{
 Useful links:

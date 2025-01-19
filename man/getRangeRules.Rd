@@ -4,7 +4,7 @@
 \alias{getRangeRules}
 \title{getRangRules}
 \usage{
-getRangeRules(path)
+getRangeRules(path, sheetName)
 }
 \description{
 Functions to extract range rules from spreadsheets.

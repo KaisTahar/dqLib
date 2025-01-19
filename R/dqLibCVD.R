@@ -1,6 +1,6 @@
 #######################################################################################################
-# Description: The data quality library (dqLib) is an R package for data quality (DQ) assessment and reporting.
-# As part of the "dqLib" package this script includes functions to detect DQ issues that may arise in the context of common diseases like cardiovascular diseases (CVDs).
+# Description: The data quality library (dqLib) is an R package for traceable and explainable assessments of clinical data quality.
+# As part of the "dqLib" package this script includes functions to detect data quality (DQ) issues that may arise in the context of common diseases like cardiovascular diseases (CVDs).
 # Kais Tahar, University Medical Center Göttingen
 # ######################################################################################################
 
@@ -10,39 +10,43 @@
 #'
 cvdDqChecker <- function (rPath, ruleMeta)
 {
-  # call constant values: Labels for potential DQ issues
-  im_misg_lbl=base::get("im_misg_lbl", envir=env)
-  vm_misg_lbl=base::get("vm_misg_lbl", envir=env)
-  vo_lbl=base::get("vo_lbl", envir=env)
-  vc_lbl=base::get("vc_lbl", envir=env)
-  # call relevant meta data for CVDs
+  # Call global variables
+  # Relevant meta data for CVDs
   numMeta=base::get("numMeta", envir=env)
   catMeta=base::get("catMeta", envir=env)
   tempMeta=base::get("tempMeta", envir=env)
   optMeta=base::get("optMeta", envir=env)
   metaCol=base::get("metaCol", envir=env)
   ovrQuality=base::get("ovrQuality", envir=env)
-  # set specific ruleMeta for CVDs
-  base::assign(x = "ruleMeta", value =ruleMeta, envir = env)
+  # Labels for potential DQ issues
+  im_misg_lbl=base::get("im_misg_lbl", envir=env)
+  vm_misg_lbl=base::get("vm_misg_lbl", envir=env)
+  vo_lbl=base::get("vo_lbl", envir=env)
+  vc_lbl=base::get("vc_lbl", envir=env)
+  # Set specific ruleMeta for CVDs
+  base::assign(x = "ruleMeta", value =ruleMeta, envir=env)
   # D1-Completeness
+  # Get user-defined missing rules from spreadsheet
+  misgRules <- getMissingRules(rPath, ruleMeta[["missingRules"]])
   if (!(is.empty(numMeta) | is.empty(catMeta) | is.empty(tempMeta))) {
-      im=getMandatoryItems(metaCol, optMeta, numMeta, catMeta, tempMeta)
-      # add results of the completeness analysis for all data items in the meta data for CVDs
-      base::assign(x ="mItem" , value=getMissingItem(im),envir=env)
-      mRules <- getMissingRules(rPath)
-      base::assign(x="numMeta", value= getMissingValue(numMeta, metaCol, vm_misg_lbl, im_misg_lbl, mRules), envir=env)
-      base::assign(x="catMeta", value = getMissingValue(catMeta, metaCol, vm_misg_lbl, im_misg_lbl, mRules), envir=env)
-      base::assign(x="tempMeta", value = getMissingValue(tempMeta, metaCol, vm_misg_lbl, im_misg_lbl, mRules), envir=env)
+    im=getMandatoryItems(metaCol, optMeta, numMeta, catMeta, tempMeta)
+    # Add results of the completeness analysis for all data items in the metadata for CVDs
+    base::assign(x ="mItem" , value=getMissingItem(im),envir=env)
+    base::assign(x="numMeta", value= getMissingValue(numMeta, metaCol, vm_misg_lbl, im_misg_lbl, misgRules), envir=env)
+    base::assign(x="catMeta", value = getMissingValue(catMeta, metaCol, vm_misg_lbl, im_misg_lbl, misgRules), envir=env)
+    base::assign(x="tempMeta", value = getMissingValue(tempMeta, metaCol, vm_misg_lbl, im_misg_lbl, misgRules), envir=env)
   } else stop(" The global Environment (env) does not contain any numerical or categorical or temporal data items.
   Please ensure the data type of mandatory data items is set correctly and then rerun the execution (For more details see global variables catMeta and numMeta).")
   # D2-Plausibility
-  # get user-defined DQ rules form spreadsheets
-  rRules <- getRangeRules(rPath)
-  mRules <- getContradictionRules(rPath, ruleMeta[["mathRule"]])
-  lRules <- getContradictionRules(rPath, ruleMeta[["logicRule"]])
-  # add results of the plausibility analysis for all data items in the meta data for CVDs
-  base::assign(x="numMeta", value = checkRangeRules(env$numMeta, rRules, metaCol, vo_lbl), envir=env)
-  base::assign(x="contra", value = checkContradictionRules(env$contra, mRules, lRules, vc_lbl), envir=env)
+  # Get user-defined DQ rules from spreadsheets
+  rangeRules <- getRangeRules(rPath, ruleMeta[["rangeRules"]])
+  mathRules <- getContradictionRules(rPath, ruleMeta[["mathRules"]])
+  logicRules <- getContradictionRules(rPath, ruleMeta[["logicRules"]])
+  #base::assign(x="dqRules", value=list (misgRules,rangeRules, logicRules), envir=env)
+  base::assign(x="dqRules", value=list ("RangeRules"=rangeRules, "LogicalRules"= logicRules, "MathRules"=mathRules, "MissingRules"=misgRules), envir=env)
+  # Add results of the plausibility analysis for all data items in the metadata for CVDs
+  base::assign(x="numMeta", value = checkRangeRules(env$numMeta, rangeRules, metaCol, vo_lbl), envir=env)
+  base::assign(x="contra", value = checkContradictionRules(env$contra, mathRules, logicRules, vc_lbl), envir=env)
   param <- getTotalStatistic(metaCol, ovrQuality)
   param
 }
@@ -51,10 +55,9 @@ cvdDqChecker <- function (rPath, ruleMeta)
 #' @description Functions to import missing data rules from spreadsheets.
 #' @export
 #'
-getMissingRules<-function (path) {
+getMissingRules<-function (path, sheetName) {
   ruleMeta <-base::get("ruleMeta", envir=env)
-  misgRule=ruleMeta[["misgRule"]]
-  rules <- read.xlsx(xlsxFile = path, sheet = misgRule, skipEmptyRows = FALSE)
+  rules <- read.xlsx(xlsxFile = path, sheet = sheetName, skipEmptyRows = FALSE)
   sapply(rules, class)
   rID=ruleMeta[["ruleID"]]
   vItem1=ruleMeta[["valueItem1"]]
@@ -64,7 +67,6 @@ getMissingRules<-function (path) {
   if (!is.empty(ruleIDs)) {
     for (ID in ruleIDs) {
       index = which(ruleIDs==ID)
-      #type = misgRule
       equation1 <- as.character(rules[[vItem1]][index])
       equation2 <- as.character(rules[[vItem2]][index])
       split1 =  unlist (strsplit(equation1, split ="="))
@@ -91,7 +93,7 @@ checkMissingRules<-function (df, mRules, metaCol, vm_misg_lbl, im_misg_lbl) {
       index = which(mRules$ruleID==i)
       x <- mRules$item1[index] %in% df [,metaCol]
       if ( all(x)) {
-        df <- missingCheck(df, mRules$item1[index], metaCol, vm_misg_lbl, im_misg_lbl, mRules$valueItem1[index], mRules$item2[index], mRules$valueItem2[index])
+        df <- missingCheck(df, mRules$item1[index], metaCol, vm_misg_lbl, im_misg_lbl, mRules$valueItem1[index], mRules$item2[index], mRules$valueItem2[index], mRules$ruleID[index])
       }
     }
   }
@@ -102,10 +104,9 @@ checkMissingRules<-function (df, mRules, metaCol, vm_misg_lbl, im_misg_lbl) {
 #' @description Functions to extract range rules from spreadsheets.
 #' @export
 #'
-getRangeRules<-function (path) {
+getRangeRules<-function (path, sheetName) {
   ruleMeta <-base::get("ruleMeta", envir=env)
-  rangeRule=ruleMeta[["rangeRule"]]
-  rules <- read.xlsx(xlsxFile = path, sheet = rangeRule, skipEmptyRows = FALSE)
+  rules <- read.xlsx(xlsxFile = path, sheet = sheetName, skipEmptyRows = FALSE)
   sapply(rules, class)
   rID=ruleMeta[["ruleID"]]
   item1 =ruleMeta[["item1"]]
@@ -169,8 +170,8 @@ checkRangeRules<-function (ndata, rRules, imCol, outlierCol) {
 #'
 getContradictionRules<-function (path, sheetName) {
   ruleMeta <-base::get("ruleMeta", envir=env)
-  mathRule =ruleMeta[["mathRule"]]
-  logicRule =ruleMeta[["logicRule"]]
+  mathRule =ruleMeta[["mathRules"]]
+  logicRule =ruleMeta[["logicRules"]]
   rID=ruleMeta[["ruleID"]]
   item1 =ruleMeta[["item1"]]
   item2 =ruleMeta[["item2"]]

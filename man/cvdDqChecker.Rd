@@ -4,7 +4,7 @@
 \alias{cvdDqChecker}
 \title{cvdDqChecker}
 \usage{
-cvdDqChecker(rPath, spstMeta)
+cvdDqChecker(rPath, ruleMeta)
 }
 \description{
 This function checks the quality of loaded data set regarding common DQ issues that may arise in the context of common diseases like cardiovascular diseases (CVDs).

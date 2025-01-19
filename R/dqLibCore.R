@@ -1,7 +1,9 @@
 #######################################################################################################
-# Description: The data quality library (dqLib) is an R package for data quality (DQ) assessment and reporting.
-# This package provides multiple metrics to analyze different aspects of DQ. The developed functions enable users to select desired dimensions, indicators, and parameters as well as to generate specific DQ reports and visualizations.
-# This script is part of the "dqLib" package and provides generic functions for data quality assessment.
+# Description: The data quality library (dqLib) is an R package for traceable and explainable assessments of clinical data quality.
+# This package offers a range of metrics to assess different data quality (DQ) aspects, especially in clinical care and research.
+# This script is part of the "dqLib" package and provides generic functions for traceable and explainable DQ assessments.
+# The implemented functions enable users to select appropriate metrics and generate visualizations and detailed reports on detected DQ issues.
+# The definitions of DQ dimensions and indicators are guided by the conceptual framework for harmonized DQ assessments first introduced under DOI:10.1055/a-2006-1018.
 # Date Created: 2021-02-26
 # Author: Kais Tahar, University Medical Center Göttingen
 #' @keywords internal
@@ -13,11 +15,6 @@
 # functions to set package environment
 #------------------------------------------------------------------------------------------------------
 
-#' @title env
-#' @description Package environment
-#'
-env <- new.env()
-
 #' @title setEnvironment
 #' @description Function to set global variables.
 #' @export
@@ -25,11 +22,11 @@ env <- new.env()
 setEnvironment <- function(data, numItems, catItems, tempItems, itemCol, optItems, ...) {
   vars <- list(...)
   if (!exists("env")) env <<- new.env()
-  # set study data
+  # Set study data
   env$studyData <- data
   if (is.null (env$studyData)) stop("No data available")
   env$dq <- data
-  # set metadata
+  # Set study metadata
   env$metaCol<- itemCol
   env$numMeta <-numItems
   env$catMeta <-catItems
@@ -41,21 +38,12 @@ setEnvironment <- function(data, numItems, catItems, tempItems, itemCol, optItem
   if (is.null (env$tempMeta)) warning("No temporal data items available")
   if (is.null (env$numMeta) & is.null(env$catMeta) & is.null(env$tempMeta)) stop("The global Environment (env) does not contain any numerical or categorical or temporal data items.
   Please ensure the data type of mandatory data items is set correctly and then rerun the execution (For more details see global variables env$numMeta and env$catMeta).")
-  # set code for missing data values
-  if (!is.empty(vars)) env$vm_misg_code <-vars[[1]] else env$vm_misg_code <- c("", "NULL", NA)
-  # set reporting labels for potential DQ issues
-  env$im_misg_lbl <- "missing_items"
-  env$vm_misg_lbl <- "missing_values"
-  env$vo_lbl <-"outliers"
-  env$vc_lbl <- "contradictions"
-  # set default variables
-  env$ovrQuality <- "Total"
-  #env$ovrQuality <- "Overall DQ"
+  # Set rule metadata
   env$ruleMeta <- list(
-                        misgRule="missingRule",
-                        rangeRule="rangeRule",
-                        mathRule="mathRule",
-                        logicRule="logicalRule",
+                        missingRule="missingRules",
+                        rangeRule="rangeRules",
+                        mathRule="mathRules",
+                        logicRule="logicalRules",
                         ruleID ="ruleID",
                         item1 ="item1",
                         item2 ="item2",
@@ -70,11 +58,27 @@ setEnvironment <- function(data, numItems, catItems, tempItems, itemCol, optItem
                         minRslt="min(result)",
                         maxRslt="max(result)"
                       )
+  # Code for missing data values
+  if (!is.empty(vars)) env$vm_misg_code <-vars[[1]] else env$vm_misg_code <- c(NA, "NULL","")
+  # Reporting labels for potential DQ issues
+  if(is.empty(env$im_misg_lbl)) env$im_misg_lbl <- "missing_items"
+  if(is.empty(env$vm_misg_lbl)) env$vm_misg_lbl <- "missing_values"
+  if(is.empty(env$vo_lbl)) env$vo_lbl <-"outliers"
+  if(is.empty(env$vc_lbl)) env$vc_lbl <- "contradictions"
+  # Overall DQ
+  if(is.empty(env$ovrQuality)) env$ovrQuality<- "total"
+  # Initialization
   env$metrics <-NULL
   env$report <-NULL
   env$contra <-NULL
+  env$dqRules <-NULL
   env$semantics <- NULL
 }
+
+#' @title env
+#' @description Package environment
+#'
+env <- new.env()
 
 #' @title getEnvironment
 #' @description This function provides the environment data structure.
@@ -92,13 +96,14 @@ getEnvironment <- function() {
 #'
 dqChecker <- function (studyData, coreDomain, numItems, catItems, tempItems, itemMandatory, itemOptional, missingCode, ...)
 {
-  vars <- list(...)
-  # set global variables
-  setEnvironment(studyData, numItems, catItems, tempItems, itemMandatory, itemOptional, missingCode)
-  # initialize metrics
+  # Initialization
   metrics <- data.frame(indicators =NA, parameters =NA)
   indInstance <- data.frame(dqi_co_icr =NA, dqi_co_vcr =NA )
-  #Domain-driven design of DQ checks
+  # Set global variables
+  setEnvironment(studyData, numItems, catItems, tempItems, itemMandatory, itemOptional, missingCode)
+  # Optional variables
+  vars <- list(...)
+  # Domain-driven design of DQ checks
   if (coreDomain=="CVD") { # cardiovascular diseases (CVD)
     if (! is.empty (vars)) {
       # Semantic Rules for detecting missing data values and recognizing the intentionally hidden data values
@@ -121,7 +126,7 @@ dqChecker <- function (studyData, coreDomain, numItems, catItems, tempItems, ite
   indInstance$dqi_co_vcr <- valueCompletenessIndicator(paramInstance$vm, paramInstance$vm_misg)$value
   indInstance$dqi_pl_rpr <- rangePlausibilityIndicator(paramInstance$vs_od, paramInstance$vo)$value
   indInstance$dqi_pl_spr <- semanticPlausibilityIndicator(paramInstance$vs_cd, paramInstance$vc)$value
-  # results of DQ analysis (parameters and indicators)
+  # Results of DQ analysis (parameters and indicators)
   metrics$parameters <- paramInstance
   metrics$indicators <- indInstance
   assign(x="metrics", value=metrics, envir = env)
@@ -278,6 +283,7 @@ addMissingValueCount<- function (bdata, col, row) {
   bdata$vm_misg[index] <- sum(as.integer(as.character(bdata$vm_misg[-index])), na.rm=TRUE)
   bdata
 }
+
 #' @title addMissingItemCount
 #' @description Function to count the overall missing data items.
 #'
@@ -331,11 +337,12 @@ getMissingValue<-function (df, bItemCol, outCol1, outCol2, ...){
 #'
 missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
   vars <- list(...)
-  if(length(vars)==3) {
+  if(length(vars)==4) {
     if (vars[[1]]=="NA") missingCode = NA
     else if (vars[[1]]=="missingCode") missingCode <-env$vm_misg_code
     itemCond <- vars[[2]]
     cond <- vars[[3]]
+    ruleID <- vars[[4]]
     if (!all(is.na(env$dq))){
       if(!cl1 %in% colnames(env$dq)) env$dq[,cl1]<-""
       if(!cl2 %in% colnames(env$dq)) env$dq[,cl2] <-""
@@ -370,7 +377,7 @@ missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
         else m <- which((env$studyData[[itemCond]]==cond & as.character(env$studyData[[item]])=="") |(env$studyData[[itemCond]]==cond & is.na(env$studyData[[item]])))
         if (!is.empty (m)) {
           for(i in m) {
-            msg <- paste("Missing ", item, sep="")
+            msg <- paste("Missing value for ", item, " according to the missing rule ", ruleID, " for hideable data values", sep="")
             if (index >=1) {
               if (!is.na(env$dq[,cl1][i])) env$dq[,cl1][i] <- paste(msg, ". ", env$dq[,cl1][i], sep="")
               else env$dq[,cl1][i] <- msg
@@ -383,7 +390,8 @@ missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
     }
     else if (item!=env$ovrQuality){
       df <- addMissingValue(item, df, 0,0, itemCol)
-      env$dq[,cl2]<- paste( item," was not collected ", env$dq[,cl2])
+      env$dq[,cl2]<- paste( "missing ", item,"according to the list of mandatory metadata ", env$dq[,cl2])
+
     }
   } else {
     missingCode <-env$vm_misg_code
@@ -409,9 +417,8 @@ missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
       }
       else m <- which(as.character(item.vec) =="" | is.na(item.vec))
       if (!is.empty (m)) {
-        for(i in m)
-        {
-          msg <- paste("Missing ", item, sep="")
+        for(i in m){
+          msg <- paste("Missing value for ", item, " according to the defined codes for missing data values", sep="")
           if (index >=1) {
             if (!is.na(env$dq[,cl1][i])) env$dq[,cl1][i] <- paste(msg, ". ", env$dq[,cl1][i], sep="")
             else env$dq[,cl1][i] <- msg
@@ -424,7 +431,7 @@ missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
     }
     else if (item!=env$ovrQuality){
       df <- addMissingValue(item, df, 0,0, itemCol)
-      env$dq[,cl2]<- paste( item, " was not collected ", env$dq[,cl2])
+      env$dq[,cl2]<- paste( "missing ", item,"according to the list of mandatory metadata ", env$dq[,cl2])
     }
   }
   df
@@ -665,7 +672,7 @@ checkLogicalRule<- function (rID, contra, contraCol, item1, value1, item2, value
       if (!is.empty(out)) {
         for(i in out){
           df[nrow(df) + 1,] <- c(rID, env$dq[[item1]][i], env$dq[[item2]][i], env$dq[[item3]][i], 1, 3)
-          msg <- paste("Implausible combination according to the rule ", rID , ": ", item1, "=", env$dq[[item1]][i] ,  ", ",item2, "=", env$dq[[item2]][i]," ", item3, "=", env$dq[[item3]][i], ".", sep="")
+          msg <- paste("Implausible combination according to the logical rule ", rID , ": ", item1, "=", env$dq[[item1]][i] ,  ", ",item2, "=", env$dq[[item2]][i]," ", item3, "=", env$dq[[item3]][i], ".", sep="")
           #print(msg)
           env$dq[,contraCol][i] <-paste (msg, env$dq[,contraCol][i])
         }
@@ -699,7 +706,7 @@ checkLogicalRule<- function (rID, contra, contraCol, item1, value1, item2, value
     if (!is.empty(out)) {
       for(i in out) {
         df[nrow(df) + 1,] <- c(rID, env$dq[[item1]][i], env$dq[[item2]][i], 1, 2)
-        msg <- paste( "Implausible combination according to the rule ", rID , ": ", item1, "=", env$dq[[item1]][i] , ", ", item2, "=", env$dq[[item2]][i], ".", sep="")
+        msg <- paste( "Implausible combination according to the logical rule ", rID , ": ", item1, "=", env$dq[[item1]][i] , ", ", item2, "=", env$dq[[item2]][i], ".", sep="")
         #print(msg)
         env$dq[,contraCol][i] <-paste (msg, env$dq[,contraCol][i])
       }
@@ -762,12 +769,12 @@ checkMathRule<- function (rID, contra, contraCol, item1, operator, item2, min, m
       for(i in out) {
         if (unit %in% c("days", "years", "monthes")){
           df[nrow(df) + 1,] <- c(rID, anydate(env$dq[[item1]][i]), anydate(env$dq[[item2]][i]), 1, 2)
-          msg <- paste( "Implausible time intervall according to the rule ", rID , ": ",  item1, "=", anydate(env$dq[[item1]][i]) , ", ", item2, "=", anydate(env$dq[[item2]][i]), ", min=", min, unit,", max=", max,unit, ".", sep="")
+          msg <- paste( "Implausible time intervall according to the mathematical rule", rID , ": ",  item1, "=", anydate(env$dq[[item1]][i]) , ", ", item2, "=", anydate(env$dq[[item2]][i]), ", min=", min, unit,", max=", max,unit, ".", sep="")
           #print(msg)
           env$dq[,contraCol][i] <-paste (msg, env$dq[,contraCol][i])
         } else {
           df[nrow(df) + 1,] <- c(rID, env$dq[[item1]][i], env$dq[[item2]][i], 1,2)
-          msg <- paste( "Implausible combination according to the rule ",rID , ": ", item1, "=", env$dq[[item1]][i] , ", ", item2, "=", env$dq[[item2]][i], ".", sep="")
+          msg <- paste( "Implausible combination according to the mathematical rule ",rID , ": ", item1, "=", env$dq[[item1]][i] , ", ", item2, "=", env$dq[[item2]][i], ".", sep="")
           #print(msg)
           env$dq[,contraCol][i] <-paste (msg, env$dq[,contraCol][i])
         }
@@ -835,8 +842,8 @@ checkRangeRule<- function (ndata, rID, itemCol, outlierCol, item, min, max, ...)
       out <- which(item.vec<min | item.vec>max)
       ndata <- addOutlier(item, ndata, length(out), length(item.vec), itemCol)
       for(i in out) {
-        msg<- paste("Implausible", item , ":", item.vec[i], "according to the range rule:", rID)
-        if (grepl("Implausible", env$dq[,outlierCol][i] , fixed = TRUE)) env$dq[,outlierCol][i] <- paste (msg,"; ", env$dq[,outlierCol][i])
+        msg<- paste("Implausible ", item , "=", item.vec[i], " according to the range rule: ", rID, sep="")
+        if (grepl("Implausible ", env$dq[,outlierCol][i] , fixed = TRUE)) env$dq[,outlierCol][i] <- paste (msg,". ", env$dq[,outlierCol][i], sep="")
         else env$dq [,outlierCol] [i] <- msg
       }
     } else if(length(vars)==4){
@@ -849,8 +856,8 @@ checkRangeRule<- function (ndata, rID, itemCol, outlierCol, item, min, max, ...)
       out <- which(!is.na(item.vec) & (item.vec< min | item.vec > max) & item2.vec ==value2 & item3.vec==value3)
       if (!is.empty (out)) {
         for(i in out) {
-          msg<- paste("Implausible", item , ":", item.vec[i], "according to the range rule:", rID)
-          if (grepl("Implausible", env$dq[,outlierCol][i] , fixed = TRUE)) env$dq[,outlierCol][i] <- paste (msg, "; ", env$dq[,outlierCol][i])
+          msg<- paste("Implausible ", item , "=", item.vec[i], " according to the range rule: ", rID, sep="")
+          if (grepl("Implausible ", env$dq[,outlierCol][i] , fixed = TRUE)) env$dq[,outlierCol][i] <- paste (msg, ". ", env$dq[,outlierCol][i], sep="")
           else env$dq [,outlierCol] [i] <- msg
         }
       }
@@ -1025,7 +1032,8 @@ visualizeContradictions <- function (ruleCol, valueCol, sumRow, vcPath, ...){
 }
 
 #' @title geReport
-#' @description This function generates DQ reports on detected quality issues and user-selected metrics.
+#' @description Function to save DQ reports in Excel and CSV files.
+#' The CSV file includes only the user-selected metrics, while the Excel file provides multiple spreadsheets detailing the detected DQ issues, the user-selected metrics, the employed DQ rules, and the semantics of the DQ metrics.
 #' @import openxlsx utils
 #' @export
 #'
@@ -1064,74 +1072,81 @@ getReport <- function(repMeta, sheetName, df, path){
       setColWidths(wb, sheet="Semantics", cols =1:30, widths = "auto")
       writeData(wb, sheet = "Semantics", env$semantics,  headerStyle = header_st)
     }
+    if (!is.null(env$dqRules)) {
+      i=0
+      sheetNames <- names(env$dqRules)
+      for (df in env$dqRules) {
+        i=i+1
+        addWorksheet(wb, sheetNames[i])
+        setColWidths(wb, sheet=sheetNames[i], cols =1:30, widths = "auto")
+        writeData(wb, sheet = sheetNames[i], x = df,  headerStyle = header_st)
+      }
+    }
     saveWorkbook(wb, path, overwrite = TRUE)
   }
 }
 
 #' @title getLongReport
-#' @description This function generates detailed reports on user-selected metrics and DQ issues including outliers, contradictions, missing values, and missing items.
+#' @description This function creates detailed DQ reports based on user-defined specifications to explain the detected DQ issues and help users address them.
+#' The reports include user-selected metrics and provide detailed information on detected outliers, contradictions, missing values, and missing items.
 #' @export
 #'
 getLongReport <- function (metrics, sheetList, design, path) {
   if (length(design)>=3){
-    col1=base::get("vo_lbl", envir=env)
-    col2=base::get("vc_lbl", envir=env)
-    col3=base::get("vm_misg_lbl", envir=env)
-    col4=base::get("im_misg_lbl", envir=env)
-    tab1 <- c(design$Outliers, col1)
-    tab2 <- c(design$Contradictions, col2)
-    tab3 <- c(design$Missings, col3, col4)
-    repData1 <-subset(env$dq, select= tab1)
-    repData2 <-subset(env$dq, select= tab2)
-    repData3 <-subset(env$dq, select= tab3)
+    vo_lbl=base::get("vo_lbl", envir=env)
+    vc_lbl=base::get("vc_lbl", envir=env)
+    vm_misg_lbl=base::get("vm_misg_lbl", envir=env)
+    im_misg_lbl=base::get("im_misg_lbl", envir=env)
+    dfo <-subset(env$dq, select=union(design[[1]], vo_lbl))[which(env$dq[,vo_lbl]!=""), ]
+    dfc <-subset(env$dq, select=union(design[[2]], vc_lbl))[which(env$dq[,vc_lbl]!=""), ]
+    dfm <-subset(env$dq, select=union(design[[3]], c(vm_misg_lbl, im_misg_lbl)))[which(env$dq[,vm_misg_lbl]!=""), ]
   } else stop ("Please set the design of desired reports on DQ issues (outliers, contradictions, and missings)")
-  dfo <-repData1[which(env$dq[,col1]!="")  ,]
-  for (i in tail(tab1, n=9)) {
-    l<-!grepl(i,  dfo[,col1])
+  temp <- dfo[,vo_lbl]
+  numItems <-length(names(dfo))-length(intersect(names(dfo),names(dfm)))
+  for (i in tail(names(dfo), numItems)) {
+    l<-!grepl(i,  dfo[,vo_lbl])
     dfo[l,i]=NA
     dfo[,i] <-gsub("\\.", ",",dfo[,i])
   }
-  dfo[,col1] <-NULL
-  dfc <-repData2[ which(env$dq[,col2]!="") ,]
+  dfo[,vo_lbl] <-temp
   for (row in 1:nrow(dfc)) {
-    str <-as.character(dfc[row, col2])
+    str <-as.character(dfc[row, vc_lbl])
     str <- gsub('\\.','', str)
     spl <- unlist(strsplit(str, " Implausible "))
     if (length(spl)>1){
       j=0
       for (i in spl) {
         if(j==0) {
-          dfc[row, col2] <-i
+          dfc[row, vc_lbl] <-i
         } else {
           newRow <-dfc[row,]
-          newRow[col2] <- paste ("Implausible ", i, sep ="")
+          newRow[vc_lbl] <- paste ("Implausible ", i, sep ="")
           dfc <-rbind(dfc,newRow)
         }
         j=j+1
       }
-    } else dfc[row, col2] <-str
+    } else dfc[row, vc_lbl] <-str
   }
-  dfm <-repData3[ which(env$dq[,col3]!="")  ,]
   for (row in 1:nrow(dfm)) {
-    str <-as.character(dfm[row, col3])
+    str <-as.character(dfm[row, vm_misg_lbl])
     str <- gsub('\\.','', str)
     spl <- unlist(strsplit(str, " Missing "))
     if (length(spl)>1){
       j=0
       for (i in spl) {
         if(j==0) {
-          dfm[row, col3] <-i
+          dfm[row, vm_misg_lbl] <-i
         } else {
           newRow <-dfm[row,]
-          newRow[col3] <- paste ("Missing ", i, sep ="")
+          newRow[vm_misg_lbl] <- paste ("Missing ", i, sep ="")
           dfm <-rbind(dfm,newRow)
         }
         j=j+1
       }
-    } else dfm[row, col3] <-str
+    } else dfm[row, vm_misg_lbl] <-str
   }
   dfList <- list (metrics, dfo, dfc, dfm)
-  if (is.empty(sheetList)) sheetList <-list("DQ Metrics", col1, col2, col3)
+  if (is.empty(sheetList)) sheetList <-list("DQ Metrics", vo_lbl, vc_lbl, vm_misg_lbl)
   getReport( NULL,  sheetList, dfList, path)
 }
 
@@ -1226,8 +1241,6 @@ getUserSelectedMetrics <- function(dqInd, df){
   for (m in dqInd){
     if (!(m  %in% names(df))) {
       stop ("undefined DQ metric: ", m)
-      #print(paste(" undefined DQ metric:", m))
-      #quit()
     }
   }
   dqMetrics <- subset(df, select= dqInd)

@@ -7,5 +7,5 @@
 checkAgePlausibility(birthDate, currentData, ageMax)
 }
 \description{
-This Function checks the data values related to the data item "birthdate" for implausible values and returns the detected plausibility issues.
+This function checks the data values related to the data item "birthdate" for implausible values and returns the detected plausibility issues.
 }

@@ -1,6 +1,6 @@
 #######################################################################################################
-# Description: The data quality library (dqLib) is an R package for data quality (DQ) assessment and reporting.
-# As part of the "dqLib" package this script includes functions for calculating specific metrics and reporting on detected DQ issues, especially in the field of Rare Diseases(RDs)
+# Description: The data quality library (dqLib) is an R package for traceable and explainable assessments of clinical data quality.
+# As part of the "dqLib" package this script includes functions for calculating specific metrics and reporting on detected data quality (DQ) issues, especially in the field of Rare Diseases(RDs)
 # Date Created: 2021-02-26
 # Kais Tahar, University Medical Center Göttingen
 # ######################################################################################################
@@ -10,20 +10,21 @@
 #' The default DQ dimensions are completeness and plausibility.
 #' @export
 rdDqChecker <- function (tracerRef, rdStandard) {
-  # call constant values: Labels for potential DQ issues
-  im_misg_lbl= base::get("im_misg_lbl", envir=env)
-  vm_misg_lbl=base::get("vm_misg_lbl", envir=env)
-  dq_lbl =base::get("dq_lbl", envir=env)
-  # call relevant meta data for RDs
+  # Call global variables
+  # Relevant meta data for RDs
   catMeta=base::get("catMeta", envir=env)
   tempMeta=base::get("tempMeta", envir=env)
   metaCol=base::get("metaCol", envir=env)
   optMeta=base::get("optMeta", envir=env)
   ovrQuality=base::get("ovrQuality", envir=env)
+  # Labels for potential DQ issues
+  im_misg_lbl= base::get("im_misg_lbl", envir=env)
+  vm_misg_lbl=base::get("vm_misg_lbl", envir=env)
+  dq_lbl =base::get("dq_lbl", envir=env)
   #D1 completeness
   if (!(is.empty(catMeta) | is.empty(tempMeta))) {
       im <-getMandatoryItems(metaCol, c(optMeta,ovrQuality), catMeta, tempMeta)
-      # add results of the completeness analysis for all data items in the meta data for RDs
+      # Add results of the completeness analysis for all data items in the meta data for RDs
       base::assign(x ="mItem" , value= getMissingItem(im), envir=env)
       base::assign(x="catMeta", value = getMissingValue(catMeta, metaCol, vm_misg_lbl, im_misg_lbl), envir=env)
       base::assign(x="tempMeta", value = getMissingValue(tempMeta, metaCol, vm_misg_lbl, im_misg_lbl), envir=env)

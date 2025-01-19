@@ -7,5 +7,6 @@
 getReport(repMeta, sheetName, df, path)
 }
 \description{
-This function generates DQ reports on detected quality issues and user-selected metrics.
+Function to save DQ reports in Excel and CSV files. 
+The CSV file includes only the user-selected metrics, while the Excel file provides multiple spreadsheets detailing the detected DQ issues, the user-selected metrics, the employed DQ rules, and the semantics of the DQ metrics.
 }

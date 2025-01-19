@@ -4,7 +4,7 @@
 \alias{getMissingRules}
 \title{getMissingRules}
 \usage{
-getMissingRules(path)
+getMissingRules(path, sheetName)
 }
 \description{
 Functions to import missing data rules from spreadsheets.

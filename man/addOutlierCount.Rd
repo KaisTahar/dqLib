@@ -7,5 +7,5 @@
 addOutlierCount(bdata, col, row)
 }
 \description{
-Function to count and add detected outliers as well as performed checks.
+Function to count and add detected outliers as well as performed DQ checks.
 }

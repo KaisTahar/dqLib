@@ -7,5 +7,5 @@
 getUserSelectedMetrics(dqInd, df)
 }
 \description{
-This function enable users to select desired DQ metrics.
+This function enables users to select desired DQ metrics.
 }
