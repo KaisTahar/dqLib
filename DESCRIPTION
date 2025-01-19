@@ -1,19 +1,19 @@
 Package: dqLib
 Type: Package
-Title: Tools for data quality assessment and reporting
-Version: 1.20.0
-Date/Publication: 2024-11-13
+Title: Data Quality Library (dqLib): An R Package for Traceable and Explainable Assessments of Clinical Data Quality
+Version: 1.32.0
+Date/Publication: 2025-01-19
 Authors@R: c(
     person( given = "Kais", 
             family = "Tahar",
             email = "kais.tahar@med.uni-goettingen.de",
-             role = c("aut","cre"),
+            role = c("aut","cre"),
             comment=c(ORCID = "0000-0001-9683-0575")))
-Description: This package contains methods for data quality analysis and reporting, especially in clinical research.
+Description: This package offers a range of metrics for assessing data quality (DQ) across the dimensions of completeness, plausibility, uniqueness, and concordance. The implemented functions allow users to select appropriate indicators and generate customized DQ reports. The definitions of DQ dimensions and indicators are guided by the conceptual framework for harmonized DQ assessments first introduced under DOI: 10.1055/a-2006-1018. Additionally, dqLib provides methods for DQ analysis and reporting on DQ issues, especially in clinical care and research. The reports provide adequate information to explain the detected DQ issues and help users trace them back to their sources and underlying causes. The new release also enables the detection and visualization of plausibility issues based on predefined logical and mathematical rules. Further details on DQ metrics and exemplary DQ reports/visualizations are given in the readme.
 License: GPL-3
 URL: https://github.com/KaisTahar/dqLib
 Encoding: UTF-8
 LazyData: true
-Imports: openxlsx, stringi, ggplot2
+Imports: openxlsx, stringi, ggplot2, anytime
 RoxygenNote: 7.1.2
 Language: en-US
