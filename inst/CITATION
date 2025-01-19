@@ -4,7 +4,7 @@ citHeader("To cite dqLib in publications, please use:")
 if(!exists("meta") || is.null(meta)) meta <- packageDescription("dqLib")
 if (is.null(meta$Date)) meta$Date <- Sys.Date()
 year <- format(as.Date(meta$Date), "%Y")
-title <- paste("dqLib:", meta$Title)
+title <- paste(meta$Title)
 auth <- paste(meta$Author)
 note <- paste("R package version", meta$Version)
 url <- meta$URL
