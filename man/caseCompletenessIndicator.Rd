@@ -7,5 +7,5 @@
 caseCompletenessIndicator(vm_case, vm_case_misg)
 }
 \description{
-This function calculate the indicator for Case Completeness (dqi_cc_ccr), and adds related metadata and parameters.
+This function calculates the indicator for Case Completeness (dqi_cc_ccr), and adds related metadata and parameters.
 }
