@@ -7,5 +7,5 @@
 subjectCompletenessIndicator(s, s_inc)
 }
 \description{
-Function to calculate the indicator for Subject Completeness (dqi_cc_scr), and adds related metadata and parameters in the DQ report.
+Function to calculate the indicator for Subject Completeness (dqi_cc_scr). It also adds related metadata and parameters in the DQ report.
 }
