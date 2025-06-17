@@ -1,7 +1,12 @@
-# <p align="center"> Data Quality Library (dqLib): An R Package for Traceable and Explainable Assessments of Clinical Data Quality </p>
+# <p align="center"> Data Quality Library (dqLib): An R Package for Explainable and Traceable Assessments of Clinical Data Quality </p>
+
+<!-- badges: start -->
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15118195.svg)](https://doi.org/10.5281/zenodo.15118195)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+<!-- badges: end -->
 
 ## 1. Description
-The Data Quality Library (`dqLib`) is an R package for traceable and explainable data quality (DQ) assessment. It offers generic methods for calculating DQ metrics and generating reports on detected DQ issues, especially in clinical care and research. This package also provides specific functions for reporting on DQ issues that may arise in the context of cardiovascular diseases (CVDs), and rare diseases (RDs). The reports provide adequate information to explain the detected DQ issues and assist users in tracing them back to their sources and underlying causes. Moreover, the latest release enables the detection and visualization of plausibility issues based on predefined logical and mathematical rules. To improve usability, this version allows users to specify DQ rules using spreadsheets. Exemplary visualizations and DQ reports are available in section 4, while further details on the developed functions are given in the [news](https://github.com/KaisTahar/dqLib/blob/master/NEWS.md).
+The Data Quality Library (`dqLib`) is an R package for explainable and traceable data quality (DQ) assessments. This package provides generic methods for calculating DQ metrics and generating reports on detected DQ issues, especially in clinical care and research. `dqLib` also provides specific functions for reporting on DQ issues that may arise in the context of cardiovascular diseases (CVDs), and rare diseases (RDs). The reports offer adequate information to explain the detected DQ issues and help users trace them back to their sources and underlying causes. `dqLib` was validated using real-world data and applied to different use cases for both rare and common diseases [1-3]. The latest release enables the detection and visualization of plausibility issues based on predefined logical and mathematical rules. To improve usability, this version allows users to specify DQ rules using spreadsheets. Exemplary visualizations and DQ reports are available in section 4, while further details on the developed functions are given in the [news](https://github.com/KaisTahar/dqLib/blob/master/NEWS.md).
 
 ## 2. Installation
 
@@ -55,7 +60,7 @@ devtools::install_local("./dqLib")
     </tbody>
 </table>
 
-<br />  In addition to indicators, the reports include relevant parameters and offer adequate information to help users address the detected DQ issues. `dqLib` provides functions to report on the following DQ issues and related parameters:
+<br />  In addition to indicators, the reports include resulting parameters and offer adequate information to help users resolve the detected DQ issues. `dqLib` provides functions to report on the following DQ issues and related parameters:
   
   | Abbreviation | DQ Parameter | Description |
   |-----|--------------------------- | ------------|
@@ -122,12 +127,7 @@ devtools::install_local("./dqLib")
   |  oc_misg | missing Orphacodes |  number of missing Orphacodes by tracer diagnoses |
   |  link_ip | implausible links | number of implausible ICD-10-GM/OC links |
 
-  
-The following references are required to assess the quality of RD documentation: (1) Current Version of Alpha-ID-SE Terminology [1] and (2) a reference for tracer diagnoses such as the list provided in [2].
-
-  [1] BfArM - Alpha-ID-SE [Internet]. [cited 2022 May 23]. Available from: [BfArM](https://www.bfarm.de/EN/Code-systems/Terminologies/Alpha-ID-SE/_node.html)
- 
-  [2] Tahar et al. Rare Diseases in Hospital Information Systems — An Interoperable Methodology for Distributed Data Quality Assessments. Methods Inf Med. 2023 Sep;62(3/4):71–89. [DOI: 10.1055/a-2006-1018](https://www.thieme-connect.com/products/ejournals/abstract/10.1055/a-2006-1018)
+The following references are required to assess the quality of RD documentation: (1) Current Version of Alpha-ID-SE Terminology [4], and (2) a reference for tracer diagnoses such as the list provided in [1].
 
 ## 4. Examples
 - [CordDqChecker](https://github.com/KaisTahar/cordDqChecker/tree/bmc_dqTools): A reporting tool for DQ assessment on RD data implemented using `dqLib`. The code repository of `CordDqChecker` includes some [examples](https://github.com/KaisTahar/cordDqChecker/tree/bmc_dqTools/Local/Data/Export) of DQ reports generated using synthetic data.
@@ -137,4 +137,15 @@ The following references are required to assess the quality of RD documentation:
 
 - To cite `dqLib`, please use the CITATION file in the folder `./inst`.
 
-- Acknowledgment: This work was funded by the German Centre for Cardiovascular Research (DZHK), grant number 81X1300117, and the "Collaboration on Rare Diseases" of the Medical Informatics Initiative (CORD-MI) under grant number: 01ZZ1911R, FKZ-01ZZ1911R.
+- Acknowledgment: This work was partially funded by the German Center for Cardiovascular Research (DZHK), grant number 81X1300117, and the "Collaboration on Rare Diseases" of the Medical Informatics Initiative (CORD-MI) under grant number: 01ZZ1911R, FKZ-01ZZ1911R.
+
+## 6. References 
+	
+[1] Tahar et al. Rare Diseases in Hospital Information Systems — An Interoperable Methodology for Distributed Data Quality Assessments. [DOI: 10.1055/a-2006-1018](https://www.thieme-connect.com/products/ejournals/abstract/10.1055/a-2006-1018)
+  
+[2] Tahar et al. Local Data Quality Assessments on EHR-Based Real-World Data for Rare Diseases. [DOI: 10.3233/SHTI230121](https://pubmed.ncbi.nlm.nih.gov/37203665/)
+  
+[3] Tahar K, CvdDqChecker: A Software Solution for Explainable and Traceable Assessments of Cardiovascular Disease Data Quality. Available from [GitHub](https://github.com/KaisTahar/cvdDqChecker)
+
+[4] BfArM - Alpha-ID-SE. Available from [BfArM](https://www.bfarm.de/EN/Code-systems/Terminologies/Alpha-ID-SE/_node.html)
+ 
