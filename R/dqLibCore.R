@@ -391,7 +391,6 @@ missingCheck<- function (df, item, itemCol, cl1, cl2, ...){
     else if (item!=env$ovrQuality){
       df <- addMissingValue(item, df, 0,0, itemCol)
       env$dq[,cl2]<- paste( "missing ", item,"according to the list of mandatory metadata ", env$dq[,cl2])
-
     }
   } else {
     missingCode <-env$vm_misg_code
@@ -702,7 +701,6 @@ checkLogicalRule<- function (rID, contra, contraCol, item1, value1, item2, value
       colnames(contra$rules) <- rulesCols
     }
     out <-checkSymbolicConjunctions(item1, value1, item2, value2)
-
     if (!is.empty(out)) {
       for(i in out) {
         df[nrow(df) + 1,] <- c(rID, env$dq[[item1]][i], env$dq[[item2]][i], 1, 2)
@@ -715,7 +713,6 @@ checkLogicalRule<- function (rID, contra, contraCol, item1, value1, item2, value
       if (nrow(df)!=0) contra <- append(contra, list(df))
       rule <- c(rID, length(out), sum (df["vc"]), nValue)
       contra$rules[nrow(contra$rules) + 1,] <- rule
-
     }else {
       contra <- append(contra, list (df))
       rule <- c(rID, 0, 0, nValue)
@@ -769,7 +766,7 @@ checkMathRule<- function (rID, contra, contraCol, item1, operator, item2, min, m
       for(i in out) {
         if (unit %in% c("days", "years", "monthes")){
           df[nrow(df) + 1,] <- c(rID, anydate(env$dq[[item1]][i]), anydate(env$dq[[item2]][i]), 1, 2)
-          msg <- paste( "Implausible time intervall according to the mathematical rule", rID , ": ",  item1, "=", anydate(env$dq[[item1]][i]) , ", ", item2, "=", anydate(env$dq[[item2]][i]), ", min=", min, unit,", max=", max,unit, ".", sep="")
+          msg <- paste( "Implausible time interval according to the mathematical rule ", rID , ": ",  item1, "=", anydate(env$dq[[item1]][i]) , ", ", item2, "=", anydate(env$dq[[item2]][i]), ", min=", min, unit,", max=", max,unit, ".", sep="")
           #print(msg)
           env$dq[,contraCol][i] <-paste (msg, env$dq[,contraCol][i])
         } else {
@@ -1338,6 +1335,5 @@ deprecatedMetrics<- function (df) {
     if ("tracerCase_rel" %in% names(df))  df$tracerCase_rel_py_ipat <-df$tracerCase_rel
     if ("orphaCase_rel" %in% names(df))  df$orphaCase_rel_py_ipat <-df$orphaCase_rel
   }
-
   df
 }
