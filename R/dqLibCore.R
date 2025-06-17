@@ -983,18 +983,20 @@ visualizeOutliers <- function (itemCol, valueCol, sumRow, voPath, ...){
   outlierNumbers <- df[, valueCol]
   vars <- list(...)
   legend = TRUE
-  labelSize = 10
-  counterSize = 3
+  labelSize = 12
+  legendSize=11
+  counterSize = 4
   if(!is.empty(vars)){
-    if (!is.null(vars$a)) legend=vars[[1]]
-    if (!is.null(vars$b)) labelSize=vars[[2]]
-    if (!is.null(vars$c)) counterSize=vars[[3]]
+    if (!is.null(vars$a)) legend=vars$a
+    if (!is.null(vars$b)) legendSize=vars$b
+    if (!is.null(vars$c)) labelSize=vars$c
+    if (!is.null(vars$d)) counterSize=vars$d
   }
   ggplot(df, aes(x= reorder(dataItems, outlierNumbers), y=outlierNumbers, fill=dataItems)) +
     geom_bar(stat="identity", show.legend = legend) +
     geom_text(aes(label = round(outlierNumbers, digits = 0)), vjust = 0, size=counterSize)+
-    labs(x="Data Items", y="Outliers", fill= "Data Items") +
-    theme(axis.text.x=element_text(angle=45, size=labelSize, hjust=1), legend.text =element_text(size=labelSize))
+    labs(x="Data items", y="Outliers", fill= "Data items") +
+    theme(axis.text.x=element_text(angle=45,size=labelSize, hjust=1), legend.text=element_text(size=legendSize))
   path<-paste (voPath, ".png")
   ggsave(path)
 }
@@ -1013,17 +1015,19 @@ visualizeContradictions <- function (ruleCol, valueCol, sumRow, vcPath, ...){
   vars <- list(...)
   legend = TRUE
   labelSize = 12
-  counterSize = 3
+  legendSize=12
+  counterSize = 4
   if(!is.empty(vars)){
-    if (!is.null(vars$a)) legend=vars[[1]]
-    if (!is.null(vars$b)) labelSize=vars[[2]]
-    if (!is.null(vars$c)) counterSize=vars[[3]]
+    if (!is.null(vars$a)) legend=vars$a
+    if (!is.null(vars$b)) legendSize=vars$b
+    if (!is.null(vars$c)) labelSize=vars$c
+    if (!is.null(vars$d)) counterSize=vars$d
   }
   ggplot(df, aes(x= reorder(rules, contraNumbers), y=contraNumbers, fill=rules)) +
     geom_bar(stat="identity", show.legend = legend) +
     geom_text(aes(label = round(contraNumbers, digits = 0)), vjust = 0, size=counterSize)+
-    labs(x="Contradictions Rules", y="Contradictory Data Value", fill= "Contradictions Rules") +
-    theme(axis.text.x=element_text(angle=45, size=labelSize, hjust=1), legend.text =element_text(size=labelSize))
+    labs(x="Contradiction rules", y="Contradictory data values", fill= "Contradiction rules") +
+    theme(axis.text.x=element_text(angle=45, size=labelSize, hjust=1), legend.text=element_text(size=legendSize))
   path<-paste (vcPath, ".png")
   ggsave(path)
 }
