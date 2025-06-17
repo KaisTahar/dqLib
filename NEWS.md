@@ -1,8 +1,21 @@
-# dqLib 1.32.0
+# <p align="center"> Evolution of the Data Quality Library (dqLib): An Overview of Implemented Changes and New Package Releases </p>
+
+# Release dqLib 1.32.1
 
 **New changes and tests**
 
-- This release was tested and validated using electronic health record (EHR) data on rare diseases (RDs) and electronic clinical trial (ECT) data on cardiovascular diseases (CVDs)
+- This release provides a patch for backwards-compatible bug fixes
+- Fixed typo in the report on detected contradictions
+- Fixed optional parameters for changing the font size of text elements in the plots of outliers and contradictions
+- Updated package documentation
+
+**Full set of changes:** [v1.32.0...v1.32.1](https://github.com/KaisTahar/dqLib/compare/v1.32.0...v1.32.1)
+
+# Release dqLib 1.32.0
+
+**New changes and tests**
+
+- This release was tested and validated using electronic health record (EHR) data on rare diseases (RDs) and electronic case report forms (eCRF) data on cardiovascular diseases (CVDs)
 - New generic functions for assessing data quality (DQ) regarding semantic plausibility. The implemented functions enable the detection of contradictions based on predefined mathematical and logical rules
 - New generic function to classify the detected DQ issues into different reports. These new reports offer more detailed information to explain the detected DQ issues and assist users trace them back to their sources and underlying causes
 - New function to enable the specification of logical and mathematical rules using spreadsheets. These rule metadata are not dependent on the specific spreadsheets and data items employed
@@ -16,11 +29,11 @@
 **Full set of changes:** [v1.20.0...v1.32.0](https://github.com/KaisTahar/dqLib/compare/v1.20.0...v1.32.0)
 
 
-# dqLib 1.20.0
+# Release dqLib 1.20.0
 
 **New changes and tests**
 
-- This version was tested and validated using ECT data on CVDs
+- This version was tested and validated using eCRF data on CVDs
 - New generic function for DQ assessments across multiple domains using generic indicators
 - New generic indicator for assessing the Semantic Plausibility
 - New function to detect common DQ issues that may arise in the context of CVDs
@@ -36,7 +49,7 @@
 **Full set of changes:** [v1.5.0...v1.20.0](https://github.com/KaisTahar/dqLib/compare/v1.5.0...v1.20.0)
 
 
-# dqLib 1.5.0
+# Release dqLib 1.5.0
 
 **New changes and tests**
 
@@ -47,7 +60,7 @@
 
 **Full set of changes:** [v1.3.1...v1.5.0](https://github.com/KaisTahar/dqLib/compare/v1.3.1...v1.5.0)
 
-# dqLib 1.3.1
+# Release dqLib 1.3.1
 
 **New changes and tests**
 - This version was successfully tested using synthetic data across multiple hospitals. The conceptual framework for harmonized DQ assessments and the findings from the distributed DQ assessments have been published under [DOI: 10.1055/a-2006-1018](https://www.thieme-connect.com/products/ejournals/abstract/10.1055/a-2006-1018)
@@ -59,7 +72,7 @@
 
 **Full set of changes:** [v1.0.0...v1.3.1](https://github.com/KaisTahar/dqLib/compare/v1.0.0...v1.3.1)
 
-# dqLib 1.0.0
+# Release dqLib 1.0.0
 
 - First version of the data quality library (dqLib), which was tested independently using synthetic data
 - Test results indicated the correctness of the implemented DQ indicators as reported in [DOI: 10.3205/22gmds116](https://www.egms.de/static/en/meetings/gmds2022/22gmds116.shtml)
