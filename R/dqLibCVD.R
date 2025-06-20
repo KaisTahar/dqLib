@@ -1,5 +1,5 @@
 #######################################################################################################
-# Description: The data quality library (dqLib) is an R package for traceable and explainable assessments of clinical data quality.
+# Description: The data quality library (dqLib) is an R package for explainable and traceable assessments of clinical data quality.
 # As part of the "dqLib" package this script includes functions to detect data quality (DQ) issues that may arise in the context of common diseases like cardiovascular diseases (CVDs).
 # Kais Tahar, University Medical Center Göttingen
 # ######################################################################################################
